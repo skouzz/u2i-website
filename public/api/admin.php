@@ -18,8 +18,12 @@ function admin_setup_needed(): bool
 {
     try {
         return (int) db()->query('SELECT COUNT(*) AS c FROM admins')->fetch()['c'] === 0;
-    } catch (Throwable) {
-        return false; // DB not installed: don't expose setup
+    } catch (PDOException $e) {
+        // Table missing = fresh install → allow first-run setup.
+        if (($e->getCode() ?? '') === '42S02') {
+            return true;
+        }
+        return false; // DB unreachable: don't expose setup
     }
 }
 
@@ -38,6 +42,14 @@ if ($action === 'setup' && $method === 'POST') {
         json_response(['ok' => false, 'message' => 'Le mot de passe doit contenir au moins 8 caractères.'], 400);
     }
     try {
+        // Self-healing: create the table if the schema predates it.
+        db()->exec("CREATE TABLE IF NOT EXISTS admins (
+            id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(100) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         $stmt = db()->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)');
         $stmt->execute([$username, password_hash($password, PASSWORD_DEFAULT)]);
         admin_login($username, $password);
