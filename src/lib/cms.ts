@@ -191,7 +191,7 @@ export const adminApi = {
     getJson<{ ok: true; items: CmsPage[] }>("/api/admin.php?a=pages", withCsrf({}, csrf)),
 
   page: (csrf: string, id: number) =>
-    getJson<{ ok: true; page: CmsPage; blocks: (CmsBlock & { images_json?: string | null })[] }>(
+    getJson<{ ok: true; page: CmsPage; blocks: CmsBlock[] }>(
       `/api/admin.php?a=page&p=${id}`,
       withCsrf({}, csrf),
     ),

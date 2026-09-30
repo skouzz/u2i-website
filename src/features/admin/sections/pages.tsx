@@ -174,7 +174,7 @@ function PageForm({
             title: b.title ?? "",
             body: b.body ?? "",
             imageUrl: b.imageUrl ?? "",
-            images: b.images_json ? (JSON.parse(b.images_json) as string[]) : [],
+            images: b.images ?? [],
           })),
         );
         setSlug(res.page.slug);

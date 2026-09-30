@@ -125,6 +125,59 @@ function fetch_page(int $id): ?array
     return $row ?: null;
 }
 
+/** Map a raw pages row to the camelCase shape the dashboard expects. */
+function map_page_row(array $row): array
+{
+    return [
+        'id' => (int) $row['id'],
+        'slug' => (string) $row['slug'],
+        'title' => (string) $row['title'],
+        'eyebrow' => $row['eyebrow'] ?? null,
+        'heroTitle' => $row['hero_title'] ?? null,
+        'heroText' => $row['hero_text'] ?? null,
+        'heroImageUrl' => $row['hero_image_url'] ?? null,
+        'navLabel' => $row['nav_label'] ?? null,
+        'navOrder' => (int) ($row['nav_order'] ?? 0),
+        'isPublished' => (bool) ($row['is_published'] ?? 0),
+    ];
+}
+
+/** Map a raw articles row to the camelCase shape the dashboard expects. */
+function map_article_row(array $row): array
+{
+    return [
+        'id' => (int) $row['id'],
+        'slug' => (string) $row['slug'],
+        'title' => (string) $row['title'],
+        'excerpt' => $row['excerpt'] ?? null,
+        'body' => $row['body'] ?? null,
+        'coverImageUrl' => $row['cover_image_url'] ?? null,
+        'author' => $row['author'] ?? null,
+        'isPublished' => (bool) ($row['is_published'] ?? 0),
+        'publishedAt' => $row['published_at'] ?? null,
+    ];
+}
+
+/** Map a raw page_blocks row (images_json decoded into images[]). */
+function map_block_row(array $row): array
+{
+    $images = null;
+    if (!empty($row['images_json'])) {
+        $decoded = json_decode((string) $row['images_json'], true);
+        if (is_array($decoded)) {
+            $images = array_values(array_map('strval', $decoded));
+        }
+    }
+
+    return [
+        'type' => (string) $row['type'],
+        'title' => $row['title'] ?? null,
+        'body' => $row['body'] ?? null,
+        'imageUrl' => $row['image_url'] ?? null,
+        'images' => $images,
+    ];
+}
+
 /** Replace the blocks of a page with the provided payload. */
 function save_blocks(int $pageId, array $blocks): void
 {
@@ -181,6 +234,10 @@ function save_article(array $data, ?int $id): array
     $published = !empty($data['isPublished']);
     $publishedAt = field($data, 'publishedAt');
 
+    // For updates the SQL keeps the original publish date unless the payload
+    // provides an explicit one; publishing a draft without a date stamps NOW.
+    $publishedParam = $publishedAt !== '' ? str_replace('T', ' ', $publishedAt) : null;
+
     if ($id === null) {
         $stmt = db()->prepare(
             'INSERT INTO articles (slug, title, excerpt, body, cover_image_url, author, is_published, published_at)
@@ -199,7 +256,7 @@ function save_article(array $data, ?int $id): array
         $id = (int) db()->lastInsertId();
     } else {
         $stmt = db()->prepare(
-            'UPDATE articles SET slug = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ?, is_published = ?, published_at = ? WHERE id = ?'
+            'UPDATE articles SET slug = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ?, is_published = ?, published_at = COALESCE(?, IF(? = 1, COALESCE(published_at, NOW()), published_at)) WHERE id = ?'
         );
         $stmt->execute([
             $slug,
@@ -209,7 +266,8 @@ function save_article(array $data, ?int $id): array
             field($data, 'coverImageUrl') ?: null,
             field($data, 'author') ?: null,
             $published ? 1 : 0,
-            $publishedAt !== '' ? str_replace('T', ' ', $publishedAt) : null,
+            $publishedParam,
+            $published ? 1 : 0,
             $id,
         ]);
     }
@@ -245,7 +303,7 @@ try {
             csrf_or_fail();
             if ($method === 'GET') {
                 $rows = db()->query('SELECT * FROM pages ORDER BY nav_order ASC, id ASC')->fetchAll();
-                json_response(['ok' => true, 'items' => $rows]);
+                json_response(['ok' => true, 'items' => array_map('map_page_row', $rows)]);
             }
             if ($method === 'POST') {
                 $data = read_json_body();
@@ -266,12 +324,15 @@ try {
                     field($data, 'heroText') ?: null,
                     field($data, 'heroImageUrl') ?: null,
                     field($data, 'navLabel') ?: null,
-                    (int) field($data, 'navOrder') ?: 0,
+                    // 0 = "not ordered yet": sort last (999) so a new page lands
+                    // at the end of the menu and is included by the public nav.
+                    (int) field($data, 'navOrder') ?: 999,
                     !empty($data['isPublished']) ? 1 : 0,
                 ]);
                 $pageId = (int) db()->lastInsertId();
                 save_blocks($pageId, is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
-                json_response(['ok' => true, 'page' => fetch_page($pageId)], 201);
+                $page = fetch_page($pageId);
+                json_response(['ok' => true, 'page' => $page ? map_page_row($page) : null], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
@@ -288,7 +349,7 @@ try {
                 }
                 $blocks = db()->prepare('SELECT * FROM page_blocks WHERE page_id = ? ORDER BY sort_order ASC');
                 $blocks->execute([$id]);
-                json_response(['ok' => true, 'page' => $page, 'blocks' => $blocks->fetchAll()]);
+                json_response(['ok' => true, 'page' => map_page_row($page), 'blocks' => array_map('map_block_row', $blocks->fetchAll())]);
             }
             if ($method === 'PUT' || $method === 'POST') {
                 $data = read_json_body();
@@ -308,12 +369,13 @@ try {
                     field($data, 'heroText') ?: null,
                     field($data, 'heroImageUrl') ?: null,
                     field($data, 'navLabel') ?: null,
-                    (int) field($data, 'navOrder') ?: 0,
+                    (int) field($data, 'navOrder') ?: 999,
                     !empty($data['isPublished']) ? 1 : 0,
                     $id,
                 ]);
                 save_blocks($id, is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
-                json_response(['ok' => true, 'page' => fetch_page($id)]);
+                $page = fetch_page($id);
+                json_response(['ok' => true, 'page' => $page ? map_page_row($page) : null]);
             }
             if ($method === 'DELETE') {
                 db()->prepare('DELETE FROM pages WHERE id = ?')->execute([$id]);
@@ -325,10 +387,10 @@ try {
         case 'articles':
             csrf_or_fail();
             if ($method === 'GET') {
-                json_response(['ok' => true, 'items' => list_articles()]);
+                json_response(['ok' => true, 'items' => array_map('map_article_row', list_articles())]);
             }
             if ($method === 'POST') {
-                json_response(['ok' => true, 'article' => save_article(read_json_body(), null)], 201);
+                json_response(['ok' => true, 'article' => map_article_row(save_article(read_json_body(), null) ?? [])], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
@@ -340,10 +402,10 @@ try {
             }
             if ($method === 'GET') {
                 $article = fetch_article($id);
-                json_response($article ? ['ok' => true, 'article' => $article] : ['ok' => false, 'message' => 'Article introuvable.'], $article ? 200 : 404);
+                json_response($article ? ['ok' => true, 'article' => map_article_row($article)] : ['ok' => false, 'message' => 'Article introuvable.'], $article ? 200 : 404);
             }
             if ($method === 'PUT' || $method === 'POST') {
-                json_response(['ok' => true, 'article' => save_article(read_json_body(), $id)]);
+                json_response(['ok' => true, 'article' => map_article_row(save_article(read_json_body(), $id) ?? [])]);
             }
             if ($method === 'DELETE') {
                 db()->prepare('DELETE FROM articles WHERE id = ?')->execute([$id]);
