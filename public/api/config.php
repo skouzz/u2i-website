@@ -16,83 +16,65 @@
 
 declare(strict_types=1);
 
-// ── Database (production values — OVH) ──────────────────────────────────────
-const DB_HOST = 'u2iprocesscom.mysql.db';
-const DB_NAME = 'u2iprocesscomdb';
-const DB_USER = 'u2iprocesscomdb';
-const DB_PASS = 'CHANGE_ME';
-
-// ── Admin dashboard (fallback credentials) ─────────────────────────────────
-const DEFAULT_ADMIN_USER = 'admin';
-// Preferred: create the account from the dashboard on first login (setup
-// mode) - it stores a real password_hash() in the `admins` table. The
-// values below are only a fallback used when the DB is unreachable. The
-// hash must be generated with:
-//   php -r "echo password_hash('yourpass', PASSWORD_DEFAULT);"
-// Leave DEFAULT_ADMIN_HASH empty ('') to disable the fallback.
-const DEFAULT_ADMIN_HASH = '';
-
-// ── Uploads ──────────────────────────────────────────────────────────────────
-const UPLOAD_DIR = __DIR__ . '/uploads';
-const UPLOAD_MAX_BYTES = 12 * 1024 * 1024; // 12 MB
-const ALLOWED_IMAGE_TYPES = [
-    'image/jpeg' => 'jpg',
-    'image/png' => 'png',
-    'image/webp' => 'webp',
-    'image/gif' => 'gif',
-    'image/svg+xml' => 'svg',
-];
-
-// ── Optional local overrides (config.local.php, XAMPP / dev machine) ────────
-// Expected contents (values below are XAMPP defaults):
-//
-//   <?php
-//   define('DB_HOST', '127.0.0.1');
-//   define('DB_NAME', 'u2i_cms');
-//   define('DB_USER', 'root');
-//   define('DB_PASS', '');
-//   define('DEFAULT_ADMIN_USER', 'admin');
-//   define('DEFAULT_ADMIN_HASH', '$2y$10$…');  // password_hash('yourpass', PASSWORD_DEFAULT)
-//   define('PLUNK_API_KEY', '');               // optional
-//
-// Everything defined here simply shadows the constants above.
+// ── Local overrides FIRST (config.local.php, XAMPP / dev machine) ───────────
+// This file uses define() and may override ANY default below. It is optional,
+// git-ignored, and blocked from HTTP access by .htaccess. See
+// config.local.example.php for a template.
 if (is_file(__DIR__ . '/config.local.php')) {
     require __DIR__ . '/config.local.php';
 }
 
-// ── Resolved runtime values (local override → production default) ───────────
-function u2i_config(string $name, string $fallback): string
-{
-    if (defined($name)) {
-        /** @var mixed $value */
-        $value = constant($name);
-
-        return is_scalar($value) ? (string) $value : $fallback;
-    }
-
-    return $fallback;
+// ── Production defaults (OVH) — used ONLY for values not overridden locally ─
+if (!defined('DB_HOST')) {
+    define('DB_HOST', 'u2iprocesscom.mysql.db');
+}
+if (!defined('DB_NAME')) {
+    define('DB_NAME', 'u2iprocesscomdb');
+}
+if (!defined('DB_USER')) {
+    define('DB_USER', 'u2iprocesscomdb');
+}
+if (!defined('DB_PASS')) {
+    define('DB_PASS', 'CHANGE_ME');
 }
 
+// Admin dashboard: create the account from the dashboard on first login
+// (setup mode) — it stores a real password_hash() in the `admins` table.
+// DEFAULT_ADMIN_* below is only a fallback used when the DB is unreachable;
+// the hash must be generated with:
+//   php -r "echo password_hash('yourpass', PASSWORD_DEFAULT);"
+// Leave DEFAULT_ADMIN_HASH empty ('') to disable the fallback.
+if (!defined('DEFAULT_ADMIN_USER')) {
+    define('DEFAULT_ADMIN_USER', 'admin');
+}
+if (!defined('DEFAULT_ADMIN_HASH')) {
+    define('DEFAULT_ADMIN_HASH', '');
+}
+if (!defined('PLUNK_API_KEY')) {
+    define('PLUNK_API_KEY', '');
+}
+
+// ── Resolved runtime values (local override → production default) ───────────
 if (!defined('U2I_DB_HOST')) {
-    define('U2I_DB_HOST', u2i_config('DB_HOST', '127.0.0.1'));
+    define('U2I_DB_HOST', DB_HOST);
 }
 if (!defined('U2I_DB_NAME')) {
-    define('U2I_DB_NAME', u2i_config('DB_NAME', 'u2i_cms'));
+    define('U2I_DB_NAME', DB_NAME);
 }
 if (!defined('U2I_DB_USER')) {
-    define('U2I_DB_USER', u2i_config('DB_USER', 'root'));
+    define('U2I_DB_USER', DB_USER);
 }
 if (!defined('U2I_DB_PASS')) {
-    define('U2I_DB_PASS', u2i_config('DB_PASS', ''));
+    define('U2I_DB_PASS', DB_PASS);
 }
 if (!defined('U2I_ADMIN_USER')) {
-    define('U2I_ADMIN_USER', u2i_config('DEFAULT_ADMIN_USER', 'admin'));
+    define('U2I_ADMIN_USER', DEFAULT_ADMIN_USER);
 }
 if (!defined('U2I_ADMIN_HASH')) {
-    define('U2I_ADMIN_HASH', u2i_config('DEFAULT_ADMIN_HASH', ''));
+    define('U2I_ADMIN_HASH', DEFAULT_ADMIN_HASH);
 }
 if (!defined('U2I_PLUNK_API_KEY')) {
-    define('U2I_PLUNK_API_KEY', u2i_config('PLUNK_API_KEY', ''));
+    define('U2I_PLUNK_API_KEY', PLUNK_API_KEY);
 }
 
 // ── Internal helpers ────────────────────────────────────────────────────────
@@ -116,6 +98,9 @@ function db(): PDO
 
 function json_response(array $payload, int $status = 200): void
 {
+    while (ob_get_level() > 0) {
+        ob_end_clean(); // drop any stray warnings/notices before the JSON body
+    }
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($payload, JSON_UNESCAPED_UNICODE);

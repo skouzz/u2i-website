@@ -29,7 +29,9 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost/u2i-website/public",
+        // Adjust the folder name if yours differs (e.g. u2i-website-main
+        // when downloaded as a ZIP from GitHub).
+        target: "http://localhost/u2i-website-main/public",
         changeOrigin: true,
       },
     },
