@@ -17,6 +17,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActualitesIndexRouteImport } from './routes/actualites/index'
+import { Route as PSplatRouteImport } from './routes/p.$'
 import { Route as ActualitesSlugRouteImport } from './routes/actualites/$slug'
 
 const SecteursRoute = SecteursRouteImport.update({
@@ -59,6 +60,11 @@ const ActualitesIndexRoute = ActualitesIndexRouteImport.update({
   path: '/actualites/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSplatRoute = PSplatRouteImport.update({
+  id: '/p/$',
+  path: '/p/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActualitesSlugRoute = ActualitesSlugRouteImport.update({
   id: '/actualites/$slug',
   path: '/actualites/$slug',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
   '/actualites/$slug': typeof ActualitesSlugRoute
+  '/p/$': typeof PSplatRoute
   '/actualites/': typeof ActualitesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
   '/actualites/$slug': typeof ActualitesSlugRoute
+  '/p/$': typeof PSplatRoute
   '/actualites': typeof ActualitesIndexRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
   '/actualites/$slug': typeof ActualitesSlugRoute
+  '/p/$': typeof PSplatRoute
   '/actualites/': typeof ActualitesIndexRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/references'
     | '/secteurs'
     | '/actualites/$slug'
+    | '/p/$'
     | '/actualites/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/references'
     | '/secteurs'
     | '/actualites/$slug'
+    | '/p/$'
     | '/actualites'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/references'
     | '/secteurs'
     | '/actualites/$slug'
+    | '/p/$'
     | '/actualites/'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   ReferencesRoute: typeof ReferencesRoute
   SecteursRoute: typeof SecteursRoute
   ActualitesSlugRoute: typeof ActualitesSlugRoute
+  PSplatRoute: typeof PSplatRoute
   ActualitesIndexRoute: typeof ActualitesIndexRoute
 }
 
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActualitesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$': {
+      id: '/p/$'
+      path: '/p/$'
+      fullPath: '/p/$'
+      preLoaderRoute: typeof PSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/actualites/$slug': {
       id: '/actualites/$slug'
       path: '/actualites/$slug'
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReferencesRoute: ReferencesRoute,
   SecteursRoute: SecteursRoute,
   ActualitesSlugRoute: ActualitesSlugRoute,
+  PSplatRoute: PSplatRoute,
   ActualitesIndexRoute: ActualitesIndexRoute,
 }
 export const routeTree = rootRouteImport

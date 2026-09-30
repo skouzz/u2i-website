@@ -3,6 +3,17 @@
 Website for **Univers Inox Industriel (U2I)** with a built-in admin dashboard and CMS.
 Built with **React 19, TanStack Start/Router, Tailwind CSS 4** (front-end) and **PHP + MySQL** (back-end, runs on OVH shared hosting).
 
+> **v2 modernization (2026):** the CMS now includes a homepage builder (14 section types),
+> menu management (nested main/footer menus), categories & tags, a rich-text article editor,
+> content workflow (draft / pending / scheduled / published / archived), automatic revisions
+> with restore, per-page & per-article SEO fields, header/footer/social editors, a media
+> library with metadata + drag & drop, an activity log, a dynamic sitemap
+> (`/api/sitemap.php`) and a hardened security layer (rate limiting, hardened sessions,
+> secure upload serving). See [docs/AUDIT.md](docs/AUDIT.md) for the full audit.
+>
+> **Upgrading an existing install:** re-run `/api/install.php?key=u2i-install-2024` once —
+> it applies all v2 tables/columns idempotently without touching existing data.
+
 This README explains **exactly** how to run the project, step by step.
 
 ---
@@ -235,12 +246,17 @@ The **left sidebar** is the navigation; the top bar shows the current section, a
 
 | Sidebar item | What it manages |
 | --- | --- |
-| **Tableau de bord** | Overview: key numbers + quick actions |
-| **Pages** | All CMS pages (content + menu) |
-| **Actualités** | News articles |
-| **Médiathèque** | Image library |
+| **Tableau de bord** | Overview: key numbers + quick actions + recent content/activity |
+| **Contenu → Pages** | All CMS pages (content, SEO, scheduling, hierarchy, revisions) |
+| **Contenu → Actualités** | News articles (rich editor, categories, tags, SEO, revisions) |
+| **Contenu → Catégories / Tags** | Article taxonomy |
+| **Médiathèque** | Media library (upload, drag & drop, alt/title/caption metadata) |
+| **Menus** | Main & footer navigation (nested, reorder, show/hide) |
+| **Page d'accueil** | Homepage builder (ordered, toggleable sections) |
+| **En-tête / Pied de page** | Logo, announcement, contacts, socials, footer columns |
+| **Réglages** | Site identity + default SEO |
+| **Activité** | Audit log of the last 100 dashboard actions |
 | **Messages** | Contact-form submissions |
-| **Réglages** | Site name, contact info, footer |
 | **Mon compte** | Your password |
 
 ### 8.2 Tableau de bord (home)

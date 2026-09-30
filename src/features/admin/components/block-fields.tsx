@@ -14,7 +14,15 @@ const BLOCK_TYPES = [
 
 type Blocks = NonNullable<AdminPagePayload["blocks"]>;
 
-export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChange: (blocks: Blocks) => void; csrf: string }) {
+export function BlockFields({
+  blocks,
+  onChange,
+  csrf,
+}: {
+  blocks: Blocks;
+  onChange: (blocks: Blocks) => void;
+  csrf: string;
+}) {
   const [picker, setPicker] = useState<{ index: number; multiple: boolean } | null>(null);
 
   const update = (index: number, patch: Partial<Blocks[number]>) => {
@@ -37,8 +45,8 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
 
       {blocks.length === 0 ? (
         <p className="admin-hint">
-          Aucune section. Ajoutez des titres, textes, images ou galeries — elles
-          s'afficheront dans l'ordre sur la page.
+          Aucune section. Ajoutez des titres, textes, images ou galeries — elles s'afficheront dans
+          l'ordre sur la page.
         </p>
       ) : null}
 
@@ -47,7 +55,9 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <select
               value={block.type}
-              onChange={(e) => update(index, { type: e.target.value as (typeof BLOCK_TYPES)[number]["value"] })}
+              onChange={(e) =>
+                update(index, { type: e.target.value as (typeof BLOCK_TYPES)[number]["value"] })
+              }
               style={{ maxWidth: 200 }}
             >
               {BLOCK_TYPES.map((t) => (
@@ -57,10 +67,20 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
               ))}
             </select>
             <span className="admin-row__spacer" />
-            <button type="button" className="admin-btn" onClick={() => move(index, -1)} title="Monter">
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={() => move(index, -1)}
+              title="Monter"
+            >
               <MoveDown size={13} style={{ transform: "rotate(180deg)" }} />
             </button>
-            <button type="button" className="admin-btn" onClick={() => move(index, 1)} title="Descendre">
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={() => move(index, 1)}
+              title="Descendre"
+            >
               <MoveDown size={13} />
             </button>
             <button
@@ -76,14 +96,21 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
           {block.type !== "gallery" && block.type !== "contact_info" ? (
             <label>
               {block.type === "image" ? "Légende" : "Titre"}
-              <input value={block.title ?? ""} onChange={(e) => update(index, { title: e.target.value })} />
+              <input
+                value={block.title ?? ""}
+                onChange={(e) => update(index, { title: e.target.value })}
+              />
             </label>
           ) : null}
 
           {block.type === "text" ? (
             <label>
               Texte
-              <textarea value={block.body ?? ""} onChange={(e) => update(index, { body: e.target.value })} rows={5} />
+              <textarea
+                value={block.body ?? ""}
+                onChange={(e) => update(index, { body: e.target.value })}
+                rows={5}
+              />
             </label>
           ) : null}
 
@@ -96,7 +123,11 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
                   onChange={(e) => update(index, { imageUrl: e.target.value })}
                   placeholder="/api/uploads/…"
                 />
-                <button type="button" className="admin-btn" onClick={() => setPicker({ index, multiple: false })}>
+                <button
+                  type="button"
+                  className="admin-btn"
+                  onClick={() => setPicker({ index, multiple: false })}
+                >
                   <ImagePlus size={13} /> Choisir…
                 </button>
               </div>
@@ -106,7 +137,9 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
           {block.type === "gallery" ? (
             <>
               <div className="admin-form__inline">
-                <span className="admin-hint">{(block.images ?? []).length} image(s) dans la galerie</span>
+                <span className="admin-hint">
+                  {(block.images ?? []).length} image(s) dans la galerie
+                </span>
                 <button
                   type="button"
                   className="admin-btn"
@@ -123,7 +156,9 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
                       <button
                         type="button"
                         title="Retirer"
-                        onClick={() => update(index, { images: (block.images ?? []).filter((_, j) => j !== i) })}
+                        onClick={() =>
+                          update(index, { images: (block.images ?? []).filter((_, j) => j !== i) })
+                        }
                       >
                         <Trash2 size={11} />
                       </button>
@@ -138,15 +173,24 @@ export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChan
             <div className="admin-form__row">
               <label>
                 Téléphone
-                <input value={block.title ?? ""} onChange={(e) => update(index, { title: e.target.value })} />
+                <input
+                  value={block.title ?? ""}
+                  onChange={(e) => update(index, { title: e.target.value })}
+                />
               </label>
               <label>
                 E-mail
-                <input value={block.body ?? ""} onChange={(e) => update(index, { body: e.target.value })} />
+                <input
+                  value={block.body ?? ""}
+                  onChange={(e) => update(index, { body: e.target.value })}
+                />
               </label>
               <label>
                 Adresse
-                <input value={block.imageUrl ?? ""} onChange={(e) => update(index, { imageUrl: e.target.value })} />
+                <input
+                  value={block.imageUrl ?? ""}
+                  onChange={(e) => update(index, { imageUrl: e.target.value })}
+                />
               </label>
             </div>
           ) : null}

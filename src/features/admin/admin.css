@@ -729,7 +729,340 @@
   display: block;
 }
 
-/* ── Spinner ────────────────────────────────────────────────────────────── */
+/* ── v2: toolbar, search, badges, chips, groups, columns ───────────────── */
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-search {
+  border: 1px solid #d7dcda;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 12px;
+  min-width: 180px;
+  background: #fff;
+}
+
+.admin-search:focus {
+  border-color: var(--admin-red);
+  outline: 0;
+}
+
+.admin-badge--published {
+  background: #e5f2e6;
+  color: #2e7d32;
+}
+
+.admin-badge--draft {
+  background: #f2f0e5;
+  color: #9a7b16;
+}
+
+.admin-badge--pending {
+  background: #e8f0fb;
+  color: #2458a6;
+}
+
+.admin-badge--scheduled {
+  background: #efe7f8;
+  color: #6d3fa8;
+}
+
+.admin-badge--archived {
+  background: #eeecec;
+  color: #6b6b6b;
+}
+
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d7dcda;
+  background: #fff;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: default;
+}
+
+.admin-chip button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #737a7b;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-chip button:hover {
+  color: var(--admin-red);
+}
+
+button.admin-chip {
+  cursor: pointer;
+}
+
+.admin-chip--active {
+  border-color: var(--admin-red);
+  background: #fbe9e9;
+  color: var(--admin-red);
+}
+
+.admin-nav-group__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: rgb(255 255 255 / 45%);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 12px 12px 4px;
+  cursor: pointer;
+}
+
+.admin-nav-group__toggle:hover {
+  color: rgb(255 255 255 / 80%);
+}
+
+.admin-chevron--closed {
+  transform: rotate(-90deg);
+}
+
+.admin-nav-group__items {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-topbar__burger {
+  display: none;
+  border: 1px solid var(--admin-line);
+  background: #fff;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  cursor: pointer;
+}
+
+.admin-topbar__user {
+  border: 1px solid var(--admin-line);
+  background: #f7f8f6;
+  color: #414849;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.admin-dashboard-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .admin-dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-tabs button {
+  border: 1px solid transparent;
+  border-bottom: 0;
+  background: transparent;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #525b5d;
+  cursor: pointer;
+}
+
+.admin-tabs button.is-active {
+  border-color: var(--admin-line);
+  background: #fff;
+  color: var(--admin-ink);
+  position: relative;
+  top: 1px;
+}
+
+.admin-media-dropzone {
+  border: 1px dashed #d7dcda;
+  background: #fff;
+  padding: 14px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.admin-media-dropzone.is-dragover {
+  border-color: var(--admin-red);
+  background: #fdf3f3;
+}
+
+.admin-media-card__fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #f2f3f1;
+  color: #737a7b;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.admin-media-card__title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--admin-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+label.admin-btn.is-dragover {
+  background: #b90d14;
+}
+
+.admin-menu-branch {
+  display: grid;
+  gap: 2px;
+}
+
+.admin-form__field {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-form__label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #414849;
+}
+
+/* ── Rich text editor ───────────────────────────────────────────────── */
+
+.admin-rte {
+  border: 1px solid #d7dcda;
+  background: #fff;
+  display: grid;
+}
+
+.admin-rte__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--admin-line);
+  background: #f7f8f6;
+  padding: 6px;
+}
+
+.admin-rte__btn {
+  min-width: 30px;
+  height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 800;
+  color: #414849;
+  cursor: pointer;
+}
+
+.admin-rte__btn:hover {
+  border-color: var(--admin-red);
+  color: var(--admin-red);
+}
+
+.admin-rte__sep {
+  width: 1px;
+  height: 18px;
+  background: #d7dcda;
+  margin: 0 4px;
+}
+
+.admin-rte__area {
+  min-height: var(--rte-min-height, 280px);
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  outline: 0;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.admin-rte__area:empty::before {
+  content: attr(data-placeholder);
+  color: #9aa1a2;
+}
+
+.admin-rte__area h2 { font-size: 1.5em; margin: 0.6em 0 0.3em; }
+.admin-rte__area h3 { font-size: 1.2em; margin: 0.5em 0 0.3em; }
+.admin-rte__area p { margin: 0 0 0.8em; }
+.admin-rte__area blockquote {
+  border-left: 3px solid var(--admin-red);
+  margin: 0.8em 0;
+  padding: 4px 14px;
+  color: #525b5d;
+}
+.admin-rte__area img { max-width: 100%; height: auto; }
+.admin-rte__area table { border-collapse: collapse; margin: 0.8em 0; }
+.admin-rte__area td,
+.admin-rte__area th { border: 1px solid #d7dcda; padding: 6px 10px; }
+
+/* Mobile: sidebar becomes a drawer */
+
+@media (max-width: 860px) {
+  .admin-topbar__burger {
+    display: grid;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 90;
+    width: min(300px, 85vw);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+  }
+
+  .admin-sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: 0 0 60px rgb(0 0 0 / 35%);
+  }
+
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Spinner ────────────────────────────────────────────────────────── */
 
 .admin-spin {
   animation: admin-spin 0.9s linear infinite;

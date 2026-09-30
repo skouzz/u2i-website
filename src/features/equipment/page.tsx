@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  Camera,
-  Maximize2,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Camera, Maximize2, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
 import workshopImage from "@/assets/about-workshop.jpg";
@@ -212,9 +205,7 @@ export function EquipmentsPage() {
         <div className="equipment-wrap">
           <header className="equipment-section-heading">
             <div>
-              <span className="equipment-eyebrow equipment-eyebrow--dark">
-                Parc technique
-              </span>
+              <span className="equipment-eyebrow equipment-eyebrow--dark">Parc technique</span>
               <h2>
                 Les équipements,
                 <br />

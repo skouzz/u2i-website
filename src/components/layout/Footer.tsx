@@ -1,13 +1,68 @@
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-react";
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
-import atelierImage from "@/assets/about-workshop.jpg";
-import pharmaImage from "@/assets/hero-pharma.jpg";
-import emailIcon from "@/assets/partners/email.png";
+import { cmsApi, type CmsArticle, type CmsNavItem, type CmsSettings } from "@/lib/cms";
 
-const pharma = { url: pharmaImage };
-const atelier = { url: atelierImage };
+const FALLBACK_FOOTER_LINKS: { label: string; url: string }[] = [
+  { label: "Qui sommes nous", url: "/about" },
+  { label: "Secteurs", url: "/secteurs" },
+  { label: "Equipements", url: "/equipements" },
+  { label: "References", url: "/references" },
+  { label: "Contact", url: "/contact" },
+];
+
+const SOCIALS = [
+  { key: "facebook", label: "Facebook", Icon: Facebook },
+  { key: "instagram", label: "Instagram", Icon: Instagram },
+  { key: "linkedin", label: "LinkedIn", Icon: Linkedin },
+  { key: "youtube", label: "YouTube", Icon: Youtube },
+] as const;
 
 export function Footer() {
+  const [settings, setSettings] = useState<CmsSettings | null>(null);
+  const [footerLinks, setFooterLinks] = useState<{ label: string; url: string }[]>([]);
+  const [latest, setLatest] = useState<CmsArticle[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    cmsApi
+      .settings()
+      .then((res) => alive && setSettings(res.settings))
+      .catch(() => undefined);
+    cmsApi
+      .footerMenu()
+      .then((res) => {
+        if (!alive) return;
+        setFooterLinks(
+          (res.items ?? [])
+            .filter((item) => item.label)
+            .map((item) => ({
+              label: item.label,
+              url: item.url ?? (item.slug ? `/p/${item.slug}` : "#"),
+            })),
+        );
+      })
+      .catch(() => undefined);
+    cmsApi
+      .articles()
+      .then((res) => alive && setLatest((res.items ?? []).slice(0, 2)))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const footer = settings?.footer_json;
+  const social = settings?.social_json;
+  const siteName = settings?.site_name || "U2I Process";
+  const phone = settings?.contact_phone || "+216 50 191 004";
+  const email = settings?.contact_email || "u2i@u2iprocess.com";
+  const address = settings?.address || "Akouda, Sousse — Tunisie";
+  const copyright =
+    footer?.copyright || `© ${new Date().getFullYear()} ${siteName} — Univers Inox Industriel`;
+  const links = footerLinks.length ? footerLinks : FALLBACK_FOOTER_LINKS;
+
   return (
     <footer className="border-t border-white/10 bg-black pt-20 text-white">
       <div className="wrap">
@@ -20,101 +75,108 @@ export function Footer() {
               letterSpacing: "-0.02em",
             }}
           >
-            U2I Process Group
+            {footer?.logoUrl ? (
+              <img src={footer.logoUrl} alt={siteName} className="h-14 w-auto object-contain" />
+            ) : (
+              `${siteName} Group`
+            )}
           </div>
           <div className="flex flex-wrap gap-6 text-sm font-bold">
-            {["Qui sommes nous", "Secteurs", "Equipments", "References", "Contact"].map(
-              (l) => (
-                <a key={l} href="#" className="hover:text-primary">
-                  {l}
-                </a>
-              ),
-            )}
+            {links.map((l) => (
+              <a key={l.label} href={l.url} className="hover:text-primary">
+                {l.label}
+              </a>
+            ))}
           </div>
         </div>
 
         <div className="grid gap-14 py-14 md:grid-cols-2">
           <div>
             <h4 className="mb-6 text-xs font-bold uppercase tracking-[0.14em] text-white/50">
-              Derniers événements
+              Dernières actualités
             </h4>
             <ul className="space-y-4">
-              {[
-                { t: "Participation à A3P Tunisie 2026", d: "08.07.2026" },
-                { t: "Inauguration du nouvel atelier", d: "15.06.2026" },
-              ].map((e) => (
-                <li key={e.t}>
-                  <a
-                    href="#"
-                    className="flex items-center justify-between border-b border-white/10 py-3 text-sm hover:text-primary"
-                  >
-                    <span className="font-semibold">{e.t}</span>
-                    <span className="text-white/50">{e.d}</span>
-                  </a>
-                </li>
-              ))}
+              {latest.length === 0 ? (
+                <li className="py-3 text-sm text-white/50">Aucune actualité pour le moment.</li>
+              ) : (
+                latest.map((article) => (
+                  <li key={article.id}>
+                    <Link
+                      to="/actualites/$slug"
+                      params={{ slug: article.slug }}
+                      className="flex items-center justify-between border-b border-white/10 py-3 text-sm hover:text-primary"
+                    >
+                      <span className="font-semibold">{article.title}</span>
+                      <span className="text-white/50">
+                        {article.publishedAt
+                          ? article.publishedAt.slice(0, 10).split("-").reverse().join(".")
+                          : ""}
+                      </span>
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 
           <div>
             <h4 className="mb-6 text-xs font-bold uppercase tracking-[0.14em] text-white/50">
-              Dernières publications
+              Contact
             </h4>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { t: "Rapport Annuel 2025", d: "01.07.2026", s: "PDF · 4.2 MB", img: atelier.url },
-                { t: "Document Pharma 2026", d: "20.06.2026", s: "PDF · 12.5 MB", img: pharma.url },
-              ].map((p) => (
-                <a key={p.t} href="#" className="group block">
-                  <div className="mb-3 overflow-hidden rounded-lg" style={{ aspectRatio: "4 / 3" }}>
-                    <img
-                      src={p.img}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="text-[11px] text-white/50">{p.d}</div>
-                  <div className="text-sm font-bold">{p.t}</div>
-                  <div className="text-[11px] text-white/50">{p.s}</div>
+            {footer?.description ? (
+              <p className="mb-4 max-w-md text-sm text-white/70">{footer.description}</p>
+            ) : null}
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-primary" />
+                <a href={`tel:${phone.replace(/\s+/g, "")}`} className="hover:text-primary">
+                  {phone}
                 </a>
-              ))}
-            </div>
+              </li>
+              <li className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-primary" />
+                <a href={`mailto:${email}`} className="hover:text-primary">
+                  {email}
+                </a>
+              </li>
+              <li className="text-white/70">{address}</li>
+            </ul>
           </div>
         </div>
 
         <div className="flex flex-col items-start justify-between gap-6 border-t border-white/10 py-8 md:flex-row md:items-center">
           <div className="flex items-center gap-3">
-            <span className="mr-2 text-xs text-white/50">+216 50 191 004</span>
-            <a
-              href="mailto:u2i@u2iprocess.com"
-              className="inline-block hover:opacity-90 transition-opacity"
-            >
-              <img src={emailIcon} alt="Email" className="h-5 w-auto object-contain inline-block" />
-            </a>
-            {[Facebook, Instagram, Linkedin, Youtube].map((Icon, i) => (
-              <a
-                key={i}
-                href="#"
-                aria-label="Social"
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/20 transition hover:border-primary hover:text-primary"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
+            <span className="mr-2 text-xs text-white/50">{phone}</span>
+            {SOCIALS.map(({ key, label, Icon }) => {
+              const href = social?.[key];
+              if (!href) return null;
+              return (
+                <a
+                  key={key}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/20 transition hover:border-primary hover:text-primary"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              );
+            })}
           </div>
         </div>
 
         <div className="border-t border-white/10 py-6 text-center text-xs text-white/50">
-          © {new Date().getFullYear()} U2I Process — Univers Inox Industriel · Akouda, Sousse —
-          Tunisie
+          {copyright} · {address}
           <span className="ml-4 inline-flex items-center gap-2">
-            <Phone className="inline h-3 w-3 text-primary" /> +216 50 191 004
+            <Phone className="inline h-3 w-3 text-primary" /> {phone}
             <a
-              href="mailto:u2i@u2iprocess.com"
+              href={`mailto:${email}`}
               className="ml-3 inline-block hover:opacity-90 transition-opacity"
+              aria-label="Email"
             >
-              <img src={emailIcon} alt="Email" className="h-4 w-auto object-contain inline-block" />
+              <img src={logoImage} alt="" aria-hidden="true" className="hidden" />
+              <Mail className="inline h-3 w-3 text-primary" />
             </a>
           </span>
         </div>
@@ -122,3 +184,6 @@ export function Footer() {
     </footer>
   );
 }
+
+/** Re-exported for potential reuse (type used by footer menu consumers). */
+export type { CmsNavItem };

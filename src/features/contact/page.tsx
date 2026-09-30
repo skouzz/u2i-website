@@ -42,16 +42,15 @@ export function ContactPage() {
         }),
       });
 
-      const payload = (await response.json().catch(() => null)) as
-        | { ok?: boolean; message?: string }
-        | null;
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+      } | null;
 
       if (response.ok && payload?.ok) {
         setSubmitState({
           status: "success",
-          message:
-            payload.message ??
-            "Merci ! Votre message a bien été envoyé.",
+          message: payload.message ?? "Merci ! Votre message a bien été envoyé.",
         });
         form.reset();
       } else {
@@ -65,8 +64,7 @@ export function ContactPage() {
     } catch {
       setSubmitState({
         status: "error",
-        message:
-          "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
+        message: "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
       });
     }
   };
@@ -94,9 +92,7 @@ export function ContactPage() {
       <section className="contact-main" id="coordonnees">
         <div className="contact-wrap">
           <div className="contact-main__heading">
-            <span className="contact-eyebrow contact-eyebrow--dark">
-              Contact direct
-            </span>
+            <span className="contact-eyebrow contact-eyebrow--dark">Contact direct</span>
             <h2>
               Le bon contact,
               <br />
@@ -233,10 +229,7 @@ export function ContactPage() {
                   />
                 </label>
                 <div className="contact-form__submit-row">
-                  <button
-                    type="submit"
-                    disabled={submitState.status === "submitting"}
-                  >
+                  <button type="submit" disabled={submitState.status === "submitting"}>
                     {submitState.status === "submitting" ? (
                       <>
                         <Loader2 size={16} className="contact-form__spinner" aria-hidden="true" />
@@ -269,9 +262,7 @@ export function ContactPage() {
         <div className="contact-wrap">
           <div className="contact-location__heading">
             <div>
-              <span className="contact-eyebrow contact-eyebrow--dark">
-                Nous trouver
-              </span>
+              <span className="contact-eyebrow contact-eyebrow--dark">Nous trouver</span>
             </div>
           </div>
           <div className="contact-map">

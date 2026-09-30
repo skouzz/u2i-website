@@ -3,6 +3,14 @@
 # Serve pre-rendered .html files when they exist (e.g. / -> /index.html, /about -> /about.html)
 DirectoryIndex index.html
 
+# --- Security headers --------------------------------------------------------
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
 # --- SPA fallback -----------------------------------------------------------
 # Rewrite every request that doesn't match an existing file or directory to the
 # TanStack Start SPA shell so client-side routing works on direct visits and

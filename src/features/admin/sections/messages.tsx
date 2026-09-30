@@ -68,10 +68,16 @@ export function MessagesSection({
                 {message.first_name} {message.last_name}
               </strong>
               <span className="admin-row__meta">{message.email}</span>
-              {message.company ? <span className="admin-row__meta">· {message.company}</span> : null}
-              {message.is_read ? null : <span className="admin-badge admin-badge--draft">Non lu</span>}
+              {message.company ? (
+                <span className="admin-row__meta">· {message.company}</span>
+              ) : null}
+              {message.is_read ? null : (
+                <span className="admin-badge admin-badge--draft">Non lu</span>
+              )}
               <span className="admin-row__spacer" />
-              <span className="admin-row__meta">{new Date(message.created_at).toLocaleString("fr-FR")}</span>
+              <span className="admin-row__meta">
+                {new Date(message.created_at).toLocaleString("fr-FR")}
+              </span>
             </div>
             <strong style={{ fontSize: 12 }}>{message.subject}</strong>
             <p>{message.message}</p>
@@ -81,7 +87,10 @@ export function MessagesSection({
                   <MailOpen size={13} /> Marquer comme lu
                 </button>
               )}
-              <a className="admin-btn" href={`mailto:${message.email}?subject=Re: ${encodeURIComponent(message.subject)}`}>
+              <a
+                className="admin-btn"
+                href={`mailto:${message.email}?subject=Re: ${encodeURIComponent(message.subject)}`}
+              >
                 <Check size={13} /> Répondre
               </a>
               <button className="admin-btn admin-btn--danger" onClick={() => remove(message)}>

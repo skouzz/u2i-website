@@ -5,6 +5,7 @@ import { PageHero } from "@/components/PageHero";
 import { PageBlocksSkeleton } from "@/components/loading";
 import workshopImage from "@/assets/about-workshop.jpg";
 import { cmsApi, type CmsBlock } from "@/lib/cms";
+import { useSeo } from "@/lib/seo";
 import "@/features/contact/contact.css";
 import "./cms-page.css";
 
@@ -38,7 +39,12 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
       return (
         <div className="cms-block-gallery">
           {(block.images ?? []).map((src, index) => (
-            <img key={`${src}-${index}`} src={src} alt={block.title ?? `Image ${index + 1}`} loading="lazy" />
+            <img
+              key={`${src}-${index}`}
+              src={src}
+              alt={block.title ?? `Image ${index + 1}`}
+              loading="lazy"
+            />
           ))}
         </div>
       );
@@ -48,21 +54,27 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
         <div className="contact-details cms-block-contact" style={{ gridColumn: "1 / -1" }}>
           <h3>Coordonnées</h3>
           <a className="contact-detail" href={`tel:${(block.title ?? "").replace(/\s+/g, "")}`}>
-            <span className="contact-detail__icon"><Phone size={19} aria-hidden="true" /></span>
+            <span className="contact-detail__icon">
+              <Phone size={19} aria-hidden="true" />
+            </span>
             <span>
               <small>Téléphone</small>
               <strong>{block.title ?? ""}</strong>
             </span>
           </a>
           <a className="contact-detail" href={`mailto:${block.body ?? ""}`}>
-            <span className="contact-detail__icon"><Mail size={19} aria-hidden="true" /></span>
+            <span className="contact-detail__icon">
+              <Mail size={19} aria-hidden="true" />
+            </span>
             <span>
               <small>E-mail</small>
               <strong>{block.body ?? ""}</strong>
             </span>
           </a>
           <div className="contact-detail">
-            <span className="contact-detail__icon"><MapPin size={19} aria-hidden="true" /></span>
+            <span className="contact-detail__icon">
+              <MapPin size={19} aria-hidden="true" />
+            </span>
             <span>
               <small>Adresse</small>
               <strong>{block.imageUrl ?? ""}</strong>
@@ -89,6 +101,13 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
 
   const page = data?.page;
 
+  useSeo({
+    title: page ? `${page.heroTitle ?? page.title} — U2I Process` : undefined,
+    description: page?.heroText ?? undefined,
+    seo: page?.seo,
+    ogImage: page?.heroImageUrl,
+  });
+
   if (isLoading) {
     return (
       <main className="contact-page">
@@ -103,8 +122,8 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
         <div className="contact-main">
           <div className="contact-wrap">
             <div className="news-empty">
-              Cette page n'est pas encore disponible — elle sera visible dès qu'elle
-              sera publiée dans le dashboard d'administration.
+              Cette page n'est pas encore disponible — elle sera visible dès qu'elle sera publiée
+              dans le dashboard d'administration.
             </div>
           </div>
         </div>

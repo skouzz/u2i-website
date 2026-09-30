@@ -383,9 +383,7 @@ export function AboutPage() {
       <section className="about-contact">
         <div className="wrap about-contact__inner">
           <div>
-            <p className="about-eyebrow">
-              Votre prochain projet
-            </p>
+            <p className="about-eyebrow">Votre prochain projet</p>
             <h2>Mettons votre installation en mouvement.</h2>
             <p>Parlons ensemble de vos contraintes, de vos délais et de vos objectifs.</p>
           </div>

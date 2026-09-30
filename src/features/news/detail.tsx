@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, UserRound } from "lucide-react";
 
 import { cmsApi } from "@/lib/cms";
+import { useSeo } from "@/lib/seo";
 import { ArticleSkeleton } from "@/components/loading";
 import "./news.css";
 import { formatDate } from "./list";
@@ -44,6 +45,13 @@ export function ArticleDetailPage() {
 
   const article = data?.article;
 
+  useSeo({
+    title: article ? `${article.title} — Actualités U2I` : undefined,
+    description: article?.excerpt ?? undefined,
+    seo: article?.seo,
+    ogImage: article?.coverImageUrl,
+  });
+
   return (
     <main className="news-page">
       <article className="article-page">
@@ -62,7 +70,8 @@ export function ArticleDetailPage() {
               <div className="article-meta">
                 {article.publishedAt ? (
                   <span>
-                    <CalendarDays size={11} style={{ verticalAlign: "-1px" }} /> {formatDate(article.publishedAt)}
+                    <CalendarDays size={11} style={{ verticalAlign: "-1px" }} />{" "}
+                    {formatDate(article.publishedAt)}
                   </span>
                 ) : null}
                 {article.author ? (

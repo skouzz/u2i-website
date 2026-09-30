@@ -67,11 +67,22 @@ export function MediaPicker({
   };
 
   return (
-    <div className="admin-modal" role="dialog" aria-modal="true" aria-label={title} onClick={onClose}>
+    <div
+      className="admin-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={onClose}
+    >
       <div className="admin-modal__box" onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal__head">
           <h3>{title}</h3>
-          <button type="button" className="admin-modal__close" onClick={onClose} aria-label="Fermer">
+          <button
+            type="button"
+            className="admin-modal__close"
+            onClick={onClose}
+            aria-label="Fermer"
+          >
             <X size={16} />
           </button>
         </div>
@@ -92,9 +103,7 @@ export function MediaPicker({
             <Loader2 size={20} className="admin-spin" />
           </div>
         ) : items.length === 0 ? (
-          <p className="admin-hint">
-            La médiathèque est vide — téléversez une première image.
-          </p>
+          <p className="admin-hint">La médiathèque est vide — téléversez une première image.</p>
         ) : (
           <div className="admin-modal__grid">
             {items.map((media) => (

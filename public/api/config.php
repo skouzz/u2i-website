@@ -77,6 +77,24 @@ if (!defined('U2I_PLUNK_API_KEY')) {
     define('U2I_PLUNK_API_KEY', PLUNK_API_KEY);
 }
 
+// ── Uploads (FIX: these constants were referenced but never defined) ────────
+if (!defined('UPLOAD_DIR')) {
+    define('UPLOAD_DIR', __DIR__ . '/uploads');
+}
+/** MIME type → safe extension. SVG is served with a hardened CSP header. */
+if (!defined('ALLOWED_IMAGE_TYPES')) {
+    define('ALLOWED_IMAGE_TYPES', [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+        'image/svg+xml' => 'svg',
+    ]);
+}
+if (!defined('UPLOAD_MAX_BYTES')) {
+    define('UPLOAD_MAX_BYTES', 12 * 1024 * 1024); // 12 MB
+}
+
 // ── Internal helpers ────────────────────────────────────────────────────────
 
 function db(): PDO
@@ -103,6 +121,7 @@ function json_response(array $payload, int $status = 200): void
     }
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
     echo json_encode($payload, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -127,9 +146,68 @@ function field(array $data, string $key): string
     return isset($data[$key]) && is_scalar($data[$key]) ? trim((string) $data[$key]) : '';
 }
 
+/** Fetch a boolean flag from a decoded JSON body. */
+function flag(array $data, string $key): bool
+{
+    return !empty($data[$key]);
+}
+
+/** Fetch a positive int from a decoded JSON body (0 when absent/invalid). */
+function int_field(array $data, string $key): int
+{
+    return isset($data[$key]) && is_numeric($data[$key]) ? (int) $data[$key] : 0;
+}
+
+/** URL-safe slug (accents folded, lowercase, dashes). */
+function slugify(string $text): string
+{
+    $text = mb_strtolower(trim($text));
+    if (function_exists('iconv')) {
+        $folded = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+        if (is_string($folded) && $folded !== '') {
+            $text = $folded;
+        }
+    }
+    $text = preg_replace('~[^a-z0-9]+~', '-', $text) ?? '';
+    $text = trim($text, '-');
+
+    return $text !== '' ? $text : 'sans-titre';
+}
+
+/**
+ * Guarantee a unique slug in $table. $table must come from the internal
+ * allow-list — never from user input (identifier injection guard).
+ */
+function unique_slug(string $table, string $base, int $excludeId = 0): string
+{
+    static $allowed = ['pages', 'articles', 'categories', 'tags'];
+    if (!in_array($table, $allowed, true)) {
+        throw new InvalidArgumentException('Unknown table for slug generation.');
+    }
+
+    $slug = $base;
+    $i = 2;
+    while (true) {
+        $stmt = db()->prepare("SELECT COUNT(*) AS c FROM {$table} WHERE slug = ? AND id != ?");
+        $stmt->execute([$slug, $excludeId]);
+        if ((int) $stmt->fetch()['c'] === 0) {
+            return $slug;
+        }
+        $slug = $base . '-' . $i++;
+    }
+}
+
 function admin_session_start(): void
 {
     if (session_status() !== PHP_SESSION_ACTIVE) {
+        // Hardened session cookie (works on plain HTTP OVH hosting too).
+        @ini_set('session.use_strict_mode', '1');
+        @ini_set('session.use_only_cookies', '1');
+        @ini_set('session.cookie_httponly', '1');
+        @ini_set('session.cookie_samesite', 'Lax');
+        if (($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? 'off') !== 'off') {
+            @ini_set('session.cookie_secure', '1');
+        }
         session_name('u2i_admin_session');
         session_start();
     }
@@ -162,6 +240,7 @@ function admin_login(string $username, string $password): bool
     session_regenerate_id(true);
     $_SESSION['admin'] = true;
     $_SESSION['admin_at'] = time();
+    $_SESSION['admin_username'] = $username;
 
     return true;
 }
@@ -241,6 +320,42 @@ function is_db_installed(): bool
 }
 
 /**
+ * Lightweight file-backed rate limiter (used for login attempts).
+ * @return bool true when the action is allowed this time.
+ */
+function rate_limit_ok(string $scope, int $max, int $windowSeconds): bool
+{
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    if ($ip === '') {
+        return true;
+    }
+    $dir = __DIR__ . '/cache';
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+        return true; // cannot persist state; don't lock admins out
+    }
+
+    $file = $dir . '/rl-' . hash('sha256', $scope . '|' . $ip) . '.json';
+    $now = time();
+    $hits = [];
+    if (is_file($file)) {
+        $decoded = json_decode((string) @file_get_contents($file), true);
+        if (is_array($decoded)) {
+            $hits = $decoded;
+        }
+    }
+    $hits = array_values(array_filter($hits, static fn ($t): bool => is_int($t) || is_numeric($t) ? (int) $t > $now - $windowSeconds : false));
+
+    if (count($hits) >= $max) {
+        return false;
+    }
+
+    $hits[] = $now;
+    @file_put_contents($file, json_encode($hits));
+
+    return true;
+}
+
+/**
  * Move an uploaded image into /api/uploads with a random, safe filename.
  * @return array{url:string,width:int|null,height:int|null}
  */
@@ -254,6 +369,9 @@ function store_uploaded_image(array $file): array
     }
 
     $tmp = (string) ($file['tmp_name'] ?? '');
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
+        json_response(['ok' => false, 'message' => 'Fichier invalide.'], 400);
+    }
     $mime = function_exists('mime_content_type') ? (mime_content_type($tmp) ?: '') : '';
     if ($mime === '' && function_exists('getimagesize')) {
         $info = @getimagesize($tmp);
@@ -285,4 +403,40 @@ function store_uploaded_image(array $file): array
     }
 
     return ['url' => '/api/uploads/' . $name, 'width' => $width, 'height' => $height];
+}
+
+/** Serve one upload with hardened headers (SVG gets a strict CSP). */
+function serve_upload(string $filename): void
+{
+    $filename = basename($filename); // path-traversal guard
+    $path = UPLOAD_DIR . '/' . $filename;
+    if (!is_file($path)) {
+        http_response_code(404);
+        exit('Not found');
+    }
+
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $mimes = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+        'pdf' => 'application/pdf',
+    ];
+    $mime = $mimes[$ext] ?? 'application/octet-stream';
+
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . (string) filesize($path));
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: public, max-age=2592000');
+    if ($ext === 'svg' || $ext === 'pdf') {
+        // SVG/PDF can carry scripts: forbid script execution when served.
+        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src data:");
+        header('Content-Disposition: inline; filename="' . $filename . '"');
+    }
+
+    readfile($path);
+    exit;
 }

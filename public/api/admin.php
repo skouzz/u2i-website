@@ -2,6 +2,10 @@
 /**
  * U2I Process — admin dashboard API (session + CSRF protected).
  * The dashboard UI (React at /admin) consumes these endpoints.
+ *
+ * Structure: ?a=<action>&p=<param>, JSON bodies, X-CSRF-Token header for all
+ * mutating requests. v2 adds menus, categories, tags, content blocks (home
+ * builder), revisions, activity log, media metadata, scheduling, duplicates.
  */
 
 declare(strict_types=1);
@@ -32,6 +36,9 @@ if ($action === 'setup_status' && $method === 'GET') {
 }
 
 if ($action === 'setup' && $method === 'POST') {
+    if (!rate_limit_ok('setup', 5, 3600)) {
+        json_response(['ok' => false, 'message' => 'Trop de tentatives. Réessayez plus tard.'], 429);
+    }
     if (!admin_setup_needed()) {
         json_response(['ok' => false, 'message' => "L'administrateur existe déjà."], 409);
     }
@@ -60,6 +67,9 @@ if ($action === 'setup' && $method === 'POST') {
 }
 
 if ($action === 'login' && $method === 'POST') {
+    if (!rate_limit_ok('login', 10, 300)) {
+        json_response(['ok' => false, 'message' => 'Trop de tentatives de connexion. Réessayez dans quelques minutes.'], 429);
+    }
     $data = read_json_body();
     $ok = admin_login(field($data, 'username'), field($data, 'password'));
     json_response($ok
@@ -72,7 +82,7 @@ if ($action === 'me' && $method === 'GET') {
     if (empty($_SESSION['admin'])) {
         json_response(['ok' => false], 401);
     }
-    json_response(['ok' => true, 'csrf' => csrf_token()]);
+    json_response(['ok' => true, 'csrf' => csrf_token(), 'username' => (string) ($_SESSION['admin_username'] ?? U2I_ADMIN_USER)]);
 }
 
 if ($action === 'logout' && $method === 'POST') {
@@ -92,28 +102,75 @@ function csrf_or_fail(): void
     verify_csrf($token);
 }
 
-function slugify(string $text): string
+/** Current admin username from the session (activity log actor). */
+function current_actor(): string
 {
-    $text = mb_strtolower(trim($text));
-    $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text) ?: $text;
-    $text = preg_replace('~[^a-z0-9]+~', '-', $text) ?? '';
-    $text = trim($text, '-');
+    admin_session_start();
 
-    return $text !== '' ? $text : 'sans-titre';
+    return substr((string) ($_SESSION['admin_username'] ?? U2I_ADMIN_USER), 0, 120);
 }
 
-function unique_slug(string $table, string $base, int $excludeId = 0): string
+function log_activity(string $action, ?string $entityType = null, ?int $entityId = null, ?string $detail = null): void
 {
-    $slug = $base;
-    $i = 2;
-    while (true) {
-        $stmt = db()->prepare("SELECT COUNT(*) AS c FROM {$table} WHERE slug = ? AND id != ?");
-        $stmt->execute([$slug, $excludeId]);
-        if ((int) $stmt->fetch()['c'] === 0) {
-            return $slug;
-        }
-        $slug = $base . '-' . $i++;
+    try {
+        $stmt = db()->prepare('INSERT INTO activity_log (actor, action, entity_type, entity_id, detail) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([current_actor(), substr($action, 0, 60), $entityType, $entityId, $detail !== null ? substr($detail, 0, 500) : null]);
+    } catch (Throwable) {
+        // Logging must never break the actual operation.
     }
+}
+
+/** Prune old revisions, keeping only the newest N per entity. */
+function prune_revisions(string $entityType, int $entityId, int $keep = 20): void
+{
+    try {
+        db()->prepare(
+            'DELETE FROM content_revisions
+             WHERE entity_type = ? AND entity_id = ?
+               AND id NOT IN (
+                 SELECT id FROM (
+                   SELECT id FROM content_revisions
+                   WHERE entity_type = ? AND entity_id = ?
+                   ORDER BY id DESC LIMIT ?
+                 ) AS keep_rows
+               )'
+        )->execute([$entityType, $entityId, $entityType, $entityId, $keep]);
+    } catch (Throwable) {
+    }
+}
+
+/** Store a snapshot of a page (with blocks) before it is modified. */
+function snapshot_page(int $pageId, string $author): void
+{
+    $page = db()->prepare('SELECT * FROM pages WHERE id = ?');
+    $page->execute([$pageId]);
+    $pageRow = $page->fetch();
+    if (!$pageRow) {
+        return;
+    }
+    $blocks = db()->prepare('SELECT type, sort_order, title, body, image_url, images_json FROM page_blocks WHERE page_id = ? ORDER BY sort_order ASC');
+    $blocks->execute([$pageId]);
+    $snapshot = ['page' => $pageRow, 'blocks' => $blocks->fetchAll()];
+    db()->prepare('INSERT INTO content_revisions (entity_type, entity_id, author, snapshot_json) VALUES (?, ?, ?, ?)')
+        ->execute(['page', $pageId, $author, json_encode($snapshot, JSON_UNESCAPED_UNICODE)]);
+    prune_revisions('page', $pageId);
+}
+
+/** Store a snapshot of an article before it is modified. */
+function snapshot_article(int $articleId, string $author): void
+{
+    $stmt = db()->prepare('SELECT * FROM articles WHERE id = ?');
+    $stmt->execute([$articleId]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return;
+    }
+    $tags = db()->prepare('SELECT t.id FROM tags t JOIN article_tags at ON at.tag_id = t.id WHERE at.article_id = ?');
+    $tags->execute([$articleId]);
+    $snapshot = ['article' => $row, 'tagIds' => array_map('intval', $tags->fetchAll(PDO::FETCH_COLUMN))];
+    db()->prepare('INSERT INTO content_revisions (entity_type, entity_id, author, snapshot_json) VALUES (?, ?, ?, ?)')
+        ->execute(['article', $articleId, $author, json_encode($snapshot, JSON_UNESCAPED_UNICODE)]);
+    prune_revisions('article', $articleId);
 }
 
 function fetch_page(int $id): ?array
@@ -128,6 +185,14 @@ function fetch_page(int $id): ?array
 /** Map a raw pages row to the camelCase shape the dashboard expects. */
 function map_page_row(array $row): array
 {
+    $seo = null;
+    if (!empty($row['seo_json'])) {
+        $decoded = json_decode((string) $row['seo_json'], true);
+        if (is_array($decoded)) {
+            $seo = $decoded;
+        }
+    }
+
     return [
         'id' => (int) $row['id'],
         'slug' => (string) $row['slug'],
@@ -138,13 +203,27 @@ function map_page_row(array $row): array
         'heroImageUrl' => $row['hero_image_url'] ?? null,
         'navLabel' => $row['nav_label'] ?? null,
         'navOrder' => (int) ($row['nav_order'] ?? 0),
+        'parentId' => isset($row['parent_id']) && $row['parent_id'] !== null ? (int) $row['parent_id'] : null,
+        'status' => (string) ($row['status'] ?? ($row['is_published'] ? 'published' : 'draft')),
         'isPublished' => (bool) ($row['is_published'] ?? 0),
+        'publishedAt' => $row['published_at'] ?? null,
+        'scheduledAt' => $row['scheduled_at'] ?? null,
+        'seo' => $seo,
+        'updatedAt' => $row['updated_at'] ?? null,
     ];
 }
 
 /** Map a raw articles row to the camelCase shape the dashboard expects. */
 function map_article_row(array $row): array
 {
+    $seo = null;
+    if (!empty($row['seo_json'])) {
+        $decoded = json_decode((string) $row['seo_json'], true);
+        if (is_array($decoded)) {
+            $seo = $decoded;
+        }
+    }
+
     return [
         'id' => (int) $row['id'],
         'slug' => (string) $row['slug'],
@@ -153,8 +232,13 @@ function map_article_row(array $row): array
         'body' => $row['body'] ?? null,
         'coverImageUrl' => $row['cover_image_url'] ?? null,
         'author' => $row['author'] ?? null,
+        'categoryId' => isset($row['category_id']) && $row['category_id'] !== null ? (int) $row['category_id'] : null,
+        'status' => (string) ($row['status'] ?? (($row['is_published'] ?? 0) ? 'published' : 'draft')),
         'isPublished' => (bool) ($row['is_published'] ?? 0),
         'publishedAt' => $row['published_at'] ?? null,
+        'scheduledAt' => $row['scheduled_at'] ?? null,
+        'seo' => $seo,
+        'updatedAt' => $row['updated_at'] ?? null,
     ];
 }
 
@@ -210,7 +294,8 @@ function save_blocks(int $pageId, array $blocks): void
 
 function list_articles(): array
 {
-    $rows = db()->query('SELECT id, slug, title, excerpt, cover_image_url, author, is_published, published_at FROM articles ORDER BY COALESCE(published_at, created_at) DESC')->fetchAll();
+    $rows = db()->query('SELECT id, slug, title, excerpt, cover_image_url, author, category_id, status, is_published, published_at, scheduled_at, updated_at FROM articles ORDER BY COALESCE(published_at, created_at) DESC')->fetchAll();
+
     return $rows;
 }
 
@@ -222,78 +307,153 @@ function fetch_article(int $id): ?array
     return $stmt->fetch() ?: null;
 }
 
-function save_article(array $data, ?int $id): array
+/** Decode a JSON column safely into an array (or null). */
+function decode_json_col(?string $raw): ?array
 {
-    $title = field($data, 'title');
-    if ($title === '') {
-        json_response(['ok' => false, 'message' => 'Le titre est obligatoire.'], 400);
+    if ($raw === null || $raw === '') {
+        return null;
     }
+    $decoded = json_decode($raw, true);
 
-    $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
-    $slug = unique_slug('articles', $slug, $id ?? 0);
-    $published = !empty($data['isPublished']);
-    $publishedAt = field($data, 'publishedAt');
+    return is_array($decoded) ? $decoded : null;
+}
 
-    // For updates the SQL keeps the original publish date unless the payload
-    // provides an explicit one; publishing a draft without a date stamps NOW.
-    $publishedParam = $publishedAt !== '' ? str_replace('T', ' ', $publishedAt) : null;
+function fetch_settings_row(): array
+{
+    $row = db()->query('SELECT * FROM settings WHERE id = 1')->fetch();
 
-    if ($id === null) {
-        $stmt = db()->prepare(
-            'INSERT INTO articles (slug, title, excerpt, body, cover_image_url, author, is_published, published_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        );
+    return $row ?: [];
+}
+
+function save_settings_payload(array $data): void
+{
+    $jsonCols = [
+        'headerJson' => 'header_json',
+        'footerJson' => 'footer_json',
+        'seoJson' => 'seo_json',
+        'socialJson' => 'social_json',
+        'homeJson' => 'home_json',
+    ];
+    $sets = ['site_name = ?', 'contact_email = ?', 'contact_phone = ?', 'address = ?', 'footer_note = ?'];
+    $values = [
+        field($data, 'siteName') ?: 'U2I Process',
+        field($data, 'contactEmail'),
+        field($data, 'contactPhone'),
+        field($data, 'address') ?: null,
+        field($data, 'footerNote') ?: null,
+    ];
+    foreach ($jsonCols as $key => $col) {
+        if (array_key_exists($key, $data)) {
+            $raw = $data[$key];
+            $sets[] = "{$col} = ?";
+            $values[] = is_array($raw) ? json_encode($raw, JSON_UNESCAPED_UNICODE) : (is_string($raw) && $raw !== '' ? $raw : null);
+        }
+    }
+    $values[] = 1;
+    db()->prepare('UPDATE settings SET ' . implode(', ', $sets) . ' WHERE id = 1')->execute($values);
+}
+
+/** Map a content_blocks row for the dashboard/homepage renderer. */
+function map_home_block(array $row): array
+{
+    return [
+        'id' => (int) $row['id'],
+        'type' => (string) $row['type'],
+        'title' => $row['title'] ?? null,
+        'subtitle' => $row['subtitle'] ?? null,
+        'body' => $row['body'] ?? null,
+        'imageUrl' => $row['image_url'] ?? null,
+        'config' => decode_json_col($row['config_json'] ?? null),
+        'sortOrder' => (int) $row['sort_order'],
+        'isVisible' => (bool) $row['is_visible'],
+    ];
+}
+
+/** Replace all homepage blocks (full replace on save). */
+function save_home_blocks(array $blocks): void
+{
+    db()->exec('DELETE FROM content_blocks');
+    $stmt = db()->prepare(
+        'INSERT INTO content_blocks (type, title, subtitle, body, image_url, config_json, sort_order, is_visible)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $order = 0;
+    foreach ($blocks as $block) {
+        if (!is_array($block)) {
+            continue;
+        }
+        $type = field($block, 'type');
+        if (!in_array($type, ['hero','about','services','stats','features','projects','testimonials','team','articles','gallery','cta','contact','faq','html'], true)) {
+            continue;
+        }
+        $config = $block['config'] ?? null;
         $stmt->execute([
-            $slug,
-            $title,
-            field($data, 'excerpt') ?: null,
-            field($data, 'body') ?: null,
-            field($data, 'coverImageUrl') ?: null,
-            field($data, 'author') ?: null,
-            $published ? 1 : 0,
-            $publishedAt !== '' ? str_replace('T', ' ', $publishedAt) : ($published ? date('Y-m-d H:i:s') : null),
+            $type,
+            field($block, 'title') ?: null,
+            field($block, 'subtitle') ?: null,
+            field($block, 'body') ?: null,
+            field($block, 'imageUrl') ?: null,
+            is_array($config) ? json_encode($config, JSON_UNESCAPED_UNICODE) : null,
+            $order++,
+            !empty($block['isVisible']) ? 1 : 0,
         ]);
-        $id = (int) db()->lastInsertId();
+    }
+}
+
+/** Sync article_tags for an article. */
+function sync_article_tags(int $articleId, array $tagIds): void
+{
+    db()->prepare('DELETE FROM article_tags WHERE article_id = ?')->execute([$articleId]);
+    $stmt = db()->prepare('INSERT IGNORE INTO article_tags (article_id, tag_id) VALUES (?, ?)');
+    foreach ($tagIds as $tagId) {
+        if (is_numeric($tagId) && (int) $tagId > 0) {
+            $stmt->execute([$articleId, (int) $tagId]);
+        }
+    }
+}
+
+function fetch_article_tag_ids(int $articleId): array
+{
+    $stmt = db()->prepare('SELECT tag_id FROM article_tags WHERE article_id = ?');
+    $stmt->execute([$articleId]);
+
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+/** Derive status ↔ is_published ↔ dates from the incoming payload. */
+function derive_status(array $data, string $currentStatus = 'draft'): array
+{
+    $status = field($data, 'status');
+    $valid = ['draft', 'pending', 'scheduled', 'published', 'archived'];
+    if ($status !== '' && in_array($status, $valid, true)) {
+        $status = $status;
+    } elseif (array_key_exists('isPublished', $data)) {
+        // Back-compat: isPublished=true maps to published, false to draft.
+        $status = !empty($data['isPublished']) ? 'published' : 'draft';
     } else {
-        $stmt = db()->prepare(
-            'UPDATE articles SET slug = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ?, is_published = ?, published_at = COALESCE(?, IF(? = 1, COALESCE(published_at, NOW()), published_at)) WHERE id = ?'
-        );
-        $stmt->execute([
-            $slug,
-            $title,
-            field($data, 'excerpt') ?: null,
-            field($data, 'body') ?: null,
-            field($data, 'coverImageUrl') ?: null,
-            field($data, 'author') ?: null,
-            $published ? 1 : 0,
-            $publishedParam,
-            $published ? 1 : 0,
-            $id,
-        ]);
+        $status = $currentStatus;
     }
 
-    return fetch_article((int) $id);
+    $scheduledAt = field($data, 'scheduledAt');
+    if ($status === 'scheduled' && $scheduledAt === '') {
+        json_response(['ok' => false, 'message' => 'Une date de programmation est requise.'], 400);
+    }
+
+    return [$status, $scheduledAt !== '' ? str_replace('T', ' ', $scheduledAt) : null];
 }
 
 try {
     switch ($action) {
-        // ── Settings ─────────────────────────────────────────────────────
+        // ── Settings (incl. header/footer/SEO/social/home JSON) ──────────
         case 'settings':
             csrf_or_fail();
             if ($method === 'GET') {
-                $row = db()->query('SELECT * FROM settings WHERE id = 1')->fetch();
+                $row = fetch_settings_row();
                 json_response(['ok' => true, 'settings' => $row ?: null]);
             }
             if ($method === 'PUT' || $method === 'POST') {
-                $data = read_json_body();
-                db()->prepare('UPDATE settings SET site_name = ?, contact_email = ?, contact_phone = ?, address = ?, footer_note = ? WHERE id = 1')
-                    ->execute([
-                        field($data, 'siteName') ?: 'U2I Process',
-                        field($data, 'contactEmail'),
-                        field($data, 'contactPhone'),
-                        field($data, 'address') ?: null,
-                        field($data, 'footerNote') ?: null,
-                    ]);
+                save_settings_payload(read_json_body());
+                log_activity('settings.update', 'settings', 1);
                 json_response(['ok' => true]);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
@@ -313,9 +473,12 @@ try {
                 }
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
                 $stmt = db()->prepare(
-                    'INSERT INTO pages (slug, title, eyebrow, hero_title, hero_text, hero_image_url, nav_label, nav_order, is_published)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    'INSERT INTO pages (slug, title, eyebrow, hero_title, hero_text, hero_image_url, nav_label, nav_order, parent_id, status, is_published, published_at, scheduled_at, seo_json, updated_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                 );
+                [$status, $scheduledAt] = derive_status($data);
+                $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
+                $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
                 $stmt->execute([
                     $slug,
                     $title,
@@ -327,10 +490,17 @@ try {
                     // 0 = "not ordered yet": sort last (999) so a new page lands
                     // at the end of the menu and is included by the public nav.
                     (int) field($data, 'navOrder') ?: 999,
-                    !empty($data['isPublished']) ? 1 : 0,
+                    int_field($data, 'parentId') ?: null,
+                    $status,
+                    $status === 'published' ? 1 : 0,
+                    $publishedAt,
+                    $scheduledAt,
+                    $seo,
+                    current_actor(),
                 ]);
                 $pageId = (int) db()->lastInsertId();
                 save_blocks($pageId, is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
+                log_activity('page.create', 'page', $pageId, $title);
                 $page = fetch_page($pageId);
                 json_response(['ok' => true, 'page' => $page ? map_page_row($page) : null], 201);
             }
@@ -352,6 +522,11 @@ try {
                 json_response(['ok' => true, 'page' => map_page_row($page), 'blocks' => array_map('map_block_row', $blocks->fetchAll())]);
             }
             if ($method === 'PUT' || $method === 'POST') {
+                $page = fetch_page($id);
+                if (!$page) {
+                    json_response(['ok' => false, 'message' => 'Page introuvable.'], 404);
+                }
+                snapshot_page($id, current_actor());
                 $data = read_json_body();
                 $title = field($data, 'title');
                 if ($title === '') {
@@ -359,8 +534,16 @@ try {
                 }
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
                 $slug = unique_slug('pages', $slug, $id);
+                [$status, $scheduledAt] = derive_status($data, (string) ($page['status'] ?? 'draft'));
+                $publishedAt = $page['published_at'] ?? null;
+                if ($status === 'published' && $publishedAt === null) {
+                    $publishedAt = date('Y-m-d H:i:s');
+                } elseif ($status !== 'published') {
+                    $publishedAt = null;
+                }
+                $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
                 db()->prepare(
-                    'UPDATE pages SET slug = ?, title = ?, eyebrow = ?, hero_title = ?, hero_text = ?, hero_image_url = ?, nav_label = ?, nav_order = ?, is_published = ? WHERE id = ?'
+                    'UPDATE pages SET slug = ?, title = ?, eyebrow = ?, hero_title = ?, hero_text = ?, hero_image_url = ?, nav_label = ?, nav_order = ?, parent_id = ?, status = ?, is_published = ?, published_at = ?, scheduled_at = ?, seo_json = COALESCE(?, seo_json), updated_by = ? WHERE id = ?'
                 )->execute([
                     $slug,
                     $title,
@@ -370,18 +553,59 @@ try {
                     field($data, 'heroImageUrl') ?: null,
                     field($data, 'navLabel') ?: null,
                     (int) field($data, 'navOrder') ?: 999,
-                    !empty($data['isPublished']) ? 1 : 0,
+                    int_field($data, 'parentId') ?: null,
+                    $status,
+                    $status === 'published' ? 1 : 0,
+                    $publishedAt,
+                    $scheduledAt,
+                    $seo,
+                    current_actor(),
                     $id,
                 ]);
                 save_blocks($id, is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
+                log_activity('page.update', 'page', $id, $title);
                 $page = fetch_page($id);
                 json_response(['ok' => true, 'page' => $page ? map_page_row($page) : null]);
             }
             if ($method === 'DELETE') {
+                snapshot_page($id, current_actor());
                 db()->prepare('DELETE FROM pages WHERE id = ?')->execute([$id]);
+                log_activity('page.delete', 'page', $id);
                 json_response(['ok' => true]);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Duplicate a page (with blocks) ───────────────────────────────
+        case 'page_duplicate':
+            csrf_or_fail();
+            if ($method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $id = (int) $param;
+            $page = fetch_page($id);
+            if (!$page) {
+                json_response(['ok' => false, 'message' => 'Page introuvable.'], 404);
+            }
+            $slug = unique_slug('pages', slugify($page['slug'] . '-copie'));
+            $stmt = db()->prepare(
+                'INSERT INTO pages (slug, title, eyebrow, hero_title, hero_text, hero_image_url, nav_label, nav_order, status, is_published, updated_by)
+                 VALUES (?, ?, ?, ?, ?, ?, NULL, 999, \'draft\', 0, ?)'
+            );
+            $stmt->execute([
+                $slug,
+                $page['title'] . ' (copie)',
+                $page['eyebrow'],
+                $page['hero_title'],
+                $page['hero_text'],
+                $page['hero_image_url'],
+                current_actor(),
+            ]);
+            $newId = (int) db()->lastInsertId();
+            db()->prepare('INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json)
+                           SELECT ?, type, sort_order, title, body, image_url, images_json FROM page_blocks WHERE page_id = ?')
+                ->execute([$newId, $id]);
+            log_activity('page.duplicate', 'page', $newId, $page['title']);
+            json_response(['ok' => true, 'page' => map_page_row(fetch_page($newId) ?? [])], 201);
 
         // ── Articles ─────────────────────────────────────────────────────
         case 'articles':
@@ -390,7 +614,38 @@ try {
                 json_response(['ok' => true, 'items' => array_map('map_article_row', list_articles())]);
             }
             if ($method === 'POST') {
-                json_response(['ok' => true, 'article' => map_article_row(save_article(read_json_body(), null) ?? [])], 201);
+                $data = read_json_body();
+                $title = field($data, 'title');
+                if ($title === '') {
+                    json_response(['ok' => false, 'message' => 'Le titre est obligatoire.'], 400);
+                }
+                $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
+                [$status, $scheduledAt] = derive_status($data);
+                $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
+                $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
+                $stmt = db()->prepare(
+                    'INSERT INTO articles (slug, title, excerpt, body, cover_image_url, author, category_id, status, is_published, published_at, scheduled_at, seo_json, updated_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                );
+                $stmt->execute([
+                    $slug,
+                    $title,
+                    field($data, 'excerpt') ?: null,
+                    field($data, 'body') ?: null,
+                    field($data, 'coverImageUrl') ?: null,
+                    field($data, 'author') ?: null,
+                    int_field($data, 'categoryId') ?: null,
+                    $status,
+                    $status === 'published' ? 1 : 0,
+                    $publishedAt,
+                    $scheduledAt,
+                    $seo,
+                    current_actor(),
+                ]);
+                $articleId = (int) db()->lastInsertId();
+                sync_article_tags($articleId, is_array($data['tagIds'] ?? null) ? $data['tagIds'] : []);
+                log_activity('article.create', 'article', $articleId, $title);
+                json_response(['ok' => true, 'article' => map_article_row(fetch_article($articleId) ?? [])], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
@@ -402,22 +657,96 @@ try {
             }
             if ($method === 'GET') {
                 $article = fetch_article($id);
-                json_response($article ? ['ok' => true, 'article' => map_article_row($article)] : ['ok' => false, 'message' => 'Article introuvable.'], $article ? 200 : 404);
+                if (!$article) {
+                    json_response(['ok' => false, 'message' => 'Article introuvable.'], 404);
+                }
+                $payload = map_article_row($article);
+                $payload['tagIds'] = fetch_article_tag_ids($id);
+                json_response(['ok' => true, 'article' => $payload]);
             }
             if ($method === 'PUT' || $method === 'POST') {
-                json_response(['ok' => true, 'article' => map_article_row(save_article(read_json_body(), $id) ?? [])]);
+                $article = fetch_article($id);
+                if (!$article) {
+                    json_response(['ok' => false, 'message' => 'Article introuvable.'], 404);
+                }
+                snapshot_article($id, current_actor());
+                $data = read_json_body();
+                $title = field($data, 'title');
+                if ($title === '') {
+                    json_response(['ok' => false, 'message' => 'Le titre est obligatoire.'], 400);
+                }
+                $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
+                $slug = unique_slug('articles', $slug, $id);
+                [$status, $scheduledAt] = derive_status($data, (string) ($article['status'] ?? 'draft'));
+                $publishedAt = $article['published_at'] ?? null;
+                if ($status === 'published' && $publishedAt === null) {
+                    $publishedAt = date('Y-m-d H:i:s');
+                } elseif ($status !== 'published') {
+                    $publishedAt = null;
+                }
+                $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
+                db()->prepare(
+                    'UPDATE articles SET slug = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ?, category_id = ?, status = ?, is_published = ?, published_at = ?, scheduled_at = ?, seo_json = COALESCE(?, seo_json), updated_by = ? WHERE id = ?'
+                )->execute([
+                    $slug,
+                    $title,
+                    field($data, 'excerpt') ?: null,
+                    field($data, 'body') ?: null,
+                    field($data, 'coverImageUrl') ?: null,
+                    field($data, 'author') ?: null,
+                    int_field($data, 'categoryId') ?: null,
+                    $status,
+                    $status === 'published' ? 1 : 0,
+                    $publishedAt,
+                    $scheduledAt,
+                    $seo,
+                    current_actor(),
+                    $id,
+                ]);
+                if (array_key_exists('tagIds', $data) && is_array($data['tagIds'])) {
+                    sync_article_tags($id, $data['tagIds']);
+                }
+                log_activity('article.update', 'article', $id, $title);
+                $payload = map_article_row(fetch_article($id) ?? []);
+                $payload['tagIds'] = fetch_article_tag_ids($id);
+                json_response(['ok' => true, 'article' => $payload]);
             }
             if ($method === 'DELETE') {
+                snapshot_article($id, current_actor());
                 db()->prepare('DELETE FROM articles WHERE id = ?')->execute([$id]);
+                log_activity('article.delete', 'article', $id);
                 json_response(['ok' => true]);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Duplicate an article ─────────────────────────────────────────
+        case 'article_duplicate':
+            csrf_or_fail();
+            if ($method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $id = (int) $param;
+            $article = fetch_article($id);
+            if (!$article) {
+                json_response(['ok' => false, 'message' => 'Article introuvable.'], 404);
+            }
+            $slug = unique_slug('articles', slugify($article['slug'] . '-copie'));
+            $stmt = db()->prepare(
+                "INSERT INTO articles (slug, title, excerpt, body, cover_image_url, author, category_id, status, is_published, updated_by)
+                 SELECT ?, ?, excerpt, body, cover_image_url, author, category_id, 'draft', 0, ? FROM articles WHERE id = ?"
+            );
+            $stmt->execute([$slug, $article['title'] . ' (copie)', current_actor(), $id]);
+            $newId = (int) db()->lastInsertId();
+            db()->prepare('INSERT INTO article_tags (article_id, tag_id) SELECT ?, tag_id FROM article_tags WHERE article_id = ?')
+                ->execute([$newId, $id]);
+            log_activity('article.duplicate', 'article', $newId, $article['title']);
+            json_response(['ok' => true, 'article' => map_article_row(fetch_article($newId) ?? [])], 201);
 
         // ── Media ────────────────────────────────────────────────────────
         case 'media':
             csrf_or_fail();
             if ($method === 'GET') {
-                $rows = db()->query('SELECT * FROM media ORDER BY created_at DESC')->fetchAll();
+                $rows = db()->query('SELECT * FROM media ORDER BY created_at DESC, id DESC')->fetchAll();
                 json_response(['ok' => true, 'items' => $rows]);
             }
             if ($method === 'POST') {
@@ -432,6 +761,7 @@ try {
                     $stored['width'],
                     $stored['height'],
                 ]);
+                log_activity('media.upload', 'media', (int) db()->lastInsertId(), (string) ($_FILES['file']['name'] ?? ''));
                 json_response(['ok' => true, 'media' => [
                     'id' => (int) db()->lastInsertId(),
                     'url' => $stored['url'],
@@ -441,6 +771,23 @@ try {
                 ]], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        case 'media_meta':
+            csrf_or_fail();
+            if ($method !== 'PUT' && $method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $id = (int) $param;
+            $data = read_json_body();
+            db()->prepare('UPDATE media SET title = COALESCE(?, title), alt_text = COALESCE(?, alt_text), caption = COALESCE(?, caption), description = COALESCE(?, description) WHERE id = ?')
+                ->execute([
+                    field($data, 'title') ?: null,
+                    field($data, 'altText') ?: null,
+                    field($data, 'caption') ?: null,
+                    field($data, 'description') ?: null,
+                    $id,
+                ]);
+            json_response(['ok' => true]);
 
         case 'media_delete':
             csrf_or_fail();
@@ -457,8 +804,317 @@ try {
                     @unlink($path);
                 }
                 db()->prepare('DELETE FROM media WHERE id = ?')->execute([$id]);
+                log_activity('media.delete', 'media', $id);
             }
             json_response(['ok' => true]);
+
+        // ── Menus ────────────────────────────────────────────────────────
+        case 'menus':
+            csrf_or_fail();
+            if ($method === 'GET') {
+                $menus = db()->query('SELECT * FROM menus ORDER BY id ASC')->fetchAll();
+                $itemsStmt = db()->prepare('SELECT * FROM menu_items WHERE menu_id = ? ORDER BY sort_order ASC, id ASC');
+                $out = [];
+                foreach ($menus as $menu) {
+                    $itemsStmt->execute([(int) $menu['id']]);
+                    $out[] = [
+                        'id' => (int) $menu['id'],
+                        'location' => $menu['location'],
+                        'label' => $menu['label'],
+                        'items' => $itemsStmt->fetchAll(),
+                    ];
+                }
+                json_response(['ok' => true, 'items' => $out]);
+            }
+            if ($method === 'POST') {
+                $data = read_json_body();
+                $location = slugify(field($data, 'location') ?: field($data, 'label'));
+                $stmt = db()->prepare('INSERT INTO menus (location, label) VALUES (?, ?)');
+                $stmt->execute([$location, field($data, 'label') ?: $location]);
+                log_activity('menu.create', 'menu', (int) db()->lastInsertId(), $location);
+                json_response(['ok' => true, 'id' => (int) db()->lastInsertId()], 201);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        case 'menu':
+            csrf_or_fail();
+            $id = (int) $param;
+            if ($method === 'DELETE') {
+                db()->prepare('DELETE FROM menus WHERE id = ?')->execute([$id]);
+                log_activity('menu.delete', 'menu', $id);
+                json_response(['ok' => true]);
+            }
+            if ($method === 'PUT' || $method === 'POST') {
+                $data = read_json_body();
+                // Full replace of the item tree (simple + safe for small menus).
+                db()->prepare('DELETE FROM menu_items WHERE menu_id = ?')->execute([$id]);
+                $stmt = db()->prepare('INSERT INTO menu_items (menu_id, parent_id, label, url, sort_order, is_enabled, opens_new_tab) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+                $idMap = [];
+                $order = 0;
+                // Two passes: parents first, then children (one nesting level
+                // deep, which is what dropdowns need).
+                foreach ([0, 1] as $depth) {
+                    foreach ($items as $item) {
+                        if (!is_array($item)) {
+                            continue;
+                        }
+                        $isChild = (int) ($item['parentId'] ?? 0) > 0;
+                        if (($depth === 0) === $isChild) {
+                            continue;
+                        }
+                        $parentDbId = null;
+                        if ($isChild) {
+                            $parentKey = (string) $item['parentId'];
+                            $parentDbId = $idMap[$parentKey] ?? null;
+                            if ($parentDbId === null) {
+                                continue;
+                            }
+                        }
+                        $stmt->execute([
+                            $id,
+                            $parentDbId,
+                            field($item, 'label') ?: 'Sans titre',
+                            field($item, 'url') !== '' ? field($item, 'url') : '/',
+                            $order++,
+                            !empty($item['isEnabled']) || !array_key_exists('isEnabled', $item) ? 1 : 0,
+                            !empty($item['opensNewTab']) ? 1 : 0,
+                        ]);
+                        $clientKey = (string) ($item['clientId'] ?? ('' . $order));
+                        $idMap[$clientKey] = (int) db()->lastInsertId();
+                    }
+                }
+                log_activity('menu.update', 'menu', $id);
+                json_response(['ok' => true]);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Categories ───────────────────────────────────────────────────
+        case 'categories':
+            csrf_or_fail();
+            if ($method === 'GET') {
+                $rows = db()->query(
+                    'SELECT c.*, (SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id) AS article_count
+                     FROM categories c ORDER BY c.name ASC'
+                )->fetchAll();
+                json_response(['ok' => true, 'items' => $rows]);
+            }
+            if ($method === 'POST') {
+                $data = read_json_body();
+                $name = field($data, 'name');
+                if ($name === '') {
+                    json_response(['ok' => false, 'message' => 'Le nom est obligatoire.'], 400);
+                }
+                $slug = unique_slug('categories', slugify(field($data, 'slug') ?: $name));
+                db()->prepare('INSERT INTO categories (slug, name, description) VALUES (?, ?, ?)')
+                    ->execute([$slug, $name, field($data, 'description') ?: null]);
+                log_activity('category.create', 'category', (int) db()->lastInsertId(), $name);
+                json_response(['ok' => true, 'id' => (int) db()->lastInsertId()], 201);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        case 'category':
+            csrf_or_fail();
+            $id = (int) $param;
+            if ($method === 'PUT' || $method === 'POST') {
+                $data = read_json_body();
+                $name = field($data, 'name');
+                if ($name === '') {
+                    json_response(['ok' => false, 'message' => 'Le nom est obligatoire.'], 400);
+                }
+                $slug = unique_slug('categories', slugify(field($data, 'slug') ?: $name), $id);
+                db()->prepare('UPDATE categories SET slug = ?, name = ?, description = ? WHERE id = ?')
+                    ->execute([$slug, $name, field($data, 'description') ?: null, $id]);
+                log_activity('category.update', 'category', $id, $name);
+                json_response(['ok' => true]);
+            }
+            if ($method === 'DELETE') {
+                db()->prepare('DELETE FROM categories WHERE id = ?')->execute([$id]);
+                log_activity('category.delete', 'category', $id);
+                json_response(['ok' => true]);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Tags ─────────────────────────────────────────────────────────
+        case 'tags':
+            csrf_or_fail();
+            if ($method === 'GET') {
+                $rows = db()->query(
+                    'SELECT t.*, (SELECT COUNT(*) FROM article_tags x WHERE x.tag_id = t.id) AS article_count
+                     FROM tags t ORDER BY t.name ASC'
+                )->fetchAll();
+                json_response(['ok' => true, 'items' => $rows]);
+            }
+            if ($method === 'POST') {
+                $data = read_json_body();
+                $name = field($data, 'name');
+                if ($name === '') {
+                    json_response(['ok' => false, 'message' => 'Le nom est obligatoire.'], 400);
+                }
+                $slug = unique_slug('tags', slugify(field($data, 'slug') ?: $name));
+                db()->prepare('INSERT INTO tags (slug, name) VALUES (?, ?)')
+                    ->execute([$slug, $name]);
+                log_activity('tag.create', 'tag', (int) db()->lastInsertId(), $name);
+                json_response(['ok' => true, 'id' => (int) db()->lastInsertId()], 201);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        case 'tag':
+            csrf_or_fail();
+            $id = (int) $param;
+            if ($method === 'PUT' || $method === 'POST') {
+                $data = read_json_body();
+                $name = field($data, 'name');
+                if ($name === '') {
+                    json_response(['ok' => false, 'message' => 'Le nom est obligatoire.'], 400);
+                }
+                $slug = unique_slug('tags', slugify(field($data, 'slug') ?: $name), $id);
+                db()->prepare('UPDATE tags SET slug = ?, name = ? WHERE id = ?')
+                    ->execute([$slug, $name, $id]);
+                log_activity('tag.update', 'tag', $id, $name);
+                json_response(['ok' => true]);
+            }
+            if ($method === 'DELETE') {
+                db()->prepare('DELETE FROM tags WHERE id = ?')->execute([$id]);
+                log_activity('tag.delete', 'tag', $id);
+                json_response(['ok' => true]);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Homepage builder blocks ──────────────────────────────────────
+        case 'home_blocks':
+            csrf_or_fail();
+            if ($method === 'GET') {
+                $rows = db()->query('SELECT * FROM content_blocks ORDER BY sort_order ASC, id ASC')->fetchAll();
+                json_response(['ok' => true, 'items' => array_map('map_home_block', $rows)]);
+            }
+            if ($method === 'PUT' || $method === 'POST') {
+                $data = read_json_body();
+                save_home_blocks(is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
+                log_activity('home.update', 'home', 1);
+                json_response(['ok' => true]);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Revisions ────────────────────────────────────────────────────
+        case 'revisions':
+            csrf_or_fail();
+            if ($method !== 'GET') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $type = field($_GET, 'type') ?: 'page';
+            if (!in_array($type, ['page', 'article'], true)) {
+                json_response(['ok' => false, 'message' => 'Unknown revision type.'], 400);
+            }
+            $entityId = (int) $param;
+            $stmt = db()->prepare(
+                'SELECT id, author, created_at FROM content_revisions WHERE entity_type = ? AND entity_id = ? ORDER BY id DESC LIMIT 50'
+            );
+            $stmt->execute([$type, $entityId]);
+            json_response(['ok' => true, 'items' => $stmt->fetchAll()]);
+
+        case 'revision':
+            csrf_or_fail();
+            $revId = (int) $param;
+            if ($method === 'GET') {
+                $stmt = db()->prepare('SELECT * FROM content_revisions WHERE id = ? LIMIT 1');
+                $stmt->execute([$revId]);
+                $rev = $stmt->fetch();
+                if (!$rev) {
+                    json_response(['ok' => false, 'message' => 'Révision introuvable.'], 404);
+                }
+                json_response(['ok' => true, 'revision' => [
+                    'id' => (int) $rev['id'],
+                    'entityType' => $rev['entity_type'],
+                    'entityId' => (int) $rev['entity_id'],
+                    'author' => $rev['author'],
+                    'createdAt' => $rev['created_at'],
+                    'snapshot' => decode_json_col($rev['snapshot_json']),
+                ]]);
+            }
+            if ($method === 'POST') {
+                // Restore: overwrite the live entity with the snapshot.
+                $stmt = db()->prepare('SELECT * FROM content_revisions WHERE id = ? LIMIT 1');
+                $stmt->execute([$revId]);
+                $rev = $stmt->fetch();
+                if (!$rev) {
+                    json_response(['ok' => false, 'message' => 'Révision introuvable.'], 404);
+                }
+                $snapshot = decode_json_col($rev['snapshot_json']);
+                if (!is_array($snapshot)) {
+                    json_response(['ok' => false, 'message' => 'Snapshot invalide.'], 500);
+                }
+                if ($rev['entity_type'] === 'page') {
+                    $pageData = $snapshot['page'] ?? null;
+                    if (!is_array($pageData)) {
+                        json_response(['ok' => false, 'message' => 'Snapshot invalide.'], 500);
+                    }
+                    snapshot_page((int) $rev['entity_id'], current_actor()); // snapshot current state first
+                    db()->prepare(
+                        'UPDATE pages SET slug = ?, title = ?, eyebrow = ?, hero_title = ?, hero_text = ?, hero_image_url = ?, nav_label = ?, nav_order = ? WHERE id = ?'
+                    )->execute([
+                        $pageData['slug'],
+                        $pageData['title'],
+                        $pageData['eyebrow'],
+                        $pageData['hero_title'],
+                        $pageData['hero_text'],
+                        $pageData['hero_image_url'],
+                        $pageData['nav_label'],
+                        (int) $pageData['nav_order'],
+                        (int) $rev['entity_id'],
+                    ]);
+                    if (isset($snapshot['blocks']) && is_array($snapshot['blocks'])) {
+                        db()->prepare('DELETE FROM page_blocks WHERE page_id = ?')->execute([(int) $rev['entity_id']]);
+                        $ins = db()->prepare('INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                        $order = 0;
+                        foreach ($snapshot['blocks'] as $b) {
+                            if (!is_array($b)) {
+                                continue;
+                            }
+                            $ins->execute([
+                                (int) $rev['entity_id'],
+                                (string) $b['type'],
+                                $order++,
+                                $b['title'],
+                                $b['body'],
+                                $b['image_url'],
+                                $b['images_json'],
+                            ]);
+                        }
+                    }
+                    log_activity('page.restore', 'page', (int) $rev['entity_id'], 'révision #' . $revId);
+                    json_response(['ok' => true]);
+                } else {
+                    $articleData = $snapshot['article'] ?? null;
+                    if (!is_array($articleData)) {
+                        json_response(['ok' => false, 'message' => 'Snapshot invalide.'], 500);
+                    }
+                    snapshot_article((int) $rev['entity_id'], current_actor());
+                    db()->prepare(
+                        'UPDATE articles SET slug = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ? WHERE id = ?'
+                    )->execute([
+                        $articleData['slug'],
+                        $articleData['title'],
+                        $articleData['excerpt'],
+                        $articleData['body'],
+                        $articleData['cover_image_url'],
+                        $articleData['author'],
+                        (int) $rev['entity_id'],
+                    ]);
+                    log_activity('article.restore', 'article', (int) $rev['entity_id'], 'révision #' . $revId);
+                    json_response(['ok' => true]);
+                }
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Activity log ─────────────────────────────────────────────────
+        case 'activity':
+            csrf_or_fail();
+            if ($method !== 'GET') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $rows = db()->query('SELECT * FROM activity_log ORDER BY id DESC LIMIT 100')->fetchAll();
+            json_response(['ok' => true, 'items' => $rows]);
 
         // ── Dashboard stats ──────────────────────────────────────────────
         case 'stats':
@@ -468,24 +1124,47 @@ try {
             }
             json_response(['ok' => true, 'stats' => [
                 'pages' => (int) db()->query('SELECT COUNT(*) AS c FROM pages')->fetch()['c'],
-                'pagesPublished' => (int) db()->query('SELECT COUNT(*) AS c FROM pages WHERE is_published = 1')->fetch()['c'],
+                'pagesPublished' => (int) db()->query("SELECT COUNT(*) AS c FROM pages WHERE status = 'published'")->fetch()['c'],
+                'pagesDraft' => (int) db()->query("SELECT COUNT(*) AS c FROM pages WHERE status = 'draft'")->fetch()['c'],
+                'pagesScheduled' => (int) db()->query("SELECT COUNT(*) AS c FROM pages WHERE status = 'scheduled'")->fetch()['c'],
                 'articles' => (int) db()->query('SELECT COUNT(*) AS c FROM articles')->fetch()['c'],
-                'articlesPublished' => (int) db()->query('SELECT COUNT(*) AS c FROM articles WHERE is_published = 1')->fetch()['c'],
+                'articlesPublished' => (int) db()->query("SELECT COUNT(*) AS c FROM articles WHERE status = 'published'")->fetch()['c'],
+                'articlesDraft' => (int) db()->query("SELECT COUNT(*) AS c FROM articles WHERE status = 'draft'")->fetch()['c'],
+                'articlesScheduled' => (int) db()->query("SELECT COUNT(*) AS c FROM articles WHERE status = 'scheduled'")->fetch()['c'],
+                'categories' => (int) db()->query('SELECT COUNT(*) AS c FROM categories')->fetch()['c'],
+                'tags' => (int) db()->query('SELECT COUNT(*) AS c FROM tags')->fetch()['c'],
                 'media' => (int) db()->query('SELECT COUNT(*) AS c FROM media')->fetch()['c'],
                 'messages' => (int) db()->query('SELECT COUNT(*) AS c FROM contact_messages')->fetch()['c'],
                 'messagesUnread' => (int) db()->query('SELECT COUNT(*) AS c FROM contact_messages WHERE is_read = 0')->fetch()['c'],
             ]]);
 
-        // ── One-click publish / unpublish ────────────────────────────────
+        // ── Latest content (dashboard lists) ─────────────────────────────
+        case 'recent':
+            csrf_or_fail();
+            if ($method !== 'GET') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $pages = db()->query('SELECT id, title, slug, status, updated_at FROM pages ORDER BY updated_at DESC LIMIT 5')->fetchAll();
+            $articles = db()->query('SELECT id, title, slug, status, updated_at FROM articles ORDER BY updated_at DESC LIMIT 5')->fetchAll();
+            $media = db()->query('SELECT id, url, original_name, created_at FROM media ORDER BY id DESC LIMIT 8')->fetchAll();
+            json_response(['ok' => true, 'pages' => $pages, 'articles' => $articles, 'media' => $media]);
+
+        // ── One-click publish / unpublish (row toggle) ───────────────────
         case 'page_publish':
             csrf_or_fail();
             if ($method !== 'POST') {
                 json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
             }
             $data = read_json_body();
-            $published = !empty($data['published']) ? 1 : 0;
-            db()->prepare('UPDATE pages SET is_published = ? WHERE id = ?')
-                ->execute([$published, (int) $param]);
+            $publish = !empty($data['published']);
+            if ($publish) {
+                db()->prepare("UPDATE pages SET status = 'published', is_published = 1, published_at = COALESCE(published_at, NOW()), scheduled_at = NULL WHERE id = ?")
+                    ->execute([(int) $param]);
+            } else {
+                db()->prepare("UPDATE pages SET status = 'draft', is_published = 0 WHERE id = ?")
+                    ->execute([(int) $param]);
+            }
+            log_activity($publish ? 'page.publish' : 'page.unpublish', 'page', (int) $param);
             json_response(['ok' => true]);
 
         case 'article_publish':
@@ -494,14 +1173,15 @@ try {
                 json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
             }
             $data = read_json_body();
-            $published = !empty($data['published']);
-            if ($published) {
-                db()->prepare('UPDATE articles SET is_published = 1, published_at = COALESCE(published_at, NOW()) WHERE id = ?')
+            $publish = !empty($data['published']);
+            if ($publish) {
+                db()->prepare("UPDATE articles SET status = 'published', is_published = 1, published_at = COALESCE(published_at, NOW()), scheduled_at = NULL WHERE id = ?")
                     ->execute([(int) $param]);
             } else {
-                db()->prepare('UPDATE articles SET is_published = 0 WHERE id = ?')
+                db()->prepare("UPDATE articles SET status = 'draft', is_published = 0 WHERE id = ?")
                     ->execute([(int) $param]);
             }
+            log_activity($publish ? 'article.publish' : 'article.unpublish', 'article', (int) $param);
             json_response(['ok' => true]);
 
         // ── Reorder pages (menu order) ───────────────────────────────────
@@ -532,7 +1212,7 @@ try {
             }
 
             admin_session_start();
-            $username = U2I_ADMIN_USER;
+            $username = current_actor();
             $hash = admin_password_hash_for($username);
             if ($hash === null || !password_verify($current, $hash)) {
                 json_response(['ok' => false, 'message' => 'Mot de passe actuel incorrect.'], 400);
@@ -550,6 +1230,7 @@ try {
                     db()->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)')
                         ->execute([$username, $newHash]);
                 }
+                log_activity('account.password_change', 'admin', (int) ($row['id'] ?? 0));
                 json_response(['ok' => true]);
             } catch (Throwable $e) {
                 json_response(['ok' => false, 'message' => 'Base de données indisponible : ' . $e->getMessage()], 500);
@@ -559,7 +1240,7 @@ try {
         case 'messages':
             csrf_or_fail();
             if ($method === 'GET') {
-                $rows = db()->query('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 500')->fetchAll();
+                $rows = db()->query('SELECT * FROM contact_messages ORDER BY created_at DESC, id DESC LIMIT 500')->fetchAll();
                 json_response(['ok' => true, 'items' => $rows]);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);

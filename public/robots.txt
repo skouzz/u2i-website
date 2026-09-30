@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Dynamic sitemap (published pages + articles).
+# Replace with your real domain after deployment:
+Sitemap: https://u2iprocess.com/api/sitemap.php

@@ -294,9 +294,7 @@ export function SectorsPage() {
       <section className="sectors-contact">
         <div className="wrap sectors-contact__inner">
           <div>
-            <p className="sectors-eyebrow">
-              Un projet industriel en vue ?
-            </p>
+            <p className="sectors-eyebrow">Un projet industriel en vue ?</p>
             <h2>Parlons de votre prochain défi.</h2>
           </div>
           <Link to="/contact" className="sectors-contact__button">

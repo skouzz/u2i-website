@@ -1,8 +1,10 @@
 <?php
 /**
- * U2I Process — CMS database installer.
+ * U2I Process — CMS database installer (v2 schema).
  * Open /api/install.php once in your browser after filling config.php.
  * Protect with ?key=INSTALL_KEY (see constant below) or delete the file after.
+ *
+ * Idempotent: CREATE TABLE IF NOT EXISTS + duplicate-column-tolerant ALTERs.
  */
 
 declare(strict_types=1);
@@ -14,8 +16,40 @@ if (INSTALL_KEY !== '' && ($_GET['key'] ?? '') !== INSTALL_KEY) {
     json_response(['ok' => false, 'message' => 'Missing or wrong install key.'], 403);
 }
 
+function column_exists(PDO $pdo, string $table, string $column): bool
+{
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        $stmt->execute([$table, $column]);
+
+        return (int) $stmt->fetch()['c'] > 0;
+    } catch (Throwable) {
+        return false;
+    }
+}
+
+/** Run an ALTER only when the column is missing (portable IF NOT EXISTS). */
+function ensure_column(PDO $pdo, string $table, string $column, string $definition): void
+{
+    global $results;
+    if (column_exists($pdo, $table, $column)) {
+        return;
+    }
+    try {
+        $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+        $results['migrated'][] = "{$table}.{$column}";
+    } catch (Throwable $e) {
+        $results['failed'][] = ['sql' => "{$table}.{$column}", 'error' => $e->getMessage()];
+    }
+}
+
+$results = ['created' => [], 'migrated' => [], 'already_existed' => [], 'failed' => []];
+$pdo = db();
+
 $statements = [
-    "CREATE TABLE IF NOT EXISTS settings (
+    'settings' => "CREATE TABLE IF NOT EXISTS settings (
         id TINYINT UNSIGNED PRIMARY KEY,
         site_name VARCHAR(191) NOT NULL DEFAULT 'U2I Process',
         contact_email VARCHAR(191) NOT NULL DEFAULT 'u2i@u2iprocess.com',
@@ -25,7 +59,7 @@ $statements = [
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-    "CREATE TABLE IF NOT EXISTS pages (
+    'pages' => "CREATE TABLE IF NOT EXISTS pages (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         slug VARCHAR(191) NOT NULL UNIQUE,
         title VARCHAR(255) NOT NULL,
@@ -40,7 +74,7 @@ $statements = [
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-    "CREATE TABLE IF NOT EXISTS page_blocks (
+    'page_blocks' => "CREATE TABLE IF NOT EXISTS page_blocks (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         page_id INT UNSIGNED NOT NULL,
         type ENUM('heading','text','image','gallery','contact_info') NOT NULL,
@@ -54,7 +88,7 @@ $statements = [
         INDEX idx_blocks_page (page_id, sort_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-    "CREATE TABLE IF NOT EXISTS articles (
+    'articles' => "CREATE TABLE IF NOT EXISTS articles (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         slug VARCHAR(191) NOT NULL UNIQUE,
         title VARCHAR(255) NOT NULL,
@@ -69,7 +103,7 @@ $statements = [
         INDEX idx_articles_pub (is_published, published_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-    "CREATE TABLE IF NOT EXISTS media (
+    'media' => "CREATE TABLE IF NOT EXISTS media (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         url VARCHAR(500) NOT NULL,
         original_name VARCHAR(255) NULL,
@@ -78,7 +112,7 @@ $statements = [
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-    "CREATE TABLE IF NOT EXISTS contact_messages (
+    'contact_messages' => "CREATE TABLE IF NOT EXISTS contact_messages (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         first_name VARCHAR(100) NOT NULL,
         last_name VARCHAR(100) NOT NULL,
@@ -91,37 +125,203 @@ $statements = [
         INDEX idx_messages_read (is_read, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-    "CREATE TABLE IF NOT EXISTS admins (
+    'admins' => "CREATE TABLE IF NOT EXISTS admins (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         username VARCHAR(100) NOT NULL UNIQUE,
         password_hash VARCHAR(255) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'site_config' => "CREATE TABLE IF NOT EXISTS site_config (
+        id TINYINT UNSIGNED PRIMARY KEY,
+        header_json JSON NULL,
+        footer_json JSON NULL,
+        seo_json JSON NULL,
+        social_json JSON NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'menus' => "CREATE TABLE IF NOT EXISTS menus (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        location VARCHAR(100) NOT NULL UNIQUE,
+        label VARCHAR(191) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'menu_items' => "CREATE TABLE IF NOT EXISTS menu_items (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        menu_id INT UNSIGNED NOT NULL,
+        parent_id INT UNSIGNED NULL,
+        label VARCHAR(191) NOT NULL,
+        url VARCHAR(500) NOT NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+        opens_new_tab TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_menu_items_menu FOREIGN KEY (menu_id) REFERENCES menus(id) ON DELETE CASCADE,
+        CONSTRAINT fk_menu_items_parent FOREIGN KEY (parent_id) REFERENCES menu_items(id) ON DELETE CASCADE,
+        INDEX idx_menu_items (menu_id, parent_id, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'categories' => "CREATE TABLE IF NOT EXISTS categories (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        slug VARCHAR(191) NOT NULL UNIQUE,
+        name VARCHAR(191) NOT NULL,
+        description TEXT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'tags' => "CREATE TABLE IF NOT EXISTS tags (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        slug VARCHAR(191) NOT NULL UNIQUE,
+        name VARCHAR(191) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'article_tags' => "CREATE TABLE IF NOT EXISTS article_tags (
+        article_id INT UNSIGNED NOT NULL,
+        tag_id INT UNSIGNED NOT NULL,
+        PRIMARY KEY (article_id, tag_id),
+        CONSTRAINT fk_at_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+        CONSTRAINT fk_at_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'content_blocks' => "CREATE TABLE IF NOT EXISTS content_blocks (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        type ENUM('hero','about','services','stats','features','projects','testimonials','team','articles','gallery','cta','contact','faq','html') NOT NULL,
+        title VARCHAR(255) NULL,
+        subtitle VARCHAR(500) NULL,
+        body MEDIUMTEXT NULL,
+        image_url VARCHAR(500) NULL,
+        config_json JSON NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        is_visible TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_content_blocks (is_visible, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'content_revisions' => "CREATE TABLE IF NOT EXISTS content_revisions (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        entity_type ENUM('page','article') NOT NULL,
+        entity_id INT UNSIGNED NOT NULL,
+        author VARCHAR(120) NULL,
+        snapshot_json JSON NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_revisions_entity (entity_type, entity_id, id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'activity_log' => "CREATE TABLE IF NOT EXISTS activity_log (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        actor VARCHAR(120) NOT NULL,
+        action VARCHAR(60) NOT NULL,
+        entity_type VARCHAR(40) NULL,
+        entity_id INT UNSIGNED NULL,
+        detail VARCHAR(500) NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_activity_recent (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
 
-$results = ['created' => [], 'already_existed' => [], 'failed' => []];
-foreach ($statements as $sql) {
+foreach ($statements as $label => $sql) {
     try {
-        $ok = db()->exec($sql);
-        if ($ok === 0) {
-            $results['already_existed'][] = 1;
-        } else {
-            $results['created'][] = 1;
-        }
+        $pdo->exec($sql);
+        $results['created'][] = $label;
     } catch (Throwable $e) {
-        $results['failed'][] = ['sql' => substr($sql, 0, 60) . '…', 'error' => $e->getMessage()];
+        if (strpos($e->getMessage(), 'already exists') !== false) {
+            $results['already_existed'][] = $label;
+        } else {
+            $results['failed'][] = ['sql' => $label, 'error' => $e->getMessage()];
+        }
     }
 }
 
-// Insert default settings row if none exists.
+// ── v2 column migrations (skip when the column already exists) ─────────────
+
+ensure_column($pdo, 'pages', 'parent_id', 'INT UNSIGNED NULL');
+ensure_column($pdo, 'pages', 'seo_json', 'JSON NULL');
+ensure_column($pdo, 'pages', 'published_at', 'DATETIME NULL');
+ensure_column($pdo, 'pages', 'scheduled_at', 'DATETIME NULL');
+ensure_column($pdo, 'pages', 'status', "ENUM('draft','pending','scheduled','published','archived') NOT NULL DEFAULT 'draft'");
+ensure_column($pdo, 'pages', 'updated_by', 'VARCHAR(120) NULL');
+
+ensure_column($pdo, 'articles', 'category_id', 'INT UNSIGNED NULL');
+ensure_column($pdo, 'articles', 'seo_json', 'JSON NULL');
+ensure_column($pdo, 'articles', 'scheduled_at', 'DATETIME NULL');
+ensure_column($pdo, 'articles', 'status', "ENUM('draft','pending','scheduled','published','archived') NOT NULL DEFAULT 'draft'");
+ensure_column($pdo, 'articles', 'updated_by', 'VARCHAR(120) NULL');
+
+ensure_column($pdo, 'media', 'title', 'VARCHAR(255) NULL');
+ensure_column($pdo, 'media', 'alt_text', 'VARCHAR(500) NULL');
+ensure_column($pdo, 'media', 'caption', 'VARCHAR(500) NULL');
+ensure_column($pdo, 'media', 'description', 'TEXT NULL');
+
+ensure_column($pdo, 'settings', 'header_json', 'JSON NULL');
+ensure_column($pdo, 'settings', 'footer_json', 'JSON NULL');
+ensure_column($pdo, 'settings', 'seo_json', 'JSON NULL');
+ensure_column($pdo, 'settings', 'social_json', 'JSON NULL');
+ensure_column($pdo, 'settings', 'home_json', 'JSON NULL');
+
 try {
-    $count = (int) db()->query('SELECT COUNT(*) AS c FROM settings')->fetch()['c'];
+    $pdo->exec("CREATE INDEX idx_pages_pub ON pages (is_published, published_at)");
+} catch (Throwable) {
+}
+try {
+    $pdo->exec("CREATE INDEX idx_pages_sched ON pages (scheduled_at)");
+} catch (Throwable) {
+}
+try {
+    $pdo->exec("CREATE INDEX idx_articles_sched ON articles (scheduled_at)");
+} catch (Throwable) {
+}
+try {
+    $pdo->exec("CREATE INDEX idx_media_created ON media (created_at)");
+} catch (Throwable) {
+}
+
+try {
+    $pdo->exec("ALTER TABLE pages ADD CONSTRAINT fk_pages_parent FOREIGN KEY (parent_id) REFERENCES pages(id) ON DELETE SET NULL");
+} catch (Throwable) {
+}
+try {
+    $pdo->exec("ALTER TABLE articles ADD CONSTRAINT fk_articles_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL");
+} catch (Throwable) {
+}
+
+// ── Seeds ────────────────────────────────────────────────────────────────────
+
+try {
+    $count = (int) $pdo->query('SELECT COUNT(*) AS c FROM settings')->fetch()['c'];
     if ($count === 0) {
-        db()->exec("INSERT INTO settings (id, site_name, contact_email, contact_phone, address) VALUES (1, 'U2I Process', 'u2i@u2iprocess.com', '+216 50 191 004', 'Akouda, Sousse, Tunisie')");
+        $pdo->exec("INSERT INTO settings (id, site_name, contact_email, contact_phone, address) VALUES (1, 'U2I Process', 'u2i@u2iprocess.com', '+216 50 191 004', 'Akouda, Sousse, Tunisie')");
     }
 } catch (Throwable $e) {
     $results['failed'][] = ['sql' => 'settings seed', 'error' => $e->getMessage()];
+}
+
+try {
+    $count = (int) $pdo->query('SELECT COUNT(*) AS c FROM site_config')->fetch()['c'];
+    if ($count === 0) {
+        $pdo->exec('INSERT INTO site_config (id) VALUES (1)');
+    }
+} catch (Throwable $e) {
+    $results['failed'][] = ['sql' => 'site_config seed', 'error' => $e->getMessage()];
+}
+
+foreach ([['main', 'Menu principal'], ['footer', 'Menu pied de page']] as $menu) {
+    try {
+        $stmt = $pdo->prepare('SELECT COUNT(*) AS c FROM menus WHERE location = ?');
+        $stmt->execute([$menu[0]]);
+        if ((int) $stmt->fetch()['c'] === 0) {
+            $insert = $pdo->prepare('INSERT INTO menus (location, label) VALUES (?, ?)');
+            $insert->execute([$menu[0], $menu[1]]);
+        }
+    } catch (Throwable $e) {
+        $results['failed'][] = ['sql' => 'menu seed ' . $menu[0], 'error' => $e->getMessage()];
+    }
 }
 
 // NOTE: no admin user is seeded — the first login at /admin shows a one-time
@@ -131,7 +331,7 @@ try {
 json_response([
     'ok' => count($results['failed']) === 0,
     'message' => count($results['failed']) === 0
-        ? 'Base de données installée. Vous pouvez utiliser le dashboard.'
-        : 'Certaines tables ont échoué.',
+        ? 'Base de données installée (schéma v2). Vous pouvez utiliser le dashboard.'
+        : 'Certaines migrations ont échoué — voir "results".',
     'results' => $results,
 ]);

@@ -20,11 +20,7 @@ export function RouteLoadingBar() {
 /** Red-on-black brand mark: orbit ring + pulsing weld core. */
 export function BrandMark({ size = 64 }: { size?: number }) {
   return (
-    <span
-      className="u2i-mark"
-      style={{ width: size, height: size }}
-      aria-hidden="true"
-    >
+    <span className="u2i-mark" style={{ width: size, height: size }} aria-hidden="true">
       <span className="u2i-mark__ring" />
       <span className="u2i-mark__core" />
     </span>
@@ -48,15 +44,7 @@ export function BootLoader({ label = "Chargement" }: { label?: string }) {
 export function Skeleton({
   variant,
 }: {
-  variant:
-    | "title"
-    | "meta"
-    | "cover"
-    | "media"
-    | "line"
-    | "lineShort"
-    | "heading"
-    | "image";
+  variant: "title" | "meta" | "cover" | "media" | "line" | "lineShort" | "heading" | "image";
 }) {
   const cls = {
     title: "u2i-skel u2i-skel--title",

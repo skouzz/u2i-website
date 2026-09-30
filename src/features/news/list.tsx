@@ -6,6 +6,7 @@ import { PageHero } from "@/components/PageHero";
 import { NewsGridSkeleton } from "@/components/loading";
 import workshopImage from "@/assets/about-workshop.jpg";
 import { cmsApi } from "@/lib/cms";
+import { useSeo } from "@/lib/seo";
 import "./news.css";
 
 export const formatDate = (value?: string | null): string => {
@@ -25,6 +26,12 @@ export function NewsListPage() {
   });
 
   const articles = data?.items ?? [];
+
+  useSeo({
+    title: "Actualités — U2I Process",
+    description:
+      "Projets, nouveaux équipements, certifications : suivez la vie de l'atelier et de l'équipe U2I.",
+  });
 
   return (
     <main className="news-page">
@@ -52,8 +59,8 @@ export function NewsListPage() {
 
           {isError && (
             <div className="news-empty">
-              Les actualités ne sont pas encore disponibles. Le CMS sera actif après
-              l'installation de la base de données sur l'hébergement.
+              Les actualités ne sont pas encore disponibles. Le CMS sera actif après l'installation
+              de la base de données sur l'hébergement.
             </div>
           )}
 
@@ -61,8 +68,8 @@ export function NewsListPage() {
             <div className="news-empty">
               <Newspaper size={28} style={{ marginBottom: 10 }} />
               <br />
-              Aucune actualité pour le moment — publiez votre premier article depuis
-              le dashboard d'administration.
+              Aucune actualité pour le moment — publiez votre premier article depuis le dashboard
+              d'administration.
             </div>
           )}
 
