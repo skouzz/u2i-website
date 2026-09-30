@@ -155,7 +155,21 @@ function admin_login(string $username, string $password): bool
     admin_session_start();
 
     $hash = admin_password_hash_for($username);
-    if ($hash === null || !password_verify($password, $hash)) {
+    if ($hash === null) {
+        usleep(400000); // slow brute force
+        return false;
+    }
+
+    // Guard against accounts seeded with a non-PHP placeholder hash (old
+    // schema versions): password_verify() would always fail silently.
+    if (!preg_match('/^\$2[aby]\$|^\$argon2/', $hash)) {
+        json_response([
+            'ok' => false,
+            'message' => "Compte administrateur invalide (ancien schéma). Dans phpMyAdmin, exécutez « DELETE FROM admins; » puis rechargez /admin pour recréer le compte.",
+        ], 409);
+    }
+
+    if (!password_verify($password, $hash)) {
         usleep(400000); // slow brute force
         return false;
     }
