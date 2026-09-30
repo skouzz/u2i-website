@@ -22,10 +22,15 @@ const DB_NAME = 'u2iprocesscomdb';
 const DB_USER = 'u2iprocesscomdb';
 const DB_PASS = 'CHANGE_ME';
 
-// ── Admin dashboard (default production credentials) ────────────────────────
-// Change the hash after your first sign-in (see README step 6).
+// ── Admin dashboard (fallback credentials) ─────────────────────────────────
 const DEFAULT_ADMIN_USER = 'admin';
-const DEFAULT_ADMIN_HASH = '$2y$10$DzZbAgvGxZxWb1Yd6A6yYuJd3WQzZRFMCk2DPzVZG6JgDUmifCbwi'; // "changeme"
+// Preferred: create the account from the dashboard on first login (setup
+// mode) - it stores a real password_hash() in the `admins` table. The
+// values below are only a fallback used when the DB is unreachable. The
+// hash must be generated with:
+//   php -r "echo password_hash('yourpass', PASSWORD_DEFAULT);"
+// Leave DEFAULT_ADMIN_HASH empty ('') to disable the fallback.
+const DEFAULT_ADMIN_HASH = '';
 
 // ── Uploads ──────────────────────────────────────────────────────────────────
 const UPLOAD_DIR = __DIR__ . '/uploads';

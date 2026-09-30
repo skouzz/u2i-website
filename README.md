@@ -81,13 +81,7 @@ The rest of this guide assumes that folder name.
 #### B4. Create the local PHP config
 
 In the folder `public/api/`, **copy** `config.local.example.php` and **rename** the copy to **`config.local.php`**.
-The shipped defaults already match XAMPP (`root`, empty password, DB `u2i_cms`, admin login `admin` / `admin123`) — change the admin password if you want:
-
-```bash
-php -r "echo password_hash('yourpassword', PASSWORD_DEFAULT);"
-```
-
-…then paste the result into `DEFAULT_ADMIN_HASH` in `config.local.php`.
+The shipped defaults already match XAMPP (`root`, empty password, DB `u2i_cms`). The admin account is created on first login at `/admin` (setup form) — no password to configure here.
 
 #### B5. Point the Vite dev server at Apache
 
@@ -114,7 +108,7 @@ npm run dev
 Open `http://localhost:3000`:
 
 - The site works like in production
-- **`http://localhost:3000/admin`** — log in with `admin` / `admin123` (or your credentials)
+- **`http://localhost:3000/admin`** — first visit: create your admin account (setup form), then log in with it
 - CMS pages, articles, media uploads, and contact messages all hit your **local MySQL** via phpMyAdmin-visible data
 - Uploads land in `public/api/uploads/`
 
@@ -196,21 +190,7 @@ const DB_PASS = 'YOUR_REAL_PASSWORD';       // ← never commit the real one
 
 > Local development never touches `config.php` — values from `public/api/config.local.php` (XAMPP) override it at runtime.
 
-**Change the admin login** (default is `admin` / `changeme` — do not keep it):
-
-```bash
-# Generate a bcrypt hash of your chosen password (requires PHP locally):
-php -r "echo password_hash('VotreMotDePasseFort', PASSWORD_DEFAULT);"
-```
-
-Paste the result into:
-
-```php
-const DEFAULT_ADMIN_USER = 'admin';                       // or your own login
-const DEFAULT_ADMIN_HASH = '$2y$10$…generated hash…';
-```
-
-(Alternative: define `U2I_ADMIN_USER` / `U2I_ADMIN_HASH` as OVH environment variables instead of editing the file.)
+**Admin account:** no default password exists. On the **first login** at `/admin`, the dashboard shows a one-time **account creation** form (like WordPress): choose your identifiant and a password (min. 8 chars) — it is stored bcrypt-hashed in the `admins` table. You can change it later under *Mon compte*.
 
 Then **re-upload `public/api/config.php`** to `www/api/` on the server.
 
@@ -230,7 +210,7 @@ Optional — better e-mail deliverability: set `PLUNK_API_KEY` at the top of `pu
 
 2. **Delete `public/api/install.php` from the server** (or change `INSTALL_KEY` first) — it's a one-time tool.
 
-3. Go to **`https://your-domain.com/admin`**, log in with your credentials from step 6.
+3. Go to **`https://your-domain.com/admin`** — the first visit shows the **account creation form** (choose identifiant + password). Next visits show the normal login.
 
 4. Go to **Réglages (Settings)** and save your contact e-mail / phone — the contact form uses them.
 
@@ -261,7 +241,7 @@ Workflow: log in → edit → **Save** → refresh the public page. Changes are 
 | --- | --- |
 | Page refresh on `/contact` gives a 404 | `.htaccess` is missing on the server (hidden file — enable "show hidden files" in FileZilla). |
 | News page says the CMS is not installed | You skipped step 7.1 (run `/api/install.php?key=…` once). |
-| Admin login fails with correct credentials | The hash in `config.php` doesn't match the password — regenerate it (step 6) and re-upload. |
+| Admin login fails with correct credentials | The account was created before a schema change — re-run `/api/install.php?key=…` (it does not overwrite data) or reset the account in phpMyAdmin: `DELETE FROM admins;` then reload `/admin` to recreate it via the setup form. |
 | `{"ok":false,…}` from `/api/cms.php` or a 503 | DB constants in `config.php` are wrong, or the database isn't created yet (step 5). |
 | Contact form says "Impossible d'envoyer…" | OVH `mail()` is limited on some offers — set up a [Plunk](https://useplunk.com) API key (step 6) or check with OVH support. |
 | Uploaded images don't appear | Check `www/api/uploads/` exists and is writable (OVH default is fine; re-upload creates it). |

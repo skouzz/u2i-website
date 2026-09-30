@@ -12,6 +12,41 @@ $action = $_GET['a'] ?? '';
 $param = $_GET['p'] ?? '';
 
 // Public (pre-login) actions
+
+/** True when no admin account exists yet (first-run setup mode). */
+function admin_setup_needed(): bool
+{
+    try {
+        return (int) db()->query('SELECT COUNT(*) AS c FROM admins')->fetch()['c'] === 0;
+    } catch (Throwable) {
+        return false; // DB not installed: don't expose setup
+    }
+}
+
+if ($action === 'setup_status' && $method === 'GET') {
+    json_response(['ok' => true, 'setup' => admin_setup_needed()]);
+}
+
+if ($action === 'setup' && $method === 'POST') {
+    if (!admin_setup_needed()) {
+        json_response(['ok' => false, 'message' => "L'administrateur existe déjà."], 409);
+    }
+    $data = read_json_body();
+    $username = field($data, 'username') ?: 'admin';
+    $password = field($data, 'password');
+    if (strlen($password) < 8) {
+        json_response(['ok' => false, 'message' => 'Le mot de passe doit contenir au moins 8 caractères.'], 400);
+    }
+    try {
+        $stmt = db()->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)');
+        $stmt->execute([$username, password_hash($password, PASSWORD_DEFAULT)]);
+        admin_login($username, $password);
+        json_response(['ok' => true, 'csrf' => csrf_token()]);
+    } catch (Throwable $e) {
+        json_response(['ok' => false, 'message' => 'Erreur base de données : ' . $e->getMessage()], 500);
+    }
+}
+
 if ($action === 'login' && $method === 'POST') {
     $data = read_json_body();
     $ok = admin_login(field($data, 'username'), field($data, 'password'));

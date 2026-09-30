@@ -126,6 +126,15 @@ export interface AdminArticlePayload {
 }
 
 export const adminApi = {
+  setupStatus: () => getJson<{ ok: true; setup: boolean }>("/api/admin.php?a=setup_status"),
+
+  setup: (username: string, password: string) =>
+    getJson<{ ok: true; csrf: string }>("/api/admin.php?a=setup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    }),
+
   login: (username: string, password: string) =>
     getJson<{ ok: true; csrf: string }>("/api/admin.php?a=login", {
       method: "POST",

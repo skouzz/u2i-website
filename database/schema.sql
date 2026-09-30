@@ -87,11 +87,16 @@ CREATE TABLE IF NOT EXISTS admins (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Default admin (username: admin / password: changeme — CHANGE IT after first login).
--- The bcrypt hash below corresponds to the password "changeme".
-INSERT INTO admins (username, password_hash)
-SELECT 'admin', '$2y$10$DzZbAgvGxZxWb1Yd6A6yYuJd3WQzZRFMCk2DPzVZG6JgDUmifCbwi'
-WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'admin');
+-- Admin accounts. NO default user is seeded — on first login at /admin the
+-- dashboard shows a one-time "create the admin account" form (like WordPress),
+-- which stores your password bcrypt-hashed via PHP password_hash().
+CREATE TABLE IF NOT EXISTS admins (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default settings row (single-row table).
 INSERT INTO settings (id, site_name, contact_email, contact_phone, address)

@@ -30,17 +30,35 @@ const SECTIONS: { key: SectionKey; label: string; icon: typeof LayoutDashboard }
 ];
 
 function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
-  const [username, setUsername] = useState("");
+  const [mode, setMode] = useState<"checking" | "login" | "setup">("checking");
+  const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    adminApi.setupStatus()
+      .then((res) => setMode(res.setup ? "setup" : "login"))
+      .catch(() => setMode("login"));
+  }, []);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await adminApi.login(username, password);
+      if (mode === "setup") {
+        if (password.length < 8) {
+          throw new Error("Le mot de passe doit contenir au moins 8 caractères.");
+        }
+        if (password !== confirm) {
+          throw new Error("Les deux mots de passe ne correspondent pas.");
+        }
+        await adminApi.setup(username, password);
+      } else {
+        await adminApi.login(username, password);
+      }
       onLoggedIn();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connexion impossible.");
@@ -49,26 +67,54 @@ function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
     }
   };
 
+  if (mode === "checking") {
+    return <div className="admin-loading">Chargement…</div>;
+  }
+
+  const isSetup = mode === "setup";
+
   return (
     <div className="admin-login">
       <form className="admin-login__card" onSubmit={submit}>
         <img src="/api/uploads/logo-u2i.png" alt="" aria-hidden="true" onError={(e) => (e.currentTarget.style.display = "none")} />
         <h1>U2I — Administration</h1>
-        <p>Connectez-vous pour gérer le contenu du site.</p>
-
-        <label>
-          Identifiant
-          <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
-        </label>
-        <label>
-          Mot de passe
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
-        </label>
+        {isSetup ? (
+          <>
+            <p>
+              <strong>Première utilisation :</strong> créez votre compte
+              administrateur pour commencer à gérer le site.
+            </p>
+            <label>
+              Identifiant
+              <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
+            </label>
+            <label>
+              Mot de passe (min. 8 caractères)
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
+            </label>
+            <label>
+              Confirmer le mot de passe
+              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
+            </label>
+          </>
+        ) : (
+          <>
+            <p>Connectez-vous pour gérer le contenu du site.</p>
+            <label>
+              Identifiant
+              <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
+            </label>
+            <label>
+              Mot de passe
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+            </label>
+          </>
+        )}
 
         {error ? <p className="admin-alert admin-alert--error">{error}</p> : null}
 
         <button type="submit" disabled={busy}>
-          {busy ? "Connexion…" : "Se connecter"}
+          {busy ? (isSetup ? "Création…" : "Connexion…") : isSetup ? "Créer mon compte" : "Se connecter"}
         </button>
       </form>
     </div>

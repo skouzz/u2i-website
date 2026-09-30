@@ -124,16 +124,9 @@ try {
     $results['failed'][] = ['sql' => 'settings seed', 'error' => $e->getMessage()];
 }
 
-// Seed the default admin account (username/hash from config) if none exists.
-try {
-    $count = (int) db()->query('SELECT COUNT(*) AS c FROM admins')->fetch()['c'];
-    if ($count === 0) {
-        $stmt = db()->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)');
-        $stmt->execute([U2I_ADMIN_USER, U2I_ADMIN_HASH]);
-    }
-} catch (Throwable $e) {
-    $results['failed'][] = ['sql' => 'admins seed', 'error' => $e->getMessage()];
-}
+// NOTE: no admin user is seeded — the first login at /admin shows a one-time
+// account-creation form (setup mode) which hashes the password with
+// password_hash(). Pre-baked hash strings in config would not verify.
 
 json_response([
     'ok' => count($results['failed']) === 0,
