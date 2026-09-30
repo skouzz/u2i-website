@@ -13,8 +13,11 @@ import { Route as SecteursRouteImport } from './routes/secteurs'
 import { Route as ReferencesRouteImport } from './routes/references'
 import { Route as EquipementsRouteImport } from './routes/equipements'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActualitesIndexRouteImport } from './routes/actualites/index'
+import { Route as ActualitesSlugRouteImport } from './routes/actualites/$slug'
 
 const SecteursRoute = SecteursRouteImport.update({
   id: '/secteurs',
@@ -36,6 +39,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -46,55 +54,97 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ActualitesIndexRoute = ActualitesIndexRouteImport.update({
+  id: '/actualites/',
+  path: '/actualites/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActualitesSlugRoute = ActualitesSlugRouteImport.update({
+  id: '/actualites/$slug',
+  path: '/actualites/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
   '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
+  '/actualites/$slug': typeof ActualitesSlugRoute
+  '/actualites/': typeof ActualitesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
   '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
+  '/actualites/$slug': typeof ActualitesSlugRoute
+  '/actualites': typeof ActualitesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
   '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
+  '/actualites/$slug': typeof ActualitesSlugRoute
+  '/actualites/': typeof ActualitesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/about' | '/contact' | '/equipements' | '/references' | '/secteurs'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/contact' | '/equipements' | '/references' | '/secteurs'
-  id:
-    | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/contact'
     | '/equipements'
     | '/references'
     | '/secteurs'
+    | '/actualites/$slug'
+    | '/actualites/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/contact'
+    | '/equipements'
+    | '/references'
+    | '/secteurs'
+    | '/actualites/$slug'
+    | '/actualites'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/contact'
+    | '/equipements'
+    | '/references'
+    | '/secteurs'
+    | '/actualites/$slug'
+    | '/actualites/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
   EquipementsRoute: typeof EquipementsRoute
   ReferencesRoute: typeof ReferencesRoute
   SecteursRoute: typeof SecteursRoute
+  ActualitesSlugRoute: typeof ActualitesSlugRoute
+  ActualitesIndexRoute: typeof ActualitesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -127,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -141,16 +198,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/actualites/': {
+      id: '/actualites/'
+      path: '/actualites'
+      fullPath: '/actualites/'
+      preLoaderRoute: typeof ActualitesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualites/$slug': {
+      id: '/actualites/$slug'
+      path: '/actualites/$slug'
+      fullPath: '/actualites/$slug'
+      preLoaderRoute: typeof ActualitesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
   EquipementsRoute: EquipementsRoute,
   ReferencesRoute: ReferencesRoute,
   SecteursRoute: SecteursRoute,
+  ActualitesSlugRoute: ActualitesSlugRoute,
+  ActualitesIndexRoute: ActualitesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

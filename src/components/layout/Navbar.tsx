@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: "Secteurs", href: "/secteurs" },
   { label: "Equipements", href: "/equipements" },
   { label: "References", href: "/references" },
+  { label: "Actualités", href: "/actualites" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -119,55 +120,34 @@ export function Navbar() {
           <X className="h-5 w-5" />
         </button>
 
-        <ul className="flex flex-col gap-6">
-          {NAV_LINKS.map((item) => (
-            <li key={item.label}>
-              <a
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="text-2xl font-bold text-white hover:text-[#e0141c] transition-colors block py-1 border-b border-white/10"
-              >
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <nav aria-label="Menu mobile">
+          <ul className="flex flex-col gap-5">
+            {NAV_LINKS.map((item) => (
+              <li key={item.label}>
+                <a
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="text-2xl font-bold text-white transition-colors hover:text-[#e0141c]"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <div className="mt-10 pt-8 border-t border-white/10 space-y-3">
-          <a
-            href="tel:+21650191004"
-            className="flex items-center gap-3 text-sm text-white/70 hover:text-white"
-          >
-            <Phone className="h-4 w-4 text-[#e0141c]" />
-            +216 50 191 004
+        <div className="mt-10 flex items-center gap-5 border-t border-white/10 pt-6">
+          <a href="#" aria-label="Facebook" className="text-white/70 hover:text-[#e0141c]">
+            <Facebook className="h-5 w-5" />
           </a>
-          <a
-            href="mailto:u2i@u2iprocess.com"
-            className="flex items-center gap-3 text-sm text-white/70 hover:text-white"
-          >
-            <Mail className="h-4 w-4 text-[#e0141c]" />
-            <img src={emailIcon} alt="Email" className="w-6 h-6 object-contain inline" />
+          <a href="#" aria-label="YouTube" className="text-white/70 hover:text-[#e0141c]">
+            <Youtube className="h-5 w-5" />
           </a>
-          <div className="flex gap-4 pt-2">
-            <a href="#" aria-label="Facebook" className="text-white/50 hover:text-[#e0141c]">
-              <Facebook className="h-5 w-5" />
-            </a>
-            <a href="#" aria-label="LinkedIn" className="text-white/50 hover:text-[#e0141c]">
-              <Linkedin className="h-5 w-5" />
-            </a>
-            <a href="#" aria-label="YouTube" className="text-white/50 hover:text-[#e0141c]">
-              <Youtube className="h-5 w-5" />
-            </a>
-          </div>
+          <a href="#" aria-label="LinkedIn" className="text-white/70 hover:text-[#e0141c]">
+            <Linkedin className="h-5 w-5" />
+          </a>
         </div>
       </div>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
     </header>
   );
 }

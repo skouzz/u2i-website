@@ -386,8 +386,52 @@ a.contact-detail:hover .contact-detail__icon {
     color 180ms ease;
 }
 
-.contact-form__submit-row button:hover {
+.contact-form__submit-row button:hover:not(:disabled) {
   background: #b90d14;
+}
+
+.contact-form__submit-row button:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.contact-form__honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.contact-form__spinner {
+  animation: contact-form-spin 1s linear infinite;
+}
+
+@keyframes contact-form-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.contact-form__status {
+  margin: 0;
+  max-width: 420px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.contact-form__status--success {
+  color: #2e7d32;
+}
+
+.contact-form__status--error {
+  color: var(--contact-red);
 }
 
 .contact-location {

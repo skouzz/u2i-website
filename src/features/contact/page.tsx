@@ -1,29 +1,74 @@
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Clock3, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Clock3, Loader2, Mail, MapPin, Phone } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
 import workshopImage from "@/assets/about-workshop.jpg";
 
 import "./contact.css";
 
+type SubmitState =
+  | { status: "idle" }
+  | { status: "submitting" }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
+
+const CONTACT_ENDPOINT = "/api/contact.php";
+
 export function ContactPage() {
   const reduceMotion = useReducedMotion();
+  const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const fullName = `${form.get("firstName")} ${form.get("lastName")}`.trim();
-    const subject = String(form.get("subject") ?? "");
-    const body = [
-      `Nom : ${fullName}`,
-      `E-mail : ${form.get("email")}`,
-      `Société : ${form.get("company") || "Non renseignée"}`,
-      "",
-      String(form.get("message") ?? ""),
-    ].join("\n");
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
-    window.location.href = `mailto:u2i@u2iprocess.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSubmitState({ status: "submitting" });
+
+    try {
+      const response = await fetch(CONTACT_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formData.get("firstName"),
+          lastName: formData.get("lastName"),
+          email: formData.get("email"),
+          company: formData.get("company"),
+          subject: formData.get("subject"),
+          message: formData.get("message"),
+          // Honeypot: humans never see or fill this field.
+          website: "",
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; message?: string }
+        | null;
+
+      if (response.ok && payload?.ok) {
+        setSubmitState({
+          status: "success",
+          message:
+            payload.message ??
+            "Merci ! Votre message a bien été envoyé.",
+        });
+        form.reset();
+      } else {
+        setSubmitState({
+          status: "error",
+          message:
+            payload?.message ??
+            "Une erreur est survenue. Merci de réessayer ou d’écrire directement à u2i@u2iprocess.com.",
+        });
+      }
+    } catch {
+      setSubmitState({
+        status: "error",
+        message:
+          "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
+      });
+    }
   };
 
   return (
@@ -125,6 +170,15 @@ export function ContactPage() {
                 </div>
               </div>
               <form className="contact-form" onSubmit={handleSubmit}>
+                {/* Honeypot field — hidden from humans, catches naive bots. */}
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="contact-form__honeypot"
+                  aria-hidden="true"
+                />
                 <div className="contact-form__row">
                   <label>
                     Prénom
@@ -179,9 +233,31 @@ export function ContactPage() {
                   />
                 </label>
                 <div className="contact-form__submit-row">
-                  <button type="submit">
-                    Préparer le courriel <ArrowRight size={17} aria-hidden="true" />
+                  <button
+                    type="submit"
+                    disabled={submitState.status === "submitting"}
+                  >
+                    {submitState.status === "submitting" ? (
+                      <>
+                        <Loader2 size={16} className="contact-form__spinner" aria-hidden="true" />
+                        Envoi en cours…
+                      </>
+                    ) : (
+                      <>
+                        Envoyer le message <ArrowRight size={17} aria-hidden="true" />
+                      </>
+                    )}
                   </button>
+                  {submitState.status === "success" && (
+                    <p className="contact-form__status contact-form__status--success" role="status">
+                      {submitState.message}
+                    </p>
+                  )}
+                  {submitState.status === "error" && (
+                    <p className="contact-form__status contact-form__status--error" role="alert">
+                      {submitState.message}
+                    </p>
+                  )}
                 </div>
               </form>
             </motion.section>

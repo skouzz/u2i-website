@@ -1,0 +1,46 @@
+# U2I Process — Apache configuration for OVH web hosting (static SPA build)
+
+# Serve pre-rendered .html files when they exist (e.g. / -> /index.html, /about -> /about.html)
+DirectoryIndex index.html
+
+# --- SPA fallback -----------------------------------------------------------
+# Rewrite every request that doesn't match an existing file or directory to the
+# TanStack Start SPA shell so client-side routing works on direct visits and
+# after a page refresh (e.g. /contact).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Never expose internals directly
+  RewriteRule ^api/cache/ - [F,L]
+  RewriteRule ^api/config\.php$ - [F,L]
+
+  # Do not rewrite real files/directories (assets, images, .html pages…)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else -> SPA shell (served with HTTP 200)
+  RewriteRule ^ /_shell.html [L]
+</IfModule>
+
+# --- Compression ------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml application/xml
+</IfModule>
+
+# --- Cache headers ----------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # Hashed build assets never change: cache them aggressively
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType video/mp4 "access plus 1 month"
+  # HTML pages are the shell/entrypoint: always revalidate
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
