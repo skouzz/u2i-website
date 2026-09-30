@@ -23,4 +23,15 @@ export default defineConfig({
     react(),
   ],
   resolve: { tsconfigPaths: true },
+  // Local full-stack development with XAMPP: the Vite dev server forwards
+  // /api/* requests to Apache (PHP) so the CMS backend runs exactly like it
+  // will on OVH. Disable when Apache is not running.
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost/u2i-website/public",
+        changeOrigin: true,
+      },
+    },
+  },
 });

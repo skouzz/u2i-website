@@ -13,6 +13,7 @@ DirectoryIndex index.html
   # Never expose internals directly
   RewriteRule ^api/cache/ - [F,L]
   RewriteRule ^api/config\.php$ - [F,L]
+  RewriteRule ^api/config\.local\.php$ - [F,L]
 
   # Do not rewrite real files/directories (assets, images, .html pages…)
   RewriteCond %{REQUEST_FILENAME} -f [OR]

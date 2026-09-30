@@ -10,7 +10,7 @@ This README explains **exactly** how to run the project, step by step.
 ## Table of contents
 
 1. [Prerequisites](#1-prerequisites)
-2. [Run the project locally (development)](#2-run-the-project-locally-development)
+2. [Run the project locally — two options](#2-run-the-project-locally--two-options) (front-end only, or **full stack with XAMPP**)
 3. [Build for production](#3-build-for-production)
 4. [Deploy to OVH web hosting](#4-deploy-to-ovh-web-hosting)
 5. [Set up the MySQL database (OVH)](#5-set-up-the-mysql-database-ovh)
@@ -34,9 +34,9 @@ No database is needed for local development — the site works without MySQL and
 
 ---
 
-## 2. Run the project locally (development)
+## 2. Run the project locally — two options
 
-From the project root:
+### Option A — front-end only (no XAMPP needed)
 
 ```bash
 # 1. Install dependencies (first time only, and after pulling new code)
@@ -46,15 +46,79 @@ npm install
 npm run dev
 ```
 
-Then open the URL printed in the terminal (usually `http://localhost:3000`).
+Open the URL printed in the terminal (usually `http://localhost:3000`).
+All pages render, but the CMS/admin/DB features need PHP (see Option B).
 
-What you get locally:
+### Option B — full stack with XAMPP (Apache + MySQL + phpMyAdmin) ✅
 
-- All static pages: `/`, `/about`, `/secteurs`, `/equipements`, `/references`, `/contact`, `/actualites`
-- The admin dashboard UI at `http://localhost:3000/admin`
-- The contact form (it will submit, but the PHP endpoint does **not** run under Vite — see the note below)
+Everything runs on your machine exactly like on OVH.
 
-> **Note:** PHP files under `public/api/` only execute on a PHP server (OVH). Locally, Vite serves them as plain files, so CMS saving/login and DB storage only work after deploying to OVH (steps 4–7). The site itself renders fine.
+#### B1. Start XAMPP
+
+Open the **XAMPP Control Panel** and click **Start** on:
+
+- **Apache** (runs PHP; default port 80)
+- **MySQL** (runs the database; default port 3306)
+
+#### B2. Put the project inside XAMPP's web root
+
+The PHP files must be reachable by Apache. Clone/copy the project into
+`C:\xampp\htdocs\` (Windows) or `/opt/lampp/htdocs/` (Linux/macOS), e.g.:
+
+```
+C:\xampp\htdocs\u2i-website\
+```
+
+The rest of this guide assumes that folder name.
+
+#### B3. Create the database in phpMyAdmin
+
+1. Open `http://localhost/phpmyadmin`
+2. Click **New** in the left sidebar → database name: **`u2i_cms`** → collation `utf8mb4_unicode_ci` → **Create**
+3. Select the `u2i_cms` database → **Import** tab → choose the file **`database/schema.sql`** from the project → **Go**
+4. You should see 6 tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`
+
+#### B4. Create the local PHP config
+
+In the folder `public/api/`, **copy** `config.local.example.php` and **rename** the copy to **`config.local.php`**.
+The shipped defaults already match XAMPP (`root`, empty password, DB `u2i_cms`, admin login `admin` / `admin123`) — change the admin password if you want:
+
+```bash
+php -r "echo password_hash('yourpassword', PASSWORD_DEFAULT);"
+```
+
+…then paste the result into `DEFAULT_ADMIN_HASH` in `config.local.php`.
+
+#### B5. Point the Vite dev server at Apache
+
+The Vite dev proxy is pre-configured to forward `/api/*` to Apache. If your project folder name is **not** `u2i-website`, edit `vite.config.ts`:
+
+```ts
+server: {
+  proxy: {
+    "/api": {
+      target: "http://localhost/u2i-website/public", // ← your folder name
+      changeOrigin: true,
+    },
+  },
+},
+```
+
+#### B6. Run it
+
+```bash
+npm install   # first time only
+npm run dev
+```
+
+Open `http://localhost:3000`:
+
+- The site works like in production
+- **`http://localhost:3000/admin`** — log in with `admin` / `admin123` (or your credentials)
+- CMS pages, articles, media uploads, and contact messages all hit your **local MySQL** via phpMyAdmin-visible data
+- Uploads land in `public/api/uploads/`
+
+> You now have the **exact same stack as production**: Vite serves the React site, Apache executes the PHP API, MySQL stores the content.
 
 Other useful commands:
 
@@ -121,7 +185,7 @@ At this point everything works except CMS/DB features (steps 5–7 enable them).
 
 ## 6. Configure the back-end
 
-Edit `public/api/config.php` (top of the file):
+Edit `public/api/config.php` (top of the file) — the production values:
 
 ```php
 const DB_HOST = 'u2iprocesscom.mysql.db';   // from step 5.4
@@ -129,6 +193,8 @@ const DB_NAME = 'u2iprocesscomdb';
 const DB_USER = 'u2iprocesscomdb';
 const DB_PASS = 'YOUR_REAL_PASSWORD';       // ← never commit the real one
 ```
+
+> Local development never touches `config.php` — values from `public/api/config.local.php` (XAMPP) override it at runtime.
 
 **Change the admin login** (default is `admin` / `changeme` — do not keep it):
 

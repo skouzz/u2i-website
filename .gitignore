@@ -45,3 +45,8 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Local PHP config (XAMPP credentials) and runtime files
+public/api/config.local.php
+public/api/uploads/
+public/api/cache/
+

@@ -18,9 +18,10 @@ require_once __DIR__ . '/config.php';
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
-/** Optional Plunk (https://useplunk.com) API key; leave empty to use mail(). */
-const PLUNK_API_KEY = '';
-const PLUNK_API_URL = 'https://api.useplunk.com/v1/send';
+/** Optional Plunk (https://useplunk.com) API key; leave empty to use mail().
+ * Overridable via PLUNK_API_KEY in public/api/config.local.php (local dev). */
+define('PLUNK_API_KEY', U2I_PLUNK_API_KEY);
+define('PLUNK_API_URL', 'https://api.useplunk.com/v1/send');
 
 /** Simple time-based throttle per IP (seconds between two submissions). */
 const THROTTLE_SECONDS = 60;
