@@ -4,6 +4,10 @@
   --admin-red: #e0141c;
   --admin-ink: #171b1c;
   --admin-line: #e0e3e0;
+  /* The public site theme paints <body> white-on-black; the dashboard is a
+     light theme. Pin the ink color here so every element that does not set
+     its own color inherits dark text instead of invisible white-on-white. */
+  color: var(--admin-ink);
   min-height: 100vh;
 }
 
@@ -67,6 +71,11 @@
   font-size: 13px;
   outline: 0;
   background: #fff;
+  color: var(--admin-ink);
+}
+
+.admin-login__card input::placeholder {
+  color: #9aa1a2;
 }
 
 .admin-login__card input:focus {
@@ -363,6 +372,12 @@
   font-size: 13px;
   outline: 0;
   background: #fff;
+  color: var(--admin-ink);
+}
+
+.admin-form input::placeholder,
+.admin-form textarea::placeholder {
+  color: #9aa1a2;
 }
 
 .admin-form textarea {
@@ -663,6 +678,7 @@
   padding: 18px 20px 22px;
   display: grid;
   gap: 14px;
+  color: var(--admin-ink);
 }
 
 .admin-modal__head {
@@ -745,6 +761,7 @@
   font-size: 12px;
   min-width: 180px;
   background: #fff;
+  color: var(--admin-ink);
 }
 
 .admin-search:focus {
@@ -1014,6 +1031,7 @@ label.admin-btn.is-dragover {
   outline: 0;
   overflow-y: auto;
   max-height: 60vh;
+  color: var(--admin-ink);
 }
 
 .admin-rte__area:empty::before {
