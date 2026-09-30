@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { adminApi, type CmsMessage } from "@/lib/cms";
+import { BootLoader } from "@/components/loading";
 import type { AdminCtx, SectionKey } from "./types";
 import { DashboardHome } from "./sections/home";
 import { PagesSection } from "./sections/pages";
@@ -71,7 +72,7 @@ function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
   };
 
   if (mode === "checking") {
-    return <div className="admin-loading">Chargement…</div>;
+    return <BootLoader label="Vérification de la session" />;
   }
 
   const isSetup = mode === "setup";
@@ -167,7 +168,7 @@ export function AdminDashboard() {
   const context = useMemo(() => ({ csrf, notify }), [csrf, notify]);
 
   if (status === "checking") {
-    return <div className="admin-loading">Chargement…</div>;
+    return <BootLoader label="Ouverture du tableau de bord" />;
   }
 
   if (status === "guest") {

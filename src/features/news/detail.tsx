@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, UserRound } from "lucide-react";
 
 import { cmsApi } from "@/lib/cms";
+import { ArticleSkeleton } from "@/components/loading";
 import "./news.css";
 import { formatDate } from "./list";
 import { Route } from "@/routes/actualites/$slug";
@@ -51,7 +52,7 @@ export function ArticleDetailPage() {
             <ArrowLeft size={14} /> Toutes les actualités
           </Link>
 
-          {isLoading && <div className="news-empty">Chargement…</div>}
+          {isLoading && <ArticleSkeleton />}
 
           {isError && <div className="news-empty">Article introuvable.</div>}
 

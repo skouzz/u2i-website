@@ -3,6 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Newspaper } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { NewsGridSkeleton } from "@/components/loading";
 import workshopImage from "@/assets/about-workshop.jpg";
 import { cmsApi } from "@/lib/cms";
 import "./news.css";
@@ -47,7 +48,7 @@ export function NewsListPage() {
 
       <section className="contact-main" style={{ background: "#fff" }}>
         <div className="contact-wrap">
-          {isLoading && <div className="news-empty">Chargement des actualités…</div>}
+          {isLoading && <NewsGridSkeleton count={6} />}
 
           {isError && (
             <div className="news-empty">

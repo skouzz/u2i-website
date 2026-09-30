@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Clock3, Mail, MapPin, Phone } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { PageBlocksSkeleton } from "@/components/loading";
 import workshopImage from "@/assets/about-workshop.jpg";
 import { cmsApi, type CmsBlock } from "@/lib/cms";
 import "@/features/contact/contact.css";
@@ -91,11 +92,7 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
   if (isLoading) {
     return (
       <main className="contact-page">
-        <div className="contact-main">
-          <div className="contact-wrap">
-            <div className="news-empty">Chargement…</div>
-          </div>
-        </div>
+        <PageBlocksSkeleton />
       </main>
     );
   }

@@ -1,0 +1,251 @@
+/* U2I branded loading system — red accent on the black canvas,
+   shimmer skeletons that preview the real layouts. */
+
+:root {
+  --u2i-red: #e0141c;
+  --u2i-line: #e0e3e0;
+}
+
+/* ── Route transition progress bar ─────────────────────────────────────── */
+
+.u2i-route-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 200;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.u2i-route-bar__track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, var(--u2i-red) 45%, #ff6268 50%, var(--u2i-red) 55%, transparent);
+  animation: u2i-route-sweep 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes u2i-route-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(380%);
+  }
+}
+
+/* ── Brand mark + full-screen boot loader ──────────────────────────────── */
+
+.u2i-mark {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.u2i-mark__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgb(255 255 255 / 12%);
+  border-top-color: var(--u2i-red);
+  animation: u2i-spin 0.9s linear infinite;
+}
+
+.u2i-mark__core {
+  position: absolute;
+  inset: 22px;
+  border-radius: 3px;
+  background: var(--u2i-red);
+  box-shadow: 0 0 18px rgb(224 20 28 / 55%);
+  animation: u2i-weld 1.8s ease-in-out infinite;
+}
+
+@keyframes u2i-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes u2i-weld {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.55);
+    opacity: 0.5;
+  }
+}
+
+.u2i-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  background: #0a0c0c;
+}
+
+.u2i-boot__inner {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+
+.u2i-boot__word {
+  font-family: var(--font-display, Oswald, sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em; /* balance the tracking on the last letter */
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.u2i-boot__hint {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 55%);
+  animation: u2i-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes u2i-blink {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* ── Skeletons ─────────────────────────────────────────────────────────── */
+
+.u2i-skel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #edf0ed;
+}
+
+.u2i-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 65%), transparent);
+  animation: u2i-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes u2i-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* News grid preview */
+.u2i-skel-grid {
+  display: grid;
+  gap: 26px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  padding: 60px 0 90px;
+}
+
+.u2i-skel-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--u2i-line);
+  background: #fff;
+}
+
+.u2i-skel-card__media {
+  aspect-ratio: 16 / 9;
+}
+
+.u2i-skel-card__body {
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px 24px;
+}
+
+/* Article preview */
+.u2i-skel-article {
+  display: grid;
+  gap: 18px;
+  width: min(820px, calc(100% - 48px));
+  margin-inline: auto;
+  padding: 64px 0 90px;
+}
+
+.u2i-skel--title {
+  height: 42px;
+  width: 78%;
+}
+
+.u2i-skel--meta {
+  height: 12px;
+  width: 180px;
+}
+
+.u2i-skel--cover {
+  height: 380px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.u2i-skel--media {
+  height: 100%;
+  width: 100%;
+  border-radius: 0;
+}
+
+.u2i-skel--line {
+  height: 14px;
+  width: 100%;
+}
+
+.u2i-skel--line--short {
+  width: 62%;
+}
+
+/* CMS blocks preview */
+.u2i-skel-blocks {
+  display: grid;
+  gap: 26px;
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 70px 0 90px;
+}
+
+.u2i-skel--heading {
+  height: 30px;
+  width: 40%;
+}
+
+.u2i-skel--image {
+  height: 300px;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .u2i-route-bar__track,
+  .u2i-mark__ring,
+  .u2i-mark__core,
+  .u2i-skel::after,
+  .u2i-boot__hint {
+    animation: none;
+  }
+
+  .u2i-mark__core {
+    opacity: 0.85;
+  }
+
+  .u2i-skel::after {
+    display: none;
+  }
+}
