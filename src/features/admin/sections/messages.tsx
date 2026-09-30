@@ -4,7 +4,13 @@ import { Check, MailOpen, Trash2 } from "lucide-react";
 import { adminApi, type CmsMessage } from "@/lib/cms";
 import type { AdminCtx } from "../types";
 
-export function MessagesSection({ ctx }: { ctx: AdminCtx }) {
+export function MessagesSection({
+  ctx,
+  onUnreadChange,
+}: {
+  ctx: AdminCtx;
+  onUnreadChange?: () => void;
+}) {
   const [items, setItems] = useState<CmsMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +27,7 @@ export function MessagesSection({ ctx }: { ctx: AdminCtx }) {
     try {
       await adminApi.markMessageRead(ctx.csrf, message.id);
       load();
+      onUnreadChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur.");
     }
@@ -31,6 +38,7 @@ export function MessagesSection({ ctx }: { ctx: AdminCtx }) {
     try {
       await adminApi.deleteMessage(ctx.csrf, message.id);
       load();
+      onUnreadChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de suppression.");
     }

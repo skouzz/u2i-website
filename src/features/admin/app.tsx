@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  KeyRound,
+  FileStack,
   Image as ImageIcon,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -9,7 +10,9 @@ import {
   Settings,
 } from "lucide-react";
 
-import { adminApi } from "@/lib/cms";
+import { adminApi, type CmsMessage } from "@/lib/cms";
+import type { AdminCtx, SectionKey } from "./types";
+import { DashboardHome } from "./sections/home";
 import { PagesSection } from "./sections/pages";
 import { ArticlesSection } from "./sections/articles";
 import { MediaSection } from "./sections/media";
@@ -18,10 +21,9 @@ import { SettingsSection } from "./sections/settings";
 import { AccountSection } from "./sections/account";
 import "./admin.css";
 
-type SectionKey = "pages" | "articles" | "media" | "messages" | "settings" | "account";
-
 const SECTIONS: { key: SectionKey; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: "pages", label: "Pages & sections", icon: LayoutDashboard },
+  { key: "home", label: "Tableau de bord", icon: LayoutDashboard },
+  { key: "pages", label: "Pages", icon: FileStack },
   { key: "articles", label: "Actualités", icon: Newspaper },
   { key: "media", label: "Médiathèque", icon: ImageIcon },
   { key: "messages", label: "Messages", icon: Mail },
@@ -38,7 +40,8 @@ function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    adminApi.setupStatus()
+    adminApi
+      .setupStatus()
       .then((res) => setMode(res.setup ? "setup" : "login"))
       .catch(() => setMode("login"));
   }, []);
@@ -76,7 +79,12 @@ function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
   return (
     <div className="admin-login">
       <form className="admin-login__card" onSubmit={submit}>
-        <img src="/api/uploads/logo-u2i.png" alt="" aria-hidden="true" onError={(e) => (e.currentTarget.style.display = "none")} />
+        <img
+          src="/api/uploads/logo-u2i.png"
+          alt=""
+          aria-hidden="true"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
         <h1>U2I — Administration</h1>
         {isSetup ? (
           <>
@@ -124,8 +132,16 @@ function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
 export function AdminDashboard() {
   const [status, setStatus] = useState<"checking" | "guest" | "admin">("checking");
   const [csrf, setCsrf] = useState("");
-  const [section, setSection] = useState<SectionKey>("pages");
+  const [section, setSection] = useState<SectionKey>("home");
   const [notice, setNotice] = useState<string | null>(null);
+  const [unread, setUnread] = useState(0);
+
+  const refreshUnread = useCallback(() => {
+    adminApi
+      .messages(csrf)
+      .then((res: { items: CmsMessage[] }) => setUnread(res.items.filter((m) => !m.is_read).length))
+      .catch(() => undefined);
+  }, [csrf]);
 
   useEffect(() => {
     adminApi
@@ -137,7 +153,18 @@ export function AdminDashboard() {
       .catch(() => setStatus("guest"));
   }, []);
 
-  const context = useMemo(() => ({ csrf, notify: setNotice }), [csrf]);
+  useEffect(() => {
+    if (status === "admin" && csrf) {
+      refreshUnread();
+    }
+  }, [status, csrf, refreshUnread]);
+
+  const notify = useCallback((message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(null), 3500);
+  }, []);
+
+  const context = useMemo(() => ({ csrf, notify }), [csrf, notify]);
 
   if (status === "checking") {
     return <div className="admin-loading">Chargement…</div>;
@@ -173,6 +200,7 @@ export function AdminDashboard() {
               onClick={() => setSection(key)}
             >
               <Icon size={16} /> {label}
+              {key === "messages" && unread > 0 ? <span className="admin-badge-dot">{unread}</span> : null}
             </button>
           ))}
         </nav>
@@ -198,10 +226,11 @@ export function AdminDashboard() {
           </div>
         </header>
 
+        {section === "home" && <DashboardHome ctx={context} onNavigate={setSection} />}
         {section === "pages" && <PagesSection ctx={context} />}
         {section === "articles" && <ArticlesSection ctx={context} />}
         {section === "media" && <MediaSection ctx={context} />}
-        {section === "messages" && <MessagesSection ctx={context} />}
+        {section === "messages" && <MessagesSection ctx={context} onUnreadChange={refreshUnread} />}
         {section === "settings" && <SettingsSection ctx={context} />}
         {section === "account" && <AccountSection ctx={context} />}
       </main>

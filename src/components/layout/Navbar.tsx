@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Facebook, Linkedin, Mail, Menu, Phone, X, Youtube } from "lucide-react";
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
 import emailIcon from "@/assets/partners/email.png";
+import { cmsApi } from "@/lib/cms";
 
 const NAV_LINKS = [
   { label: "Accueil", href: "/" },
@@ -16,6 +17,31 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [cmsLinks, setCmsLinks] = useState<{ label: string; href: string }[]>([]);
+
+  // Pages créées dans l'admin (avec un libellé de menu) apparaissent
+  // automatiquement dans la navigation, juste avant « Contact ».
+  useEffect(() => {
+    let alive = true;
+    cmsApi
+      .nav()
+      .then((res) => {
+        if (!alive) return;
+        setCmsLinks(
+          res.items
+            .filter((item) => item.label)
+            .map((item) => ({ label: item.label, href: `/p/${item.slug}` })),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const before = NAV_LINKS.filter((l) => l.href !== "/contact");
+  const contact = NAV_LINKS.find((l) => l.href === "/contact");
+  const navLinks = [...before, ...cmsLinks, ...(contact ? [contact] : [])];
 
   return (
     <header
@@ -82,7 +108,7 @@ export function Navbar() {
 
           <nav className="hidden flex-1 lg:block" aria-label="Menu principal">
             <ul className="flex gap-6 [&:hover_a]:opacity-50">
-              {NAV_LINKS.map((item) => (
+              {navLinks.map((item) => (
                 <li key={item.label}>
                   <a
                     href={item.href}
@@ -122,7 +148,7 @@ export function Navbar() {
 
         <nav aria-label="Menu mobile">
           <ul className="flex flex-col gap-5">
-            {NAV_LINKS.map((item) => (
+            {navLinks.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}

@@ -220,18 +220,47 @@ Done — the full CMS is active. 🎉
 
 ## 8. Manage the website (no code)
 
-All at `https://your-domain.com/admin`:
+All at `https://your-domain.com/admin`. The dashboard opens on the **Tableau de bord** with the key numbers and one-click actions.
+
+### 8.1 Tableau de bord (home)
+
+- **Stat cards** — published pages, published articles, images, unread messages. Click a card to jump to that section.
+- **Quick actions** — *Créer une page*, *Écrire un article*, *Ajouter des images*, *Voir le site*.
+- **Derniers messages** — the 5 latest contact-form submissions, unread ones highlighted.
+
+### 8.2 Pages
+
+| Action | How |
+| --- | --- |
+| Create a page | **Nouvelle page** → fill the title → add sections → check **Publier immédiatement** → **Enregistrer**. Live immediately at `/p/<slug>`. |
+| Publish / unpublish | The **Publiée / Brouillon** button on each row toggles it in one click. |
+| Reorder the menu | The ↑ / ↓ arrows on each row move the page up/down in the site navigation. |
+| Edit / delete | Pencil opens the editor; trash deletes (with confirmation). |
+| Hero image & section images | **Choisir…** opens the media library — pick an existing image or upload a new one on the spot. |
+| Show in the navbar | Fill **Libellé dans le menu** (e.g. "Nos services"). The link appears automatically in the public navigation, just before *Contact*. |
+
+A page is built from reorderable **sections**: *Titre de section*, *Texte*, *Image*, *Galerie* (multi-image picker with thumbnail previews), *Coordonnées*.
+
+### 8.3 Actualités
+
+| Action | How |
+| --- | --- |
+| Write an article | **Nouvel article** → title, résumé, content (simple HTML), cover image via **Choisir…** → check **Publier immédiatement** → **Enregistrer**. |
+| Publish / unpublish | One click on the **Publié / Brouillon** button on each row. |
+| Edit / delete | Pencil / trash on each row. |
+
+Articles appear on `/actualites` and at `/actualites/<slug>`.
+
+### 8.4 Other sections
 
 | Section | What you can do |
 | --- | --- |
-| **Pages & sections** | Create pages with a hero banner + reorderable blocks (heading, text, image, gallery, contact info). Add a *menu label + order* to make them appear in the site navigation. Published pages are visible at `/p/<slug>`. |
-| **Actualités** | Write news articles (title, cover image, summary, simple HTML body). They appear on `/actualites` and `/actualites/<slug>`. |
-| **Médiathèque** | Upload images (JPG/PNG/WebP/GIF/SVG, max 12 MB), copy their URL, paste it into pages/articles. |
-| **Messages** | Every contact-form submission is stored here: mark read, reply by e-mail, delete. |
+| **Médiathèque** | Upload images (JPG/PNG/WebP/GIF/SVG, max 12 MB), copy their URL, delete. Also available as a picker inside every page/article form. |
+| **Messages** | Every contact-form submission: unread badge in the sidebar, mark read, reply by e-mail, delete. |
 | **Réglages** | Site name, contact e-mail (form recipient), phone, address, footer note. |
 | **Mon compte** | Change the admin password (stored bcrypt-hashed in the `admins` table). |
 
-Workflow: log in → edit → **Save** → refresh the public page. Changes are live immediately; no rebuild, no FTP.
+Workflow: log in → edit → **Enregistrer** (or just click **Publier**) → the public site is updated immediately; no rebuild, no FTP.
 
 ---
 

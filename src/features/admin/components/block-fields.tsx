@@ -1,6 +1,8 @@
-import { MoveDown, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ImagePlus, MoveDown, Plus, Trash2 } from "lucide-react";
 
 import type { AdminPagePayload } from "@/lib/cms";
+import { MediaPicker } from "./media-picker";
 
 const BLOCK_TYPES = [
   { value: "heading", label: "Titre de section" },
@@ -10,14 +12,12 @@ const BLOCK_TYPES = [
   { value: "contact_info", label: "Coordonnées" },
 ] as const;
 
-export function BlockFields({
-  blocks,
-  onChange,
-}: {
-  blocks: NonNullable<AdminPagePayload["blocks"]>;
-  onChange: (blocks: NonNullable<AdminPagePayload["blocks"]>) => void;
-}) {
-  const update = (index: number, patch: Partial<NonNullable<AdminPagePayload["blocks"]>[number]>) => {
+type Blocks = NonNullable<AdminPagePayload["blocks"]>;
+
+export function BlockFields({ blocks, onChange, csrf }: { blocks: Blocks; onChange: (blocks: Blocks) => void; csrf: string }) {
+  const [picker, setPicker] = useState<{ index: number; multiple: boolean } | null>(null);
+
+  const update = (index: number, patch: Partial<Blocks[number]>) => {
     onChange(blocks.map((block, i) => (i === index ? { ...block, ...patch } : block)));
   };
 
@@ -32,11 +32,14 @@ export function BlockFields({
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", color: "#414849" }}>
-        Sections de la page
+        Sections de la page ({blocks.length})
       </span>
 
       {blocks.length === 0 ? (
-        <p className="admin-hint">Aucune section. Ajoutez des titres, textes, images ou galeries.</p>
+        <p className="admin-hint">
+          Aucune section. Ajoutez des titres, textes, images ou galeries — elles
+          s'afficheront dans l'ordre sur la page.
+        </p>
       ) : null}
 
       {blocks.map((block, index) => (
@@ -86,25 +89,49 @@ export function BlockFields({
 
           {block.type === "image" ? (
             <label>
-              URL de l'image
-              <input
-                value={block.imageUrl ?? ""}
-                onChange={(e) => update(index, { imageUrl: e.target.value })}
-                placeholder="/api/uploads/…"
-              />
+              Image
+              <div className="admin-form__inline">
+                <input
+                  value={block.imageUrl ?? ""}
+                  onChange={(e) => update(index, { imageUrl: e.target.value })}
+                  placeholder="/api/uploads/…"
+                />
+                <button type="button" className="admin-btn" onClick={() => setPicker({ index, multiple: false })}>
+                  <ImagePlus size={13} /> Choisir…
+                </button>
+              </div>
             </label>
           ) : null}
 
           {block.type === "gallery" ? (
-            <label>
-              URLs des images (une par ligne)
-              <textarea
-                value={(block.images ?? []).join("\n")}
-                onChange={(e) => update(index, { images: e.target.value.split("\n").map((v) => v.trim()).filter(Boolean) })}
-                rows={4}
-                placeholder={"/api/uploads/a.jpg\n/api/uploads/b.jpg"}
-              />
-            </label>
+            <>
+              <div className="admin-form__inline">
+                <span className="admin-hint">{(block.images ?? []).length} image(s) dans la galerie</span>
+                <button
+                  type="button"
+                  className="admin-btn"
+                  onClick={() => setPicker({ index, multiple: true })}
+                >
+                  <ImagePlus size={13} /> Ajouter des images
+                </button>
+              </div>
+              {(block.images ?? []).length > 0 ? (
+                <div className="admin-gallery-preview">
+                  {(block.images ?? []).map((src, i) => (
+                    <div key={`${src}-${i}`} className="admin-gallery-preview__item">
+                      <img src={src} alt="" loading="lazy" />
+                      <button
+                        type="button"
+                        title="Retirer"
+                        onClick={() => update(index, { images: (block.images ?? []).filter((_, j) => j !== i) })}
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </>
           ) : null}
 
           {block.type === "contact_info" ? (
@@ -135,6 +162,23 @@ export function BlockFields({
           <Plus size={14} /> Ajouter une section
         </button>
       </div>
+
+      {picker ? (
+        <MediaPicker
+          csrf={csrf}
+          open
+          title={picker.multiple ? "Ajouter à la galerie" : "Choisir une image"}
+          onSelect={(url) => {
+            if (picker.multiple) {
+              const current = blocks[picker.index]?.images ?? [];
+              update(picker.index, { images: [...current, url] });
+            } else {
+              update(picker.index, { imageUrl: url });
+            }
+          }}
+          onClose={() => setPicker(null)}
+        />
+      ) : null}
     </div>
   );
 }

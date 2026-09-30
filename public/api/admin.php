@@ -398,6 +398,64 @@ try {
             }
             json_response(['ok' => true]);
 
+        // ── Dashboard stats ──────────────────────────────────────────────
+        case 'stats':
+            csrf_or_fail();
+            if ($method !== 'GET') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            json_response(['ok' => true, 'stats' => [
+                'pages' => (int) db()->query('SELECT COUNT(*) AS c FROM pages')->fetch()['c'],
+                'pagesPublished' => (int) db()->query('SELECT COUNT(*) AS c FROM pages WHERE is_published = 1')->fetch()['c'],
+                'articles' => (int) db()->query('SELECT COUNT(*) AS c FROM articles')->fetch()['c'],
+                'articlesPublished' => (int) db()->query('SELECT COUNT(*) AS c FROM articles WHERE is_published = 1')->fetch()['c'],
+                'media' => (int) db()->query('SELECT COUNT(*) AS c FROM media')->fetch()['c'],
+                'messages' => (int) db()->query('SELECT COUNT(*) AS c FROM contact_messages')->fetch()['c'],
+                'messagesUnread' => (int) db()->query('SELECT COUNT(*) AS c FROM contact_messages WHERE is_read = 0')->fetch()['c'],
+            ]]);
+
+        // ── One-click publish / unpublish ────────────────────────────────
+        case 'page_publish':
+            csrf_or_fail();
+            if ($method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $data = read_json_body();
+            $published = !empty($data['published']) ? 1 : 0;
+            db()->prepare('UPDATE pages SET is_published = ? WHERE id = ?')
+                ->execute([$published, (int) $param]);
+            json_response(['ok' => true]);
+
+        case 'article_publish':
+            csrf_or_fail();
+            if ($method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $data = read_json_body();
+            $published = !empty($data['published']);
+            if ($published) {
+                db()->prepare('UPDATE articles SET is_published = 1, published_at = COALESCE(published_at, NOW()) WHERE id = ?')
+                    ->execute([(int) $param]);
+            } else {
+                db()->prepare('UPDATE articles SET is_published = 0 WHERE id = ?')
+                    ->execute([(int) $param]);
+            }
+            json_response(['ok' => true]);
+
+        // ── Reorder pages (menu order) ───────────────────────────────────
+        case 'page_reorder':
+            csrf_or_fail();
+            if ($method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $data = read_json_body();
+            $ids = isset($data['ids']) && is_array($data['ids']) ? array_map('intval', $data['ids']) : [];
+            $stmt = db()->prepare('UPDATE pages SET nav_order = ? WHERE id = ?');
+            foreach ($ids as $i => $id) {
+                $stmt->execute([$i + 1, $id]);
+            }
+            json_response(['ok' => true]);
+
         // ── Account ──────────────────────────────────────────────────────
         case 'change_password':
             csrf_or_fail();

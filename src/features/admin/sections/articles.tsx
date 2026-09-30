@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Save, Trash2 } from "lucide-react";
 
 import { adminApi, type AdminArticlePayload, type CmsArticle } from "@/lib/cms";
 import type { AdminCtx } from "../types";
+import { MediaPicker } from "../components/media-picker";
 
 export function ArticlesSection({ ctx }: { ctx: AdminCtx }) {
   const [articles, setArticles] = useState<CmsArticle[]>([]);
@@ -19,10 +20,21 @@ export function ArticlesSection({ ctx }: { ctx: AdminCtx }) {
 
   useEffect(load, [load]);
 
+  const togglePublish = async (article: CmsArticle) => {
+    try {
+      await adminApi.publishArticle(ctx.csrf, article.id, !article.isPublished);
+      ctx.notify(article.isPublished ? "Article dépublié." : "Article publié ! Visible sur /actualites.");
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur.");
+    }
+  };
+
   const handleDelete = async (article: CmsArticle) => {
     if (!window.confirm(`Supprimer l'article « ${article.title} » ?`)) return;
     try {
       await adminApi.deleteArticle(ctx.csrf, article.id);
+      ctx.notify("Article supprimé.");
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de suppression.");
@@ -58,27 +70,31 @@ export function ArticlesSection({ ctx }: { ctx: AdminCtx }) {
         <div className="admin-list">
           {articles.length === 0 ? (
             <p className="admin-hint">
-              Aucun article. Publiez votre première actualité : elle apparaîtra sur
-              la page « Actualités » du site.
+              Aucun article. Cliquez « Nouvel article », écrivez le titre et le
+              texte, choisissez une image de couverture, puis Publier — il
+              apparaît sur la page Actualités.
             </p>
           ) : null}
           {articles.map((article) => (
             <div key={article.id} className="admin-row">
               <span className="admin-row__title">{article.title}</span>
-              <span className="admin-row__meta">/{article.slug}</span>
-              {article.isPublished ? (
-                <span className="admin-badge admin-badge--live">Publiée</span>
-              ) : (
-                <span className="admin-badge admin-badge--draft">Brouillon</span>
-              )}
+              <span className="admin-row__meta">/actualites/{article.slug}</span>
               <span className="admin-row__spacer" />
+              <button
+                className={`admin-btn ${article.isPublished ? "" : "admin-btn--primary"}`}
+                onClick={() => togglePublish(article)}
+                title={article.isPublished ? "Dépublier" : "Publier"}
+              >
+                {article.isPublished ? <Eye size={13} /> : <EyeOff size={13} />}
+                {article.isPublished ? "Publié" : "Brouillon"}
+              </button>
               <a className="admin-btn" href={`/actualites/${article.slug}`} target="_blank" rel="noreferrer">
                 Voir
               </a>
-              <button className="admin-btn" onClick={() => setEditing(article)}>
-                Modifier
+              <button className="admin-btn" onClick={() => setEditing(article)} title="Modifier">
+                <Pencil size={13} />
               </button>
-              <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(article)}>
+              <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(article)} title="Supprimer">
                 <Trash2 size={13} />
               </button>
             </div>
@@ -107,6 +123,7 @@ function ArticleForm({
   const [coverImageUrl, setCoverImageUrl] = useState(article?.coverImageUrl ?? "");
   const [author, setAuthor] = useState(article?.author ?? "");
   const [isPublished, setIsPublished] = useState(Boolean(article?.isPublished));
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,10 +145,11 @@ function ArticleForm({
     try {
       if (article === null) {
         await adminApi.createArticle(ctx.csrf, payload);
+        ctx.notify(isPublished ? "Article créé et publié !" : "Article créé (brouillon).");
       } else {
         await adminApi.updateArticle(ctx.csrf, article.id, payload);
+        ctx.notify("Article enregistré.");
       }
-      ctx.notify("Article enregistré.");
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur d'enregistrement.");
@@ -148,7 +166,7 @@ function ArticleForm({
           <input value={title} onChange={(e) => setTitle(e.target.value)} required />
         </label>
         <label>
-          Slug (URL)
+          Adresse (slug)
           <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="auto" />
         </label>
         <label>
@@ -159,12 +177,17 @@ function ArticleForm({
 
       <div className="admin-form__row">
         <label>
-          Image de couverture (URL)
-          <input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="/api/uploads/…" />
+          Image de couverture
+          <div className="admin-form__inline">
+            <input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="/api/uploads/…" />
+            <button type="button" className="admin-btn" onClick={() => setPickerOpen(true)}>
+              Choisir…
+            </button>
+          </div>
         </label>
         <label className="admin-form__check">
           <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
-          Publier cet article
+          Publier immédiatement
         </label>
       </div>
 
@@ -196,6 +219,14 @@ function ArticleForm({
           Annuler
         </button>
       </div>
+
+      <MediaPicker
+        csrf={ctx.csrf}
+        open={pickerOpen}
+        title="Image de couverture"
+        onSelect={setCoverImageUrl}
+        onClose={() => setPickerOpen(false)}
+      />
     </form>
   );
 }

@@ -125,8 +125,39 @@ export interface AdminArticlePayload {
   publishedAt?: string;
 }
 
+export interface AdminStats {
+  pages: number;
+  pagesPublished: number;
+  articles: number;
+  articlesPublished: number;
+  media: number;
+  messages: number;
+  messagesUnread: number;
+}
+
 export const adminApi = {
   setupStatus: () => getJson<{ ok: true; setup: boolean }>("/api/admin.php?a=setup_status"),
+
+  stats: (csrf: string) =>
+    getJson<{ ok: true; stats: AdminStats }>("/api/admin.php?a=stats", withCsrf({}, csrf)),
+
+  publishPage: (csrf: string, id: number, published: boolean) =>
+    getJson<{ ok: true }>(
+      "/api/admin.php?a=page_publish",
+      withCsrf({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ published }) }, csrf),
+    ),
+
+  publishArticle: (csrf: string, id: number, published: boolean) =>
+    getJson<{ ok: true }>(
+      "/api/admin.php?a=article_publish",
+      withCsrf({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ published }) }, csrf),
+    ),
+
+  reorderPages: (csrf: string, ids: number[]) =>
+    getJson<{ ok: true }>(
+      "/api/admin.php?a=page_reorder",
+      withCsrf({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) }, csrf),
+    ),
 
   setup: (username: string, password: string) =>
     getJson<{ ok: true; csrf: string }>("/api/admin.php?a=setup", {
