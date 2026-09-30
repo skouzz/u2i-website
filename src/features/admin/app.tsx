@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  FileText,
+  KeyRound,
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
   Mail,
   Newspaper,
-  RefreshCw,
   Settings,
 } from "lucide-react";
 
@@ -16,9 +15,10 @@ import { ArticlesSection } from "./sections/articles";
 import { MediaSection } from "./sections/media";
 import { MessagesSection } from "./sections/messages";
 import { SettingsSection } from "./sections/settings";
+import { AccountSection } from "./sections/account";
 import "./admin.css";
 
-type SectionKey = "pages" | "articles" | "media" | "messages" | "settings";
+type SectionKey = "pages" | "articles" | "media" | "messages" | "settings" | "account";
 
 const SECTIONS: { key: SectionKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: "pages", label: "Pages & sections", icon: LayoutDashboard },
@@ -26,6 +26,7 @@ const SECTIONS: { key: SectionKey; label: string; icon: typeof LayoutDashboard }
   { key: "media", label: "Médiathèque", icon: ImageIcon },
   { key: "messages", label: "Messages", icon: Mail },
   { key: "settings", label: "Réglages", icon: Settings },
+  { key: "account", label: "Mon compte", icon: KeyRound },
 ];
 
 function LoginGate({ onLoggedIn }: { onLoggedIn: () => void }) {
@@ -156,6 +157,7 @@ export function AdminDashboard() {
         {section === "media" && <MediaSection ctx={context} />}
         {section === "messages" && <MessagesSection ctx={context} />}
         {section === "settings" && <SettingsSection ctx={context} />}
+        {section === "account" && <AccountSection ctx={context} />}
       </main>
     </div>
   );

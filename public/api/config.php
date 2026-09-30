@@ -149,7 +149,8 @@ function admin_login(string $username, string $password): bool
 {
     admin_session_start();
 
-    if (!hash_equals(U2I_ADMIN_USER, $username) || !password_verify($password, U2I_ADMIN_HASH)) {
+    $hash = admin_password_hash_for($username);
+    if ($hash === null || !password_verify($password, $hash)) {
         usleep(400000); // slow brute force
         return false;
     }
@@ -159,6 +160,30 @@ function admin_login(string $username, string $password): bool
     $_SESSION['admin_at'] = time();
 
     return true;
+}
+
+/**
+ * Look up a user's bcrypt hash: database `admins` table first (editable from
+ * the dashboard), then the config/env credentials as fallback.
+ */
+function admin_password_hash_for(string $username): ?string
+{
+    try {
+        $stmt = db()->prepare('SELECT password_hash FROM admins WHERE username = ? LIMIT 1');
+        $stmt->execute([$username]);
+        $row = $stmt->fetch();
+        if (is_array($row) && $row['password_hash'] !== '') {
+            return (string) $row['password_hash'];
+        }
+    } catch (Throwable) {
+        // DB not installed/reachable — fall back to config credentials.
+    }
+
+    if (hash_equals(U2I_ADMIN_USER, $username) && U2I_ADMIN_HASH !== '') {
+        return U2I_ADMIN_HASH;
+    }
+
+    return null;
 }
 
 function admin_logout(): void

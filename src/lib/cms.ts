@@ -208,6 +208,15 @@ export const adminApi = {
   messages: (csrf: string) =>
     getJson<{ ok: true; items: CmsMessage[] }>("/api/admin.php?a=messages", withCsrf({}, csrf)),
 
+  changePassword: (csrf: string, currentPassword: string, newPassword: string) =>
+    getJson<{ ok: true }>(
+      "/api/admin.php?a=change_password",
+      withCsrf(
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) },
+        csrf,
+      ),
+    ),
+
   markMessageRead: (csrf: string, id: number) =>
     getJson<{ ok: true }>(`/api/admin.php?a=message&p=${id}`, withCsrf({ method: "POST" }, csrf)),
 

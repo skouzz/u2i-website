@@ -351,6 +351,43 @@ try {
             }
             json_response(['ok' => true]);
 
+        // ── Account ──────────────────────────────────────────────────────
+        case 'change_password':
+            csrf_or_fail();
+            if ($method !== 'POST') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $data = read_json_body();
+            $current = field($data, 'currentPassword');
+            $new = field($data, 'newPassword');
+            if (strlen($new) < 8) {
+                json_response(['ok' => false, 'message' => 'Le nouveau mot de passe doit contenir au moins 8 caractères.'], 400);
+            }
+
+            admin_session_start();
+            $username = U2I_ADMIN_USER;
+            $hash = admin_password_hash_for($username);
+            if ($hash === null || !password_verify($current, $hash)) {
+                json_response(['ok' => false, 'message' => 'Mot de passe actuel incorrect.'], 400);
+            }
+
+            try {
+                $stmt = db()->prepare('SELECT id FROM admins WHERE username = ? LIMIT 1');
+                $stmt->execute([$username]);
+                $row = $stmt->fetch();
+                $newHash = password_hash($new, PASSWORD_DEFAULT);
+                if ($row) {
+                    db()->prepare('UPDATE admins SET password_hash = ? WHERE id = ?')
+                        ->execute([$newHash, (int) $row['id']]);
+                } else {
+                    db()->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)')
+                        ->execute([$username, $newHash]);
+                }
+                json_response(['ok' => true]);
+            } catch (Throwable $e) {
+                json_response(['ok' => false, 'message' => 'Base de données indisponible : ' . $e->getMessage()], 500);
+            }
+
         // ── Contact messages ─────────────────────────────────────────────
         case 'messages':
             csrf_or_fail();

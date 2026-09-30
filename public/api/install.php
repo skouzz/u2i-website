@@ -90,6 +90,14 @@ $statements = [
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_messages_read (is_read, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    "CREATE TABLE IF NOT EXISTS admins (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
 
 $results = ['created' => [], 'already_existed' => [], 'failed' => []];
@@ -114,6 +122,17 @@ try {
     }
 } catch (Throwable $e) {
     $results['failed'][] = ['sql' => 'settings seed', 'error' => $e->getMessage()];
+}
+
+// Seed the default admin account (username/hash from config) if none exists.
+try {
+    $count = (int) db()->query('SELECT COUNT(*) AS c FROM admins')->fetch()['c'];
+    if ($count === 0) {
+        $stmt = db()->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)');
+        $stmt->execute([U2I_ADMIN_USER, U2I_ADMIN_HASH]);
+    }
+} catch (Throwable $e) {
+    $results['failed'][] = ['sql' => 'admins seed', 'error' => $e->getMessage()];
 }
 
 json_response([

@@ -76,7 +76,7 @@ The rest of this guide assumes that folder name.
 1. Open `http://localhost/phpmyadmin`
 2. Click **New** in the left sidebar → database name: **`u2i_cms`** → collation `utf8mb4_unicode_ci` → **Create**
 3. Select the `u2i_cms` database → **Import** tab → choose the file **`database/schema.sql`** from the project → **Go**
-4. You should see 6 tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`
+4. You should see 7 tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `admins`
 
 #### B4. Create the local PHP config
 
@@ -226,7 +226,7 @@ Optional — better e-mail deliverability: set `PLUNK_API_KEY` at the top of `pu
    https://your-domain.com/api/install.php?key=u2i-install-2024
    ```
 
-   You should see: `{"ok":true,"message":"Base de données installée…"}`. The tables (`pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `settings`) are created.
+   You should see: `{"ok":true,"message":"Base de données installée…"}`. The tables (`pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `settings`, `admins`) are created. The default admin account (from your config, or `admin` / `changeme`) is seeded into the `admins` table.
 
 2. **Delete `public/api/install.php` from the server** (or change `INSTALL_KEY` first) — it's a one-time tool.
 
@@ -249,6 +249,7 @@ All at `https://your-domain.com/admin`:
 | **Médiathèque** | Upload images (JPG/PNG/WebP/GIF/SVG, max 12 MB), copy their URL, paste it into pages/articles. |
 | **Messages** | Every contact-form submission is stored here: mark read, reply by e-mail, delete. |
 | **Réglages** | Site name, contact e-mail (form recipient), phone, address, footer note. |
+| **Mon compte** | Change the admin password (stored bcrypt-hashed in the `admins` table). |
 
 Workflow: log in → edit → **Save** → refresh the public page. Changes are live immediately; no rebuild, no FTP.
 
