@@ -17,6 +17,17 @@ if ($method !== 'GET') {
     json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 }
 
+/**
+ * Draft preview: when a logged-in admin opens ?preview=1, unpublished pages
+ * and articles become visible to them only. Everyone else keeps the strict
+ * published-only behavior.
+ */
+$adminPreview = false;
+if (isset($_GET['preview']) && $_GET['preview'] === '1') {
+    admin_session_start();
+    $adminPreview = !empty($_SESSION['admin']);
+}
+
 /** Map a raw pages row to the camelCase shape the site expects. */
 function map_public_page(array $row): array
 {
@@ -183,14 +194,20 @@ try {
             if ($param === '') {
                 json_response(['ok' => false, 'message' => 'Missing slug.'], 400);
             }
-            $stmt = db()->prepare('SELECT id, slug, title, eyebrow, hero_title, hero_text, hero_image_url, seo_json FROM pages WHERE slug = ? AND status = \'published\' LIMIT 1');
+            $stmt = db()->prepare('SELECT id, slug, title, eyebrow, hero_title, hero_text, hero_image_url, status, seo_json FROM pages WHERE slug = ? AND status = \'published\' LIMIT 1');
             $stmt->execute([$param]);
             $page = $stmt->fetch();
+            if (!$page && $adminPreview) {
+                // Draft/scheduled preview — admins only (see $adminPreview).
+                $stmt = db()->prepare('SELECT id, slug, title, eyebrow, hero_title, hero_text, hero_image_url, status, seo_json FROM pages WHERE slug = ? LIMIT 1');
+                $stmt->execute([$param]);
+                $page = $stmt->fetch();
+            }
             if (!$page) {
                 json_response(['ok' => false, 'message' => 'Page introuvable.'], 404);
             }
 
-            $blocks = db()->prepare('SELECT type, title, body, image_url, images_json FROM page_blocks WHERE page_id = ? ORDER BY sort_order ASC');
+            $blocks = db()->prepare('SELECT type, title, body, image_url, images_json, is_visible FROM page_blocks WHERE page_id = ? AND is_visible = 1 ORDER BY sort_order ASC');
             $blocks->execute([(int) $page['id']]);
 
             json_response(['ok' => true, 'page' => map_public_page($page), 'blocks' => array_map('map_public_block', $blocks->fetchAll())]);
@@ -209,9 +226,14 @@ try {
             if ($param === '') {
                 json_response(['ok' => false, 'message' => 'Missing slug.'], 400);
             }
-            $stmt = db()->prepare('SELECT id, slug, title, excerpt, body, cover_image_url, author, category_id, published_at, seo_json FROM articles WHERE slug = ? AND status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW() LIMIT 1');
+            $stmt = db()->prepare('SELECT id, slug, title, excerpt, body, cover_image_url, author, category_id, published_at, status, seo_json FROM articles WHERE slug = ? AND status = \'published\' AND published_at IS NOT NULL AND published_at <= NOW() LIMIT 1');
             $stmt->execute([$param]);
             $article = $stmt->fetch();
+            if (!$article && $adminPreview) {
+                $stmt = db()->prepare('SELECT id, slug, title, excerpt, body, cover_image_url, author, category_id, published_at, status, seo_json FROM articles WHERE slug = ? LIMIT 1');
+                $stmt->execute([$param]);
+                $article = $stmt->fetch();
+            }
             if (!$article) {
                 json_response(['ok' => false, 'message' => 'Article introuvable.'], 404);
             }

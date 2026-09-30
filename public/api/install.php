@@ -265,6 +265,29 @@ ensure_column($pdo, 'settings', 'seo_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'social_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'home_json', 'JSON NULL');
 
+// v2.1 — page builder: per-section visibility + richer block types.
+// ENUM widen must be guarded (an ALTER on an up-to-date column is harmless but
+// noisy; skip when the type already carries every value).
+try {
+    $stmt = $pdo->prepare(
+        'SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+    );
+    $stmt->execute(['page_blocks', 'type']);
+    $colType = (string) ($stmt->fetch()['COLUMN_TYPE'] ?? '');
+    $wanted = ["'button'", "'quote'", "'spacer'", "'video'", "'html'"];
+    $missing = array_filter($wanted, static fn ($v) => strpos($colType, $v) === false);
+    if ($colType !== '' && $missing) {
+        $pdo->exec(
+            "ALTER TABLE page_blocks MODIFY COLUMN type ENUM('heading','text','image','gallery','contact_info','button','quote','spacer','video','html') NOT NULL DEFAULT 'heading'"
+        );
+        $results['migrated'][] = 'page_blocks.type widened (+button,quote,spacer,video,html)';
+    }
+} catch (Throwable $e) {
+    $results['failed'][] = ['sql' => 'page_blocks.type widen', 'error' => $e->getMessage()];
+}
+
+ensure_column($pdo, 'page_blocks', 'is_visible', 'TINYINT(1) NOT NULL DEFAULT 1');
+
 try {
     $pdo->exec("CREATE INDEX idx_pages_pub ON pages (is_published, published_at)");
 } catch (Throwable) {

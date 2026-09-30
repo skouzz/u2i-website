@@ -6,6 +6,7 @@ import { PageBlocksSkeleton } from "@/components/loading";
 import workshopImage from "@/assets/about-workshop.jpg";
 import { cmsApi, type CmsBlock } from "@/lib/cms";
 import { useSeo } from "@/lib/seo";
+import { sanitizeArticleHtml as sanitizeBlockHtml } from "@/lib/sanitize-html";
 import "@/features/contact/contact.css";
 import "./cms-page.css";
 
@@ -23,9 +24,76 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
       return (
         <>
           {block.title ? <h3 className="cms-block-subheading">{block.title}</h3> : null}
-          {block.body ? <p className="cms-block-text">{block.body}</p> : null}
+          {block.body ? (
+            <div
+              className="cms-block-text"
+              dangerouslySetInnerHTML={{ __html: sanitizeBlockHtml(block.body) }}
+            />
+          ) : null}
         </>
       );
+
+    case "button":
+      if (!block.title || !block.body) return null;
+      return (
+        <p className="cms-block-button">
+          <a
+            className="contact-submit"
+            href={block.body}
+            target={block.body.startsWith("http") ? "_blank" : undefined}
+            rel={block.body.startsWith("http") ? "noreferrer" : undefined}
+          >
+            {block.title}
+          </a>
+        </p>
+      );
+
+    case "quote":
+      return block.body ? (
+        <blockquote className="cms-block-quote">
+          <p>{block.body}</p>
+          {block.title ? <cite>— {block.title}</cite> : null}
+        </blockquote>
+      ) : null;
+
+    case "spacer": {
+      const height = Math.min(Math.max(parseInt(block.body ?? "48", 10) || 48, 8), 400);
+      return <div style={{ height }} aria-hidden="true" />;
+    }
+
+    case "video": {
+      const src = block.imageUrl ?? "";
+      const embed = src.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/,
+      );
+      if (!src) return null;
+      return embed ? (
+        <figure className="cms-block-video">
+          <div className="cms-block-video__frame">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${embed[1]}`}
+              title={block.title ?? "Vidéo"}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+          {block.title ? <figcaption>{block.title}</figcaption> : null}
+        </figure>
+      ) : (
+        <p className="cms-block-text">
+          <a href={src} target="_blank" rel="noreferrer">
+            {block.title || "Voir la vidéo"}
+          </a>
+        </p>
+      );
+    }
+
+    case "html":
+      // Admin-authored HTML (dashboard access is authenticated + CSRF-guarded).
+      return block.body ? (
+        <div className="cms-block-html" dangerouslySetInnerHTML={{ __html: block.body }} />
+      ) : null;
 
     case "image":
       return block.imageUrl ? (
@@ -93,9 +161,14 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
 }
 
 export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
+  // Draft preview: the API only honors ?preview=1 for logged-in admins — this
+  // flag just asks the backend; authorization is enforced server-side.
+  const wantsPreview =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "1";
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["cms", "page", slug],
-    queryFn: () => cmsApi.page(slug),
+    queryKey: ["cms", "page", slug, wantsPreview ? "preview" : "live"],
+    queryFn: () => cmsApi.page(slug, wantsPreview),
     retry: 1,
   });
 
@@ -106,6 +179,11 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
     description: page?.heroText ?? undefined,
     seo: page?.seo,
     ogImage: page?.heroImageUrl,
+    path: `/p/${slug}`,
+    breadcrumbs: [
+      { label: "Accueil", path: "/" },
+      { label: page?.title ?? slug, path: `/p/${slug}` },
+    ],
   });
 
   if (isLoading) {

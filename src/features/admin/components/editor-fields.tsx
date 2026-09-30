@@ -70,6 +70,16 @@ export function SeoFields({ seo, onChange }: { seo: CmsSeo; onChange: (seo: CmsS
           />
         </label>
         <label>
+          Image Twitter/X (optionnelle — utilise l'image OG sinon)
+          <input
+            value={seo.twitterImage ?? ""}
+            onChange={(e) => set({ twitterImage: e.target.value })}
+            placeholder="/api/uploads/…"
+          />
+        </label>
+      </div>
+      <div className="admin-form__row">
+        <label>
           Robots
           <select value={seo.robots ?? ""} onChange={(e) => set({ robots: e.target.value })}>
             <option value="">index, follow (défaut)</option>
@@ -79,7 +89,45 @@ export function SeoFields({ seo, onChange }: { seo: CmsSeo; onChange: (seo: CmsS
           </select>
         </label>
       </div>
+      <SeoHints seo={seo} />
     </fieldset>
+  );
+}
+
+/** Honest length hints (no fake scores) — mirrors Google snippet truncation. */
+function SeoHints({ seo }: { seo: CmsSeo }) {
+  const title = (seo.seoTitle ?? "").trim();
+  const desc = (seo.seoDescription ?? "").trim();
+  const hints: { text: string; bad: boolean }[] = [];
+  if (title.length > 60)
+    hints.push({
+      text: `Titre SEO : ${title.length} caractères — sera tronqué (~60 max).`,
+      bad: true,
+    });
+  else if (title.length > 0 && title.length < 15)
+    hints.push({ text: `Titre SEO court (${title.length}/15 min conseillé).`, bad: true });
+  if (desc.length > 160)
+    hints.push({
+      text: `Méta description : ${desc.length} caractères — sera tronquée (~160 max).`,
+      bad: true,
+    });
+  else if (desc.length > 0 && desc.length < 50)
+    hints.push({ text: `Méta description courte (${desc.length}/50 min conseillé).`, bad: true });
+  if (!seo.ogImage)
+    hints.push({
+      text: "Aucune image de partage (OG) — les réseaux afficheront un lien sans visuel.",
+      bad: false,
+    });
+  if (hints.length === 0) return null;
+  return (
+    <div style={{ display: "grid", gap: 4 }}>
+      {hints.map((h) => (
+        <small key={h.text} style={{ color: h.bad ? "#b45309" : "#737a7b", fontSize: 11 }}>
+          {h.bad ? "⚠ " : "ℹ "}
+          {h.text}
+        </small>
+      ))}
+    </div>
   );
 }
 

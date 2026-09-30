@@ -33,19 +33,20 @@ CREATE TABLE IF NOT EXISTS pages (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS page_blocks (
-    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    page_id INT UNSIGNED NOT NULL,
-    type ENUM('heading','text','image','gallery','contact_info') NOT NULL,
-    sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-    title TEXT NULL,
-    body MEDIUMTEXT NULL,
-    image_url VARCHAR(500) NULL,
-    images_json JSON NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_blocks_page FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE,
-    INDEX idx_blocks_page (page_id, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS    page_blocks (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        page_id INT UNSIGNED NOT NULL,
+        type ENUM('heading','text','image','gallery','contact_info','button','quote','spacer','video','html') NOT NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        title TEXT NULL,
+        body MEDIUMTEXT NULL,
+        image_url VARCHAR(500) NULL,
+        images_json JSON NULL,
+        is_visible TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_blocks_page FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE,
+        INDEX idx_blocks_page (page_id, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS articles (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

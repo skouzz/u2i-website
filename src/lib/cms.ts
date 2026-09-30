@@ -3,7 +3,17 @@
  * All endpoints live under /api (see public/api/*.php).
  */
 
-export type CmsBlockType = "heading" | "text" | "image" | "gallery" | "contact_info";
+export type CmsBlockType =
+  | "heading"
+  | "text"
+  | "image"
+  | "gallery"
+  | "contact_info"
+  | "button"
+  | "quote"
+  | "spacer"
+  | "video"
+  | "html";
 
 export type CmsStatus = "draft" | "pending" | "scheduled" | "published" | "archived";
 
@@ -14,6 +24,7 @@ export interface CmsSeo {
   ogTitle?: string;
   ogDescription?: string;
   ogImage?: string;
+  twitterImage?: string;
   robots?: string;
 }
 
@@ -23,6 +34,8 @@ export interface CmsBlock {
   body?: string | null;
   imageUrl?: string | null;
   images?: string[] | null;
+  /** Builder: hidden sections stay in the page but are not rendered publicly. */
+  isVisible?: boolean | null;
 }
 
 export interface CmsPage {
@@ -272,16 +285,16 @@ export const cmsApi = {
 
   footerMenu: () => getJson<{ ok: true; items: CmsNavItem[] }>("/api/cms.php?r=footer_menu"),
 
-  page: (slug: string) =>
+  page: (slug: string, preview = false) =>
     getJson<{ ok: true; page: CmsPage; blocks: CmsBlock[] }>(
-      `/api/cms.php?r=page&p=${encodeURIComponent(slug)}`,
+      `/api/cms.php?r=page&p=${encodeURIComponent(slug)}${preview ? "&preview=1" : ""}`,
     ),
 
   articles: () => getJson<{ ok: true; items: CmsArticle[] }>("/api/cms.php?r=articles"),
 
-  article: (slug: string) =>
+  article: (slug: string, preview = false) =>
     getJson<{ ok: true; article: CmsArticle }>(
-      `/api/cms.php?r=article&p=${encodeURIComponent(slug)}`,
+      `/api/cms.php?r=article&p=${encodeURIComponent(slug)}${preview ? "&preview=1" : ""}`,
     ),
 
   home: () => getJson<{ ok: true; items: CmsHomeBlock[] }>("/api/cms.php?r=home"),

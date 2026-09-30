@@ -209,7 +209,15 @@ export function PagesSection({ ctx }: { ctx: AdminCtx }) {
                 {page.isPublished ? <Eye size={13} /> : <EyeOff size={13} />}
                 {page.isPublished ? "Publiée" : "Brouillon"}
               </button>
-              <a className="admin-btn" href={`/p/${page.slug}`} target="_blank" rel="noreferrer">
+              <a
+                className="admin-btn"
+                href={`/p/${page.slug}${page.isPublished ? "" : "?preview=1"}`}
+                target="_blank"
+                rel="noreferrer"
+                title={
+                  page.isPublished ? "Voir la page" : "Aperçu (brouillon, visible par les admins)"
+                }
+              >
                 Voir
               </a>
               <button className="admin-btn" onClick={() => setEditing(page)} title="Modifier">
@@ -279,7 +287,10 @@ function PageForm({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(page !== null);
+  // `loaded` guards the detail fetch: for an EXISTING page we must fetch its
+  // blocks once (the list endpoint does not include them) — otherwise saving
+  // the form would silently wipe every section of the page.
+  const [loaded, setLoaded] = useState(page === null);
 
   useEffect(() => {
     if (page === null || loaded) return;
@@ -294,6 +305,7 @@ function PageForm({
             body: b.body ?? "",
             imageUrl: b.imageUrl ?? "",
             images: b.images ?? [],
+            isVisible: b.isVisible !== false,
           })),
         );
         setSlug(res.page.slug);

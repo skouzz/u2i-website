@@ -168,9 +168,14 @@ export function ArticlesSection({ ctx }: { ctx: AdminCtx }) {
               </button>
               <a
                 className="admin-btn"
-                href={`/actualites/${article.slug}`}
+                href={`/actualites/${article.slug}${article.isPublished ? "" : "?preview=1"}`}
                 target="_blank"
                 rel="noreferrer"
+                title={
+                  article.isPublished
+                    ? "Voir l'article"
+                    : "Aperçu (brouillon, visible par les admins)"
+                }
               >
                 Voir
               </a>

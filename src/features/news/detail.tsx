@@ -4,42 +4,20 @@ import { ArrowLeft, CalendarDays, UserRound } from "lucide-react";
 
 import { cmsApi } from "@/lib/cms";
 import { useSeo } from "@/lib/seo";
+import { sanitizeArticleHtml } from "@/lib/sanitize-html";
 import { ArticleSkeleton } from "@/components/loading";
 import "./news.css";
 import { formatDate } from "./list";
 import { Route } from "@/routes/actualites/$slug";
 
-/**
- * Minimal HTML sanitizer for CMS-authored article bodies.
- * Removes script/style/iframe/object/embed blocks and on* / javascript: attributes.
- */
-function sanitizeArticleHtml(html: string): string {
-  const template = document.createElement("template");
-  template.innerHTML = html;
-
-  const forbiddenTags = new Set(["script", "style", "iframe", "object", "embed", "link", "meta"]);
-  template.content.querySelectorAll("*").forEach((el) => {
-    if (forbiddenTags.has(el.tagName.toLowerCase())) {
-      el.remove();
-      return;
-    }
-    for (const attr of Array.from(el.attributes)) {
-      const name = attr.name.toLowerCase();
-      const value = attr.value.trim().toLowerCase();
-      if (name.startsWith("on") || (name === "href" && value.startsWith("javascript:"))) {
-        el.removeAttribute(attr.name);
-      }
-    }
-  });
-
-  return template.innerHTML;
-}
-
 export function ArticleDetailPage() {
   const { slug } = Route.useParams();
+  const wantsPreview =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "1";
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["cms", "article", slug],
-    queryFn: () => cmsApi.article(slug),
+    queryKey: ["cms", "article", slug, wantsPreview ? "preview" : "live"],
+    queryFn: () => cmsApi.article(slug, wantsPreview),
     retry: 1,
   });
 
@@ -50,6 +28,23 @@ export function ArticleDetailPage() {
     description: article?.excerpt ?? undefined,
     seo: article?.seo,
     ogImage: article?.coverImageUrl,
+    ogType: "article",
+    path: `/actualites/${slug}`,
+    article: article
+      ? {
+          headline: article.title,
+          description: article.excerpt,
+          image: article.coverImageUrl,
+          datePublished: article.publishedAt,
+          dateModified: article.updatedAt ?? article.publishedAt,
+          author: article.author,
+        }
+      : null,
+    breadcrumbs: [
+      { label: "Accueil", path: "/" },
+      { label: "Actualités", path: "/actualites" },
+      { label: article?.title ?? slug, path: `/actualites/${slug}` },
+    ],
   });
 
   return (

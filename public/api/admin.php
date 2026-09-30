@@ -149,7 +149,7 @@ function snapshot_page(int $pageId, string $author): void
     if (!$pageRow) {
         return;
     }
-    $blocks = db()->prepare('SELECT type, sort_order, title, body, image_url, images_json FROM page_blocks WHERE page_id = ? ORDER BY sort_order ASC');
+    $blocks = db()->prepare('SELECT type, sort_order, title, body, image_url, images_json, is_visible FROM page_blocks WHERE page_id = ? ORDER BY sort_order ASC');
     $blocks->execute([$pageId]);
     $snapshot = ['page' => $pageRow, 'blocks' => $blocks->fetchAll()];
     db()->prepare('INSERT INTO content_revisions (entity_type, entity_id, author, snapshot_json) VALUES (?, ?, ?, ?)')
@@ -260,6 +260,7 @@ function map_block_row(array $row): array
         'body' => $row['body'] ?? null,
         'imageUrl' => $row['image_url'] ?? null,
         'images' => $images,
+        'isVisible' => !isset($row['is_visible']) || (int) $row['is_visible'] === 1,
     ];
 }
 
@@ -268,8 +269,8 @@ function save_blocks(int $pageId, array $blocks): void
 {
     db()->prepare('DELETE FROM page_blocks WHERE page_id = ?')->execute([$pageId]);
     $stmt = db()->prepare(
-        'INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json, is_visible)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $order = 0;
     foreach ($blocks as $block) {
@@ -277,7 +278,7 @@ function save_blocks(int $pageId, array $blocks): void
             continue;
         }
         $type = field($block, 'type');
-        if (!in_array($type, ['heading', 'text', 'image', 'gallery', 'contact_info'], true)) {
+        if (!in_array($type, ['heading', 'text', 'image', 'gallery', 'contact_info', 'button', 'quote', 'spacer', 'video', 'html'], true)) {
             continue;
         }
         $images = $block['images'] ?? null;
@@ -289,6 +290,7 @@ function save_blocks(int $pageId, array $blocks): void
             field($block, 'body') !== '' ? field($block, 'body') : null,
             field($block, 'imageUrl') !== '' ? field($block, 'imageUrl') : null,
             is_array($images) ? json_encode(array_values(array_filter(array_map('strval', $images)))) : null,
+            array_key_exists('isVisible', $block) && !$block['isVisible'] ? 0 : 1,
         ]);
     }
 }
@@ -612,8 +614,8 @@ try {
                 current_actor(),
             ]);
             $newId = (int) db()->lastInsertId();
-            db()->prepare('INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json)
-                           SELECT ?, type, sort_order, title, body, image_url, images_json FROM page_blocks WHERE page_id = ?')
+            db()->prepare('INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json, is_visible)
+                           SELECT ?, type, sort_order, title, body, image_url, images_json, is_visible FROM page_blocks WHERE page_id = ?')
                 ->execute([$newId, $id]);
             log_activity('page.duplicate', 'page', $newId, $page['title']);
             json_response(['ok' => true, 'page' => map_page_row(fetch_page($newId) ?? [])], 201);
@@ -814,7 +816,30 @@ try {
             $stmt->execute([$id]);
             $row = $stmt->fetch();
             if ($row) {
-                $path = UPLOAD_DIR . '/' . basename((string) $row['url']);
+                // Prevent breaking pages/articles that still reference the file.
+                $url = (string) $row['url'];
+                try {
+                    // Distinct named placeholders per subquery: native prepares
+                    // (emulation off) cannot reuse one named param twice.
+                    $usage = db()->prepare(
+                        "SELECT (SELECT COUNT(*) FROM pages WHERE hero_image_url = :u1)"
+                        . " + (SELECT COUNT(*) FROM articles WHERE cover_image_url = :u2)"
+                        . " + (SELECT COUNT(*) FROM page_blocks WHERE image_url = :u3"
+                        . " OR images_json LIKE CONCAT('%', :u4, '%')) AS c"
+                    );
+                    $usage->execute(['u1' => $url, 'u2' => $url, 'u3' => $url, 'u4' => $url]);
+                    if ((int) ($usage->fetch()['c'] ?? 0) > 0) {
+                        json_response([
+                            'ok' => false,
+                            'message' => 'Image encore utilisée par une page ou un article. Remplacez-la d\'abord dans ce contenu, puis supprimez-la ici.',
+                        ], 409);
+                    }
+                } catch (Throwable $e) {
+                    // Never block deletion on a lookup failure — but log it so
+                    // the guard cannot silently disappear again.
+                    error_log('[u2i-admin] media usage lookup failed: ' . $e->getMessage());
+                }
+                $path = UPLOAD_DIR . '/' . basename($url);
                 if (is_file($path)) {
                     @unlink($path);
                 }
@@ -1094,7 +1119,7 @@ try {
                     ]);
                     if (isset($snapshot['blocks']) && is_array($snapshot['blocks'])) {
                         db()->prepare('DELETE FROM page_blocks WHERE page_id = ?')->execute([(int) $rev['entity_id']]);
-                        $ins = db()->prepare('INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                        $ins = db()->prepare('INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
                         $order = 0;
                         foreach ($snapshot['blocks'] as $b) {
                             if (!is_array($b)) {
@@ -1108,6 +1133,7 @@ try {
                                 $b['body'],
                                 $b['image_url'],
                                 $b['images_json'],
+                                isset($b['is_visible']) ? (int) (bool) $b['is_visible'] : 1,
                             ]);
                         }
                     }
