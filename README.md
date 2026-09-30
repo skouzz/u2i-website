@@ -16,7 +16,7 @@ This README explains **exactly** how to run the project, step by step.
 5. [Set up the MySQL database (OVH)](#5-set-up-the-mysql-database-ovh)
 6. [Configure the back-end](#6-configure-the-back-end)
 7. [Install the CMS tables & log in to the dashboard](#7-install-the-cms-tables--log-in-to-the-dashboard)
-8. [Manage the website (no code)](#8-manage-the-website-no-code)
+8. [How to use the admin dashboard (step by step)](#8-how-to-use-the-admin-dashboard-step-by-step)
 9. [Troubleshooting](#9-troubleshooting)
 10. [Project structure](#10-project-structure)
 
@@ -218,49 +218,133 @@ Done — the full CMS is active. 🎉
 
 ---
 
-## 8. Manage the website (no code)
+## 8. How to use the admin dashboard (step by step)
 
-All at `https://your-domain.com/admin`. The dashboard opens on the **Tableau de bord** with the key numbers and one-click actions.
+Everything is managed at **`https://your-domain.com/admin`** (local dev: `http://localhost:3000/admin`). No code, no FTP — every change below is visible on the public site **immediately**.
 
-### 8.1 Tableau de bord (home)
+### 8.0 Log in — first time only
+
+1. Open `/admin` → you see the one-time form **"Première utilisation : créez votre compte administrateur"**.
+2. Choose an **Identifiant** (e.g. `admin`) and a password (min. 8 characters), confirm it → **Créer mon compte**.
+3. You are logged in and land on the dashboard. Next visits only ask identifiant + password (**Se connecter**).
+4. Forgot the password? See [Troubleshooting](#9-troubleshooting) — the account is reset in phpMyAdmin, then recreated with this form.
+
+### 8.1 The screen layout
+
+The **left sidebar** is the navigation; the top bar shows the current section, a green confirmation after every save, and **Voir le site** (opens the public site in a new tab).
+
+| Sidebar item | What it manages |
+| --- | --- |
+| **Tableau de bord** | Overview: key numbers + quick actions |
+| **Pages** | All CMS pages (content + menu) |
+| **Actualités** | News articles |
+| **Médiathèque** | Image library |
+| **Messages** | Contact-form submissions |
+| **Réglages** | Site name, contact info, footer |
+| **Mon compte** | Your password |
+
+### 8.2 Tableau de bord (home)
 
 - **Stat cards** — published pages, published articles, images, unread messages. Click a card to jump to that section.
 - **Quick actions** — *Créer une page*, *Écrire un article*, *Ajouter des images*, *Voir le site*.
 - **Derniers messages** — the 5 latest contact-form submissions, unread ones highlighted.
 
-### 8.2 Pages
+### 8.3 Pages — create & publish a page (2 minutes)
 
-| Action | How |
+1. **Pages** (sidebar) → **+ Nouvelle page**.
+2. Fill **Titre \*** (required), e.g. `Nos services`. The **Adresse (slug)** fills itself (`nos-services`) — leave it unless you want a custom URL like `/p/services`.
+3. Optional banner: **Titre du bandeau**, **Texte du bandeau**, and **Image du bandeau → Choisir…** (opens the media library: pick an image or **Téléverser une image** — upload and select happen in one click). **Surtitre** is the small line above the banner title.
+4. Build the content with **+ Ajouter une section**. Each section has a type:
+
+   | Section type | Fields | Renders on the page as |
+   | --- | --- | --- |
+   | *Titre de section* | Titre | big section heading |
+   | *Texte* | Titre + Texte | subheading + paragraph |
+   | *Image* | Légende + Image (**Choisir…**) | picture with caption |
+   | *Galerie* | **Ajouter des images** (multi-select; thumbnails with ✕ to remove) | image grid |
+   | *Coordonnées* | Téléphone / E-mail / Adresse | contact card |
+
+   Reorder sections with the ↑ ↓ buttons, remove one with 🗑.
+5. To show the page in the site menu, fill **Libellé dans le menu** (e.g. `Services`). Leave it **empty** to keep the page reachable only by its direct URL. The link appears in the public navbar automatically, just before *Contact*.
+6. Tick **Publier immédiatement** → **Enregistrer**. The page is live at `/p/nos-services` and in the menu.
+
+**Managing existing pages** (the list view):
+
+| Button on a row | What it does |
 | --- | --- |
-| Create a page | **Nouvelle page** → fill the title → add sections → check **Publier immédiatement** → **Enregistrer**. Live immediately at `/p/<slug>`. |
-| Publish / unpublish | The **Publiée / Brouillon** button on each row toggles it in one click. |
-| Reorder the menu | The ↑ / ↓ arrows on each row move the page up/down in the site navigation. |
-| Edit / delete | Pencil opens the editor; trash deletes (with confirmation). |
-| Hero image & section images | **Choisir…** opens the media library — pick an existing image or upload a new one on the spot. |
-| Show in the navbar | Fill **Libellé dans le menu** (e.g. "Nos services"). The link appears automatically in the public navigation, just before *Contact*. |
+| **Publiée / Brouillon** (eye icon) | Publish or unpublish in one click — a draft is hidden from the site but kept |
+| **↑ / ↓** | Move the page up/down in the menu order (saved instantly) |
+| **Voir** | Open the live page |
+| **✏ (pencil)** | Edit title, banner, sections, menu label |
+| **🗑 (trash)** | Delete permanently (asks for confirmation) |
 
-A page is built from reorderable **sections**: *Titre de section*, *Texte*, *Image*, *Galerie* (multi-image picker with thumbnail previews), *Coordonnées*.
+### 8.4 Actualités — write & publish an article
 
-### 8.3 Actualités
+1. **Actualités** (sidebar) → **+ Nouvel article**.
+2. Fill **Titre \*** (required). **Adresse (slug)** auto-fills; **Auteur** is optional.
+3. **Image de couverture → Choisir…** — shown on the news card and at the top of the article.
+4. **Résumé** — the text displayed on the `/actualites` card.
+5. **Contenu de l'article** — the body, in simple HTML:
 
-| Action | How |
+   ```html
+   <p>Premier paragraphe…</p>
+   <h2>Un titre de partie</h2>
+   <p>Du texte avec du <strong>gras</strong> et de l'<em>italique</em>.</p>
+   <ul><li>Un élément de liste</li></ul>
+   <img src="/api/uploads/xxxxxxxx.jpg" alt="">  <!-- URL copied from the Médiathèque -->
+   <a href="/contact">Nous contacter</a>
+   <blockquote>Une citation</blockquote>
+   ```
+
+6. Tick **Publier immédiatement** → **Enregistrer** → visible on `/actualites` and at `/actualites/<slug>`.
+
+Row actions are the same as pages: **Publié / Brouillon** one-click toggle, **Voir**, **✏ edit** (editing keeps the original publish date), **🗑 delete**.
+
+### 8.5 Médiathèque (image library)
+
+- **Ajouter des images** → select one or several (JPG/PNG/WebP/GIF/SVG, max 12 MB each).
+- **Copier l'URL** → paste it anywhere (e.g. an `<img>` in an article body). The **Choisir…** button inside every page/article form opens this same library with an upload button, so you never need to copy/paste URLs there.
+- **🗑** removes an image from the library. ⚠ If it is still used by a page or article, replace it there first.
+
+### 8.6 Messages (contact form)
+
+Every submission of the public contact form arrives here. Unread ones show a red left border, a **Non lu** badge, and a red counter in the sidebar.
+
+- **Marquer comme lu** — clears the unread state.
+- **Répondre** — opens your e-mail client with the sender's address.
+- **🗑** — delete the message.
+
+### 8.7 Réglages
+
+| Field | Used by |
 | --- | --- |
-| Write an article | **Nouvel article** → title, résumé, content (simple HTML), cover image via **Choisir…** → check **Publier immédiatement** → **Enregistrer**. |
-| Publish / unpublish | One click on the **Publié / Brouillon** button on each row. |
-| Edit / delete | Pencil / trash on each row. |
+| **Nom du site** | Site title (footer) |
+| **E-mail de contact** | Recipient of every contact-form message |
+| **Téléphone affiché** | Footer / contact blocks |
+| **Adresse** | Footer |
+| **Note de pied de page** | Extra footer text |
 
-Articles appear on `/actualites` and at `/actualites/<slug>`.
+Don't forget **Enregistrer**.
 
-### 8.4 Other sections
+### 8.8 Mon compte
 
-| Section | What you can do |
+Change your own password: current password + new one (min. 8 characters) → **Enregistrer**. Applies immediately.
+
+### 8.9 Cheat sheet — "I want to…"
+
+| I want to… | Do this |
 | --- | --- |
-| **Médiathèque** | Upload images (JPG/PNG/WebP/GIF/SVG, max 12 MB), copy their URL, delete. Also available as a picker inside every page/article form. |
-| **Messages** | Every contact-form submission: unread badge in the sidebar, mark read, reply by e-mail, delete. |
-| **Réglages** | Site name, contact e-mail (form recipient), phone, address, footer note. |
-| **Mon compte** | Change the admin password (stored bcrypt-hashed in the `admins` table). |
+| Add a new page to the site | Pages → **Nouvelle page** → add sections → **Publier immédiatement** → **Enregistrer** |
+| Change text on an existing page | Pages → **✏** on the row → edit the section → **Enregistrer** |
+| Publish news | Actualités → **Nouvel article** → **Publier immédiatement** → **Enregistrer** |
+| Temporarily hide something | Click **Publiée/Publié** to switch it to **Brouillon** |
+| Remove something for good | **🗑** on the row (confirm) |
+| Reorder the site menu | Pages → **↑ / ↓** on the rows |
+| Rename a menu entry | Pages → **✏** → **Libellé dans le menu** → **Enregistrer** |
+| Replace an image | Médiathèque: upload → open the page/article → **Choisir…** → pick it → **Enregistrer** |
+| Read customer inquiries | Messages |
 
-Workflow: log in → edit → **Enregistrer** (or just click **Publier**) → the public site is updated immediately; no rebuild, no FTP.
+> **Remember:** dashboard content is stored in MySQL and served live by the PHP API — you never rebuild or re-upload `dist/` for content changes. Only code/design changes need a new build (section 4).
 
 ---
 
