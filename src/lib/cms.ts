@@ -400,7 +400,10 @@ export const adminApi = {
     ),
 
   publishPage: (csrf: string, id: number, published: boolean) =>
-    getJson<{ ok: true }>("/api/admin.php?a=page_publish", withCsrf(jsonBody({ published }), csrf)),
+    getJson<{ ok: true }>(
+      `/api/admin.php?a=page_publish&p=${id}`,
+      withCsrf(jsonBody({ published }), csrf),
+    ),
 
   reorderPages: (csrf: string, ids: number[]) =>
     getJson<{ ok: true }>("/api/admin.php?a=page_reorder", withCsrf(jsonBody({ ids }), csrf)),
@@ -438,7 +441,7 @@ export const adminApi = {
 
   publishArticle: (csrf: string, id: number, published: boolean) =>
     getJson<{ ok: true }>(
-      "/api/admin.php?a=article_publish",
+      `/api/admin.php?a=article_publish&p=${id}`,
       withCsrf(jsonBody({ published }), csrf),
     ),
 

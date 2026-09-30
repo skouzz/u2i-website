@@ -62,6 +62,7 @@ if ($action === 'setup' && $method === 'POST') {
         admin_login($username, $password);
         json_response(['ok' => true, 'csrf' => csrf_token()]);
     } catch (Throwable $e) {
+        error_log(sprintf('[u2i-admin] setup action=%s %s: %s', $action, get_class($e), $e->getMessage()));
         json_response(['ok' => false, 'message' => 'Erreur base de données : ' . $e->getMessage()], 500);
     }
 }
@@ -349,7 +350,9 @@ function save_settings_payload(array $data): void
             $values[] = is_array($raw) ? json_encode($raw, JSON_UNESCAPED_UNICODE) : (is_string($raw) && $raw !== '' ? $raw : null);
         }
     }
-    $values[] = 1;
+    // NOTE: no extra bound value here — the WHERE id = 1 below is a literal.
+    // A stray "$values[] = 1;" used to sit here and triggered
+    // SQLSTATE[HY093] (Invalid parameter number) on every settings save.
     db()->prepare('UPDATE settings SET ' . implode(', ', $sets) . ' WHERE id = 1')->execute($values);
 }
 
@@ -449,6 +452,13 @@ try {
             csrf_or_fail();
             if ($method === 'GET') {
                 $row = fetch_settings_row();
+                // Decode JSON columns so the dashboard receives objects, not
+                // raw strings (the public cms.php already does the same).
+                if ($row) {
+                    foreach (['header_json', 'footer_json', 'seo_json', 'social_json', 'home_json'] as $col) {
+                        $row[$col] = decode_json_col($row[$col] ?? null);
+                    }
+                }
                 json_response(['ok' => true, 'settings' => $row ?: null]);
             }
             if ($method === 'PUT' || $method === 'POST') {
@@ -472,6 +482,7 @@ try {
                     json_response(['ok' => false, 'message' => 'Le titre est obligatoire.'], 400);
                 }
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
+                $slug = unique_slug('pages', $slug);
                 $stmt = db()->prepare(
                     'INSERT INTO pages (slug, title, eyebrow, hero_title, hero_text, hero_image_url, nav_label, nav_order, parent_id, status, is_published, published_at, scheduled_at, seo_json, updated_by)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -620,6 +631,7 @@ try {
                     json_response(['ok' => false, 'message' => 'Le titre est obligatoire.'], 400);
                 }
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
+                $slug = unique_slug('articles', $slug);
                 [$status, $scheduledAt] = derive_status($data);
                 $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
                 $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
@@ -761,9 +773,12 @@ try {
                     $stored['width'],
                     $stored['height'],
                 ]);
-                log_activity('media.upload', 'media', (int) db()->lastInsertId(), (string) ($_FILES['file']['name'] ?? ''));
+                // Capture the id BEFORE log_activity() inserts another row
+                // (lastInsertId() would otherwise return the activity row id).
+                $mediaId = (int) db()->lastInsertId();
+                log_activity('media.upload', 'media', $mediaId, (string) ($_FILES['file']['name'] ?? ''));
                 json_response(['ok' => true, 'media' => [
-                    'id' => (int) db()->lastInsertId(),
+                    'id' => $mediaId,
                     'url' => $stored['url'],
                     'original_name' => (string) ($_FILES['file']['name'] ?? ''),
                     'width' => $stored['width'],
@@ -829,10 +844,16 @@ try {
             if ($method === 'POST') {
                 $data = read_json_body();
                 $location = slugify(field($data, 'location') ?: field($data, 'label'));
+                $stmt = db()->prepare('SELECT id FROM menus WHERE location = ?');
+                $stmt->execute([$location]);
+                if ($stmt->fetch()) {
+                    json_response(['ok' => false, 'message' => "Un menu existe déjà pour cet emplacement (« {$location} »)."], 409);
+                }
                 $stmt = db()->prepare('INSERT INTO menus (location, label) VALUES (?, ?)');
                 $stmt->execute([$location, field($data, 'label') ?: $location]);
-                log_activity('menu.create', 'menu', (int) db()->lastInsertId(), $location);
-                json_response(['ok' => true, 'id' => (int) db()->lastInsertId()], 201);
+                $menuId = (int) db()->lastInsertId(); // before log_activity (see media)
+                log_activity('menu.create', 'menu', $menuId, $location);
+                json_response(['ok' => true, 'id' => $menuId], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
@@ -859,14 +880,20 @@ try {
                         if (!is_array($item)) {
                             continue;
                         }
-                        $isChild = (int) ($item['parentId'] ?? 0) > 0;
+                        // parentId may be a DB id (previous save) OR a client
+                        // key like "b" — any non-empty value marks a child;
+                        // resolution happens in the second pass below.
+                        $rawParent = $item['parentId'] ?? null;
+                        $isChild = $rawParent !== null && (string) $rawParent !== '';
                         if (($depth === 0) === $isChild) {
                             continue;
                         }
                         $parentDbId = null;
                         if ($isChild) {
-                            $parentKey = (string) $item['parentId'];
-                            $parentDbId = $idMap[$parentKey] ?? null;
+                            $parentKey = (string) $rawParent;
+                            $parentDbId = $idMap[$parentKey]
+                                ?? $idMap[(string) (int) $parentKey]
+                                ?? (ctype_digit($parentKey) && (int) $parentKey > 0 ? (int) $parentKey : null);
                             if ($parentDbId === null) {
                                 continue;
                             }
@@ -908,8 +935,9 @@ try {
                 $slug = unique_slug('categories', slugify(field($data, 'slug') ?: $name));
                 db()->prepare('INSERT INTO categories (slug, name, description) VALUES (?, ?, ?)')
                     ->execute([$slug, $name, field($data, 'description') ?: null]);
-                log_activity('category.create', 'category', (int) db()->lastInsertId(), $name);
-                json_response(['ok' => true, 'id' => (int) db()->lastInsertId()], 201);
+                $categoryId = (int) db()->lastInsertId(); // before log_activity (see media)
+                log_activity('category.create', 'category', $categoryId, $name);
+                json_response(['ok' => true, 'id' => $categoryId], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
@@ -954,8 +982,9 @@ try {
                 $slug = unique_slug('tags', slugify(field($data, 'slug') ?: $name));
                 db()->prepare('INSERT INTO tags (slug, name) VALUES (?, ?)')
                     ->execute([$slug, $name]);
-                log_activity('tag.create', 'tag', (int) db()->lastInsertId(), $name);
-                json_response(['ok' => true, 'id' => (int) db()->lastInsertId()], 201);
+                $tagId = (int) db()->lastInsertId(); // before log_activity (see media)
+                log_activity('tag.create', 'tag', $tagId, $name);
+                json_response(['ok' => true, 'id' => $tagId], 201);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
@@ -1262,7 +1291,11 @@ try {
             json_response(['ok' => false, 'message' => 'Unknown action.'], 404);
     }
 } catch (PDOException $e) {
+    // Log the failing action + code so SQL problems (e.g. HY093 parameter
+    // mismatches, 42S22 column skew) can be traced to the exact endpoint.
+    error_log(sprintf('[u2i-admin] action=%s %s: %s', $action, $e->getCode(), $e->getMessage()));
     json_response(['ok' => false, 'message' => 'Erreur base de données : ' . $e->getMessage()], 500);
 } catch (Throwable $e) {
+    error_log(sprintf('[u2i-admin] action=%s %s: %s', $action, get_class($e), $e->getMessage()));
     json_response(['ok' => false, 'message' => 'Erreur serveur : ' . $e->getMessage()], 500);
 }

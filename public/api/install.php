@@ -291,6 +291,31 @@ try {
 } catch (Throwable) {
 }
 
+// ── Legacy data backfill (idempotent) ───────────────────────────────────
+// Rows published before the v2 status workflow have is_published = 1 but
+// status = 'draft' (the ALTER default) — public queries filter on status, so
+// those pages/articles would silently vanish from the site. Keep both columns
+// in sync in BOTH directions.
+try {
+    $pdo->exec("UPDATE pages SET status = 'published', published_at = COALESCE(published_at, NOW()) WHERE is_published = 1 AND status = 'draft'");
+    $results['migrated'][] = 'backfill pages legacy published → status';
+} catch (Throwable $e) {
+    $results['failed'][] = ['sql' => 'backfill pages', 'error' => $e->getMessage()];
+}
+try {
+    $pdo->exec("UPDATE articles SET status = 'published', published_at = COALESCE(published_at, NOW()) WHERE is_published = 1 AND status = 'draft'");
+    $results['migrated'][] = 'backfill articles legacy published → status';
+} catch (Throwable $e) {
+    $results['failed'][] = ['sql' => 'backfill articles', 'error' => $e->getMessage()];
+}
+try {
+    $pdo->exec("UPDATE pages SET is_published = 0 WHERE status <> 'published' AND is_published = 1");
+    $pdo->exec("UPDATE articles SET is_published = 0 WHERE status <> 'published' AND is_published = 1");
+    $results['migrated'][] = 'sync is_published ← status';
+} catch (Throwable $e) {
+    $results['failed'][] = ['sql' => 'sync is_published', 'error' => $e->getMessage()];
+}
+
 // ── Seeds ────────────────────────────────────────────────────────────────────
 
 try {

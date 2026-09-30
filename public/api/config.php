@@ -16,6 +16,13 @@
 
 declare(strict_types=1);
 
+// All timestamps (published_at, NOW() comparisons in public queries) must use
+// the same clock as MySQL — a PHP/MySQL timezone mismatch silently hides fresh
+// content for up to one hour (published_at > NOW()).
+if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('UTC');
+}
+
 // ── Local overrides FIRST (config.local.php, XAMPP / dev machine) ───────────
 // This file uses define() and may override ANY default below. It is optional,
 // git-ignored, and blocked from HTTP access by .htaccess. See
@@ -156,16 +163,16 @@ function flag(array $data, string $key): bool
 function int_field(array $data, string $key): int
 {
     return isset($data[$key]) && is_numeric($data[$key]) ? (int) $data[$key] : 0;
-}
-
-/** URL-safe slug (accents folded, lowercase, dashes). */
+}/** URL-safe slug (accents folded, lowercase, dashes). */
 function slugify(string $text): string
 {
     $text = mb_strtolower(trim($text));
-    if (function_exists('iconv')) {
-        $folded = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
-        if (is_string($folded) && $folded !== '') {
-            $text = $folded;
+    // NFD + combining-marks strip: locale-independent accent folding. The old
+    // iconv//TRANSLIT path dropped characters under C locales ("É" → "").
+    if (class_exists('Normalizer')) {
+        $normalized = normalizer_normalize($text, Normalizer::FORM_D);
+        if ($normalized !== false) {
+            $text = (string) preg_replace('~\p{M}+~u', '', $normalized);
         }
     }
     $text = preg_replace('~[^a-z0-9]+~', '-', $text) ?? '';

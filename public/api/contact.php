@@ -19,8 +19,12 @@ require_once __DIR__ . '/config.php';
 // ── Configuration ────────────────────────────────────────────────────────────
 
 /** Optional Plunk (https://useplunk.com) API key; leave empty to use mail().
- * Overridable via PLUNK_API_KEY in public/api/config.local.php (local dev). */
-define('PLUNK_API_KEY', U2I_PLUNK_API_KEY);
+ * Overridable via PLUNK_API_KEY in public/api/config.local.php (local dev).
+ * Guarded: config.local.php may already have defined it (PHP 8+ fatals on a
+ * constant redefinition). */
+if (!defined('PLUNK_API_KEY')) {
+    define('PLUNK_API_KEY', U2I_PLUNK_API_KEY);
+}
 define('PLUNK_API_URL', 'https://api.useplunk.com/v1/send');
 
 /** Simple time-based throttle per IP (seconds between two submissions). */
@@ -100,19 +104,22 @@ function throttle_ok(): bool
     return true;
 }
 
-function store_message(array $data, string $firstName, string $lastName, string $email, string $company, string $subject, string $message): void
+function store_message(array $data, string $firstName, string $lastName, string $email, string $company, string $subject, string $message): bool
 {
     try {
         if (!is_db_installed()) {
-            return;
+            return false;
         }
         $stmt = db()->prepare(
             'INSERT INTO contact_messages (first_name, last_name, email, company, subject, message)
              VALUES (?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([$firstName, $lastName, $email, $company !== '' ? $company : null, $subject, $message]);
+
+        return true;
     } catch (Throwable) {
         // Email sending must not depend on the database being reachable.
+        return false;
     }
 }
 
@@ -231,7 +238,7 @@ try {
 } catch (Throwable) {
 }
 
-store_message($data, $firstName, $lastName, $email, $company, $subject, $message);
+$stored = store_message($data, $firstName, $lastName, $email, $company, $subject, $message);
 
 $fullName = $firstName . ' ' . $lastName;
 $emailSubject = '[Site U2I] ' . $subject;
@@ -243,6 +250,12 @@ $emailBody = "Nom : {$fullName}\n"
 $sent = send_via_plunk($recipient, $fullName, $email, $emailSubject, $emailBody);
 if (!$sent) {
     $sent = send_via_mail($recipient, $fullName, $email, $emailSubject, $emailBody);
+}
+
+if ($stored) {
+    // The message is safely in the inbox: the e-mail is best-effort (local
+    // dev machines often have no MTA — mail() fails without one).
+    respond(true, 'Merci ! Votre message a bien été envoyé. Nous vous répondrons dans les plus brefs délais.');
 }
 
 if (!$sent) {
