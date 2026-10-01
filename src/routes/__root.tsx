@@ -135,7 +135,7 @@ function RootComponent() {
       <div className="w-full max-w-full overflow-x-hidden flex flex-col min-h-screen">
         <Navbar />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <div className="flex-grow w-full max-w-full overflow-x-hidden">
+        <div className="grow w-full max-w-full overflow-x-hidden">
           <Outlet />
         </div>
         <Footer />

@@ -16,6 +16,7 @@ export default defineConfig({
         // about.html, contact.html, …) in addition to the SPA shell,
         // so the static build is SEO-friendly on plain file hosts.
         prerender: {
+          outputPath: "/index",
           crawlLinks: true,
         },
       },

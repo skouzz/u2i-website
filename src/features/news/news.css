@@ -26,7 +26,9 @@
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .news-card:hover {
@@ -173,8 +175,12 @@
   line-height: 1.1;
 }
 
-.article-body h2 { font-size: 22px; }
-.article-body h3 { font-size: 18px; }
+.article-body h2 {
+  font-size: 22px;
+}
+.article-body h3 {
+  font-size: 18px;
+}
 
 .article-body a {
   color: var(--contact-red);

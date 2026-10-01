@@ -33,16 +33,16 @@ if (is_file(__DIR__ . '/config.local.php')) {
 
 // ── Production defaults (OVH) — used ONLY for values not overridden locally ─
 if (!defined('DB_HOST')) {
-    define('DB_HOST', 'u2iprocesscom.mysql.db');
+    define('DB_HOST', '10.10.10.100');
 }
 if (!defined('DB_NAME')) {
-    define('DB_NAME', 'u2iprocesscomdb');
+    define('DB_NAME', 'uitncxeb_u2i_cms');
 }
 if (!defined('DB_USER')) {
-    define('DB_USER', 'u2iprocesscomdb');
+    define('DB_USER', 'uitncxeb_u2i');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', 'CHANGE_ME');
+    define('DB_PASS', 'ahKsJKs3GwzHXJ8');
 }
 
 // Admin dashboard: create the account from the dashboard on first login

@@ -35,11 +35,11 @@ This README explains **exactly** how to run the project, step by step.
 
 ## 1. Prerequisites
 
-| Tool | Version | Why |
-| --- | --- | --- |
-| [Node.js](https://nodejs.org) | **20.19+ or 22.12+** | Runs Vite / the build |
-| npm | Bundled with Node | Installs dependencies |
-| PHP | **7.4+** (selectable in the OVH panel) | Only needed **on the OVH server**, not on your PC |
+| Tool                          | Version                                | Why                                               |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------- |
+| [Node.js](https://nodejs.org) | **20.19+ or 22.12+**                   | Runs Vite / the build                             |
+| npm                           | Bundled with Node                      | Installs dependencies                             |
+| PHP                           | **7.4+** (selectable in the OVH panel) | Only needed **on the OVH server**, not on your PC |
 
 No database is needed for local development — the site works without MySQL and shows a friendly message where CMS content would appear.
 
@@ -163,7 +163,7 @@ Works with any OVH **shared hosting** plan (Starter, Perso, Pro…).
 3. Connect and go to the web root folder: `www/`
 4. Upload **the contents of `dist/client/`** (not the `client` folder itself) into `www/`:
    - `assets/`, `api/`, all `.html` files and folders
-   - `.htaccess` — **must be uploaded too** (in FileZilla enable *Server → Force showing hidden files* to see it)
+   - `.htaccess` — **must be uploaded too** (in FileZilla enable _Server → Force showing hidden files_ to see it)
 5. In the OVH panel check **Hosting → PHP version → 7.4 or higher**.
 6. Visit `https://your-domain.com` — the site is live. ✅
 
@@ -201,7 +201,7 @@ const DB_PASS = 'YOUR_REAL_PASSWORD';       // ← never commit the real one
 
 > Local development never touches `config.php` — values from `public/api/config.local.php` (XAMPP) override it at runtime.
 
-**Admin account:** no default password exists. On the **first login** at `/admin`, the dashboard shows a one-time **account creation** form (like WordPress): choose your identifiant and a password (min. 8 chars) — it is stored bcrypt-hashed in the `admins` table. You can change it later under *Mon compte*.
+**Admin account:** no default password exists. On the **first login** at `/admin`, the dashboard shows a one-time **account creation** form (like WordPress): choose your identifiant and a password (min. 8 chars) — it is stored bcrypt-hashed in the `admins` table. You can change it later under _Mon compte_.
 
 Then **re-upload `public/api/config.php`** to `www/api/` on the server.
 
@@ -244,25 +244,25 @@ Everything is managed at **`https://your-domain.com/admin`** (local dev: `http:/
 
 The **left sidebar** is the navigation; the top bar shows the current section, a green confirmation after every save, and **Voir le site** (opens the public site in a new tab).
 
-| Sidebar item | What it manages |
-| --- | --- |
-| **Tableau de bord** | Overview: key numbers + quick actions + recent content/activity |
-| **Contenu → Pages** | All CMS pages (content, SEO, scheduling, hierarchy, revisions) |
-| **Contenu → Actualités** | News articles (rich editor, categories, tags, SEO, revisions) |
-| **Contenu → Catégories / Tags** | Article taxonomy |
-| **Médiathèque** | Media library (upload, drag & drop, alt/title/caption metadata) |
-| **Menus** | Main & footer navigation (nested, reorder, show/hide) |
-| **Page d'accueil** | Homepage builder (ordered, toggleable sections) |
-| **En-tête / Pied de page** | Logo, announcement, contacts, socials, footer columns |
-| **Réglages** | Site identity + default SEO |
-| **Activité** | Audit log of the last 100 dashboard actions |
-| **Messages** | Contact-form submissions |
-| **Mon compte** | Your password |
+| Sidebar item                    | What it manages                                                 |
+| ------------------------------- | --------------------------------------------------------------- |
+| **Tableau de bord**             | Overview: key numbers + quick actions + recent content/activity |
+| **Contenu → Pages**             | All CMS pages (content, SEO, scheduling, hierarchy, revisions)  |
+| **Contenu → Actualités**        | News articles (rich editor, categories, tags, SEO, revisions)   |
+| **Contenu → Catégories / Tags** | Article taxonomy                                                |
+| **Médiathèque**                 | Media library (upload, drag & drop, alt/title/caption metadata) |
+| **Menus**                       | Main & footer navigation (nested, reorder, show/hide)           |
+| **Page d'accueil**              | Homepage builder (ordered, toggleable sections)                 |
+| **En-tête / Pied de page**      | Logo, announcement, contacts, socials, footer columns           |
+| **Réglages**                    | Site identity + default SEO                                     |
+| **Activité**                    | Audit log of the last 100 dashboard actions                     |
+| **Messages**                    | Contact-form submissions                                        |
+| **Mon compte**                  | Your password                                                   |
 
 ### 8.2 Tableau de bord (home)
 
 - **Stat cards** — published pages, published articles, images, unread messages. Click a card to jump to that section.
-- **Quick actions** — *Créer une page*, *Écrire un article*, *Ajouter des images*, *Voir le site*.
+- **Quick actions** — _Créer une page_, _Écrire un article_, _Ajouter des images_, _Voir le site_.
 - **Derniers messages** — the 5 latest contact-form submissions, unread ones highlighted.
 
 ### 8.3 Pages — create & publish a page (2 minutes)
@@ -272,27 +272,28 @@ The **left sidebar** is the navigation; the top bar shows the current section, a
 3. Optional banner: **Titre du bandeau**, **Texte du bandeau**, and **Image du bandeau → Choisir…** (opens the media library: pick an image or **Téléverser une image** — upload and select happen in one click). **Surtitre** is the small line above the banner title.
 4. Build the content with **+ Ajouter une section**. Each section has a type:
 
-   | Section type | Fields | Renders on the page as |
-   | --- | --- | --- |
-   | *Titre de section* | Titre | big section heading |
-   | *Texte* | Titre + Texte | subheading + paragraph |
-   | *Image* | Légende + Image (**Choisir…**) | picture with caption |
-   | *Galerie* | **Ajouter des images** (multi-select; thumbnails with ✕ to remove) | image grid |
-   | *Coordonnées* | Téléphone / E-mail / Adresse | contact card |
+   | Section type       | Fields                                                             | Renders on the page as |
+   | ------------------ | ------------------------------------------------------------------ | ---------------------- |
+   | _Titre de section_ | Titre                                                              | big section heading    |
+   | _Texte_            | Titre + Texte                                                      | subheading + paragraph |
+   | _Image_            | Légende + Image (**Choisir…**)                                     | picture with caption   |
+   | _Galerie_          | **Ajouter des images** (multi-select; thumbnails with ✕ to remove) | image grid             |
+   | _Coordonnées_      | Téléphone / E-mail / Adresse                                       | contact card           |
 
    Reorder sections with the ↑ ↓ buttons, remove one with 🗑.
-5. To show the page in the site menu, fill **Libellé dans le menu** (e.g. `Services`). Leave it **empty** to keep the page reachable only by its direct URL. The link appears in the public navbar automatically, just before *Contact*.
+
+5. To show the page in the site menu, fill **Libellé dans le menu** (e.g. `Services`). Leave it **empty** to keep the page reachable only by its direct URL. The link appears in the public navbar automatically, just before _Contact_.
 6. Tick **Publier immédiatement** → **Enregistrer**. The page is live at `/p/nos-services` and in the menu.
 
 **Managing existing pages** (the list view):
 
-| Button on a row | What it does |
-| --- | --- |
+| Button on a row                    | What it does                                                                 |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
 | **Publiée / Brouillon** (eye icon) | Publish or unpublish in one click — a draft is hidden from the site but kept |
-| **↑ / ↓** | Move the page up/down in the menu order (saved instantly) |
-| **Voir** | Open the live page |
-| **✏ (pencil)** | Edit title, banner, sections, menu label |
-| **🗑 (trash)** | Delete permanently (asks for confirmation) |
+| **↑ / ↓**                          | Move the page up/down in the menu order (saved instantly)                    |
+| **Voir**                           | Open the live page                                                           |
+| **✏ (pencil)**                     | Edit title, banner, sections, menu label                                     |
+| **🗑 (trash)**                      | Delete permanently (asks for confirmation)                                   |
 
 ### 8.4 Actualités — write & publish an article
 
@@ -306,8 +307,11 @@ The **left sidebar** is the navigation; the top bar shows the current section, a
    <p>Premier paragraphe…</p>
    <h2>Un titre de partie</h2>
    <p>Du texte avec du <strong>gras</strong> et de l'<em>italique</em>.</p>
-   <ul><li>Un élément de liste</li></ul>
-   <img src="/api/uploads/xxxxxxxx.jpg" alt="">  <!-- URL copied from the Médiathèque -->
+   <ul>
+     <li>Un élément de liste</li>
+   </ul>
+   <img src="/api/uploads/xxxxxxxx.jpg" alt="" />
+   <!-- URL copied from the Médiathèque -->
    <a href="/contact">Nous contacter</a>
    <blockquote>Une citation</blockquote>
    ```
@@ -332,13 +336,13 @@ Every submission of the public contact form arrives here. Unread ones show a red
 
 ### 8.7 Réglages
 
-| Field | Used by |
-| --- | --- |
-| **Nom du site** | Site title (footer) |
-| **E-mail de contact** | Recipient of every contact-form message |
-| **Téléphone affiché** | Footer / contact blocks |
-| **Adresse** | Footer |
-| **Note de pied de page** | Extra footer text |
+| Field                    | Used by                                 |
+| ------------------------ | --------------------------------------- |
+| **Nom du site**          | Site title (footer)                     |
+| **E-mail de contact**    | Recipient of every contact-form message |
+| **Téléphone affiché**    | Footer / contact blocks                 |
+| **Adresse**              | Footer                                  |
+| **Note de pied de page** | Extra footer text                       |
 
 Don't forget **Enregistrer**.
 
@@ -348,17 +352,17 @@ Change your own password: current password + new one (min. 8 characters) → **E
 
 ### 8.9 Cheat sheet — "I want to…"
 
-| I want to… | Do this |
-| --- | --- |
-| Add a new page to the site | Pages → **Nouvelle page** → add sections → **Publier immédiatement** → **Enregistrer** |
-| Change text on an existing page | Pages → **✏** on the row → edit the section → **Enregistrer** |
-| Publish news | Actualités → **Nouvel article** → **Publier immédiatement** → **Enregistrer** |
-| Temporarily hide something | Click **Publiée/Publié** to switch it to **Brouillon** |
-| Remove something for good | **🗑** on the row (confirm) |
-| Reorder the site menu | Pages → **↑ / ↓** on the rows |
-| Rename a menu entry | Pages → **✏** → **Libellé dans le menu** → **Enregistrer** |
-| Replace an image | Médiathèque: upload → open the page/article → **Choisir…** → pick it → **Enregistrer** |
-| Read customer inquiries | Messages |
+| I want to…                      | Do this                                                                                |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| Add a new page to the site      | Pages → **Nouvelle page** → add sections → **Publier immédiatement** → **Enregistrer** |
+| Change text on an existing page | Pages → **✏** on the row → edit the section → **Enregistrer**                          |
+| Publish news                    | Actualités → **Nouvel article** → **Publier immédiatement** → **Enregistrer**          |
+| Temporarily hide something      | Click **Publiée/Publié** to switch it to **Brouillon**                                 |
+| Remove something for good       | **🗑** on the row (confirm)                                                             |
+| Reorder the site menu           | Pages → **↑ / ↓** on the rows                                                          |
+| Rename a menu entry             | Pages → **✏** → **Libellé dans le menu** → **Enregistrer**                             |
+| Replace an image                | Médiathèque: upload → open the page/article → **Choisir…** → pick it → **Enregistrer** |
+| Read customer inquiries         | Messages                                                                               |
 
 > **Remember:** dashboard content is stored in MySQL and served live by the PHP API — you never rebuild or re-upload `dist/` for content changes. Only code/design changes need a new build (section 4).
 
@@ -366,15 +370,15 @@ Change your own password: current password + new one (min. 8 characters) → **E
 
 ## 9. Troubleshooting
 
-| Symptom | Cause & fix |
-| --- | --- |
-| Page refresh on `/contact` gives a 404 | `.htaccess` is missing on the server (hidden file — enable "show hidden files" in FileZilla). |
-| News page says the CMS is not installed | You skipped step 7.1 (run `/api/install.php?key=…` once). |
-| Admin login fails with correct credentials | The account was created before a schema change — re-run `/api/install.php?key=…` (it does not overwrite data) or reset the account in phpMyAdmin: `DELETE FROM admins;` then reload `/admin` to recreate it via the setup form. |
-| `{"ok":false,…}` from `/api/cms.php` or a 503 | DB constants in `config.php` are wrong, or the database isn't created yet (step 5). |
-| Contact form says "Impossible d'envoyer…" | OVH `mail()` is limited on some offers — set up a [Plunk](https://useplunk.com) API key (step 6) or check with OVH support. |
-| Uploaded images don't appear | Check `www/api/uploads/` exists and is writable (OVH default is fine; re-upload creates it). |
-| White page after deploy | You uploaded the `client` folder itself instead of its **contents** (step 4.4). |
+| Symptom                                       | Cause & fix                                                                                                                                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page refresh on `/contact` gives a 404        | `.htaccess` is missing on the server (hidden file — enable "show hidden files" in FileZilla).                                                                                                                                   |
+| News page says the CMS is not installed       | You skipped step 7.1 (run `/api/install.php?key=…` once).                                                                                                                                                                       |
+| Admin login fails with correct credentials    | The account was created before a schema change — re-run `/api/install.php?key=…` (it does not overwrite data) or reset the account in phpMyAdmin: `DELETE FROM admins;` then reload `/admin` to recreate it via the setup form. |
+| `{"ok":false,…}` from `/api/cms.php` or a 503 | DB constants in `config.php` are wrong, or the database isn't created yet (step 5).                                                                                                                                             |
+| Contact form says "Impossible d'envoyer…"     | OVH `mail()` is limited on some offers — set up a [Plunk](https://useplunk.com) API key (step 6) or check with OVH support.                                                                                                     |
+| Uploaded images don't appear                  | Check `www/api/uploads/` exists and is writable (OVH default is fine; re-upload creates it).                                                                                                                                    |
+| White page after deploy                       | You uploaded the `client` folder itself instead of its **contents** (step 4.4).                                                                                                                                                 |
 
 ---
 

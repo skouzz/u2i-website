@@ -208,7 +208,7 @@ export function Navbar() {
 
       {/* Mobile drawer */}
       <div
-        className={`fixed inset-y-0 right-0 z-[60] w-4/5 max-w-sm overflow-y-auto bg-black backdrop-blur-xl px-8 pt-24 pb-8 transition-transform duration-300 lg:hidden border-l border-white/10 ${
+        className={`fixed inset-y-0 right-0 z-60 w-4/5 max-w-sm overflow-y-auto bg-black backdrop-blur-xl px-8 pt-24 pb-8 transition-transform duration-300 lg:hidden border-l border-white/10 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >

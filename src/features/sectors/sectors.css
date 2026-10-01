@@ -52,7 +52,8 @@
 .sectors-hero__grid {
   z-index: -1;
   opacity: 0.18;
-  background-image: linear-gradient(rgb(255 255 255 / 15%) 1px, transparent 1px),
+  background-image:
+    linear-gradient(rgb(255 255 255 / 15%) 1px, transparent 1px),
     linear-gradient(90deg, rgb(255 255 255 / 15%) 1px, transparent 1px);
   background-size: 112px 112px;
   mask-image: linear-gradient(90deg, #000 0%, transparent 80%);
@@ -125,7 +126,9 @@
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
-  transition: gap 180ms ease, color 180ms ease;
+  transition:
+    gap 180ms ease,
+    color 180ms ease;
 }
 
 .sectors-hero__link:hover {
@@ -335,7 +338,10 @@
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
-  transition: color 180ms ease, border-color 180ms ease, gap 180ms ease;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    gap 180ms ease;
 }
 
 .sector-copy__cta:hover {
@@ -395,7 +401,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 650ms cubic-bezier(0.2, 0.65, 0.25, 1), filter 300ms ease;
+  transition:
+    transform 650ms cubic-bezier(0.2, 0.65, 0.25, 1),
+    filter 300ms ease;
 }
 
 .sector-photo:hover img,
@@ -485,7 +493,9 @@
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
-  transition: gap 180ms ease, background 180ms ease;
+  transition:
+    gap 180ms ease,
+    background 180ms ease;
 }
 
 .sectors-contact__button:hover {
@@ -540,7 +550,9 @@
   background: transparent;
   color: #fff;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
 .sector-lightbox__topbar button:hover,
@@ -595,8 +607,12 @@
 }
 
 @keyframes sectors-hero-arrive {
-  from { transform: scale(1.035); }
-  to { transform: scale(1); }
+  from {
+    transform: scale(1.035);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 1000px) {

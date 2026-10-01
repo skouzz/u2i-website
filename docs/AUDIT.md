@@ -9,18 +9,18 @@ new capabilities are additive.
 
 ## 1. Critical defects found and fixed
 
-| # | Severity | Issue | Fix |
-|---|----------|-------|-----|
-| 1 | **Blocker** | `/p/<slug>` had **no route** — every page created in the dashboard 404'd on the public site | New catch-all route `src/routes/p.$.tsx` rendering `CmsPageRoute` |
-| 2 | **Blocker** | `UPLOAD_DIR`, `ALLOWED_IMAGE_TYPES`, `UPLOAD_MAX_BYTES` were referenced but **never defined** → *any* media upload crashed with a fatal error | Constants defined in [config.php](../public/api/config.php) |
-| 3 | High | Prerendered static routes are favored by `DirectoryIndex`; admin changes to pages don't reflect on prerendered URLs | Documented; CMS pages served under `/p/<slug>` via SPA shell + Apache rewrite (existing behavior retained) |
-| 4 | High | `settings.footer_json` column added to a `TINYINT PK` table schema was inconsistent with the new JSON config storage | Single `settings` row with guarded JSON columns; installer migrations skip existing columns |
-| 5 | Medium | `admin_change_password` used the *config* username instead of the logged-in session username | Now uses `current_actor()` from the session |
-| 6 | Medium | CMS pages/articles had **no SEO metadata** support at all | `seo_json` columns + per-entity SEO tab + `useSeo` hook + dynamic `sitemap.php` |
-| 7 | Medium | Login had no rate limiting (brute-force possible beyond the 400ms sleep) | File-backed rate limiter: 10 logins / 5 min / IP; 5 setups / hour |
-| 8 | Medium | Footer/nav/social/contact info was **hardcoded** in TSX | Header/footer/social/announcement configurable from the dashboard with fallbacks |
-| 9 | Low | Session cookie lacked `HttpOnly`/`SameSite`/`Secure` hardening | Hardened in `admin_session_start()` |
-| 10 | Low | ~500 lines of dead duplicated code in the homepage (unused `SiteHeader`, `SiteFooter`, `StatCard`, duplicate marquee) | Extracted to [default-page.tsx](../src/features/home/default-page.tsx); dead code removed |
+| #   | Severity    | Issue                                                                                                                                         | Fix                                                                                                        |
+| --- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | **Blocker** | `/p/<slug>` had **no route** — every page created in the dashboard 404'd on the public site                                                   | New catch-all route `src/routes/p.$.tsx` rendering `CmsPageRoute`                                          |
+| 2   | **Blocker** | `UPLOAD_DIR`, `ALLOWED_IMAGE_TYPES`, `UPLOAD_MAX_BYTES` were referenced but **never defined** → _any_ media upload crashed with a fatal error | Constants defined in [config.php](../public/api/config.php)                                                |
+| 3   | High        | Prerendered static routes are favored by `DirectoryIndex`; admin changes to pages don't reflect on prerendered URLs                           | Documented; CMS pages served under `/p/<slug>` via SPA shell + Apache rewrite (existing behavior retained) |
+| 4   | High        | `settings.footer_json` column added to a `TINYINT PK` table schema was inconsistent with the new JSON config storage                          | Single `settings` row with guarded JSON columns; installer migrations skip existing columns                |
+| 5   | Medium      | `admin_change_password` used the _config_ username instead of the logged-in session username                                                  | Now uses `current_actor()` from the session                                                                |
+| 6   | Medium      | CMS pages/articles had **no SEO metadata** support at all                                                                                     | `seo_json` columns + per-entity SEO tab + `useSeo` hook + dynamic `sitemap.php`                            |
+| 7   | Medium      | Login had no rate limiting (brute-force possible beyond the 400ms sleep)                                                                      | File-backed rate limiter: 10 logins / 5 min / IP; 5 setups / hour                                          |
+| 8   | Medium      | Footer/nav/social/contact info was **hardcoded** in TSX                                                                                       | Header/footer/social/announcement configurable from the dashboard with fallbacks                           |
+| 9   | Low         | Session cookie lacked `HttpOnly`/`SameSite`/`Secure` hardening                                                                                | Hardened in `admin_session_start()`                                                                        |
+| 10  | Low         | ~500 lines of dead duplicated code in the homepage (unused `SiteHeader`, `SiteFooter`, `StatCard`, duplicate marquee)                         | Extracted to [default-page.tsx](../src/features/home/default-page.tsx); dead code removed                  |
 
 ## 2. Security review summary
 
@@ -42,20 +42,20 @@ new capabilities are additive.
 
 ## 3. New CMS capabilities (all additive)
 
-| Area | What's new |
-|------|-----------|
-| **Content workflow** | `draft / pending / scheduled / published / archived` statuses, one-click publish toggle, scheduled publication date, revisions (last 20 auto-snapshots per page/article with restore) |
-| **Pages** | SEO tab (title/description/canonical/OG/robots), parent-page hierarchy, status filter + search, duplicate, revisions, scheduler |
-| **Articles** | Rich-text editor (headings, bold/italic/underline, lists, quotes, links, tables, inline images from the media library, code-free workflow), categories, tags, SEO tab, duplicate, revisions, scheduler |
-| **Taxonomy** | Categories & tags CRUD with slugs, article counts, tag chips on article editor |
-| **Menus** | Multiple named menus (main + footer), nested items (one dropdown level), enable/disable, open-in-new-tab, add pages or custom URLs, reorder; public navbar/footer consume them (legacy pages-based nav as fallback) |
-| **Homepage builder** | 14 section types (hero, about, services, stats, features, projects, testimonials, team, articles, gallery, cta, contact, faq, html) with per-section fields, visibility toggles, ordering; falls back to the original designed homepage when empty |
-| **Header / Footer editors** | Logo, announcement bar, contact info, social links (7 networks), footer columns/links, copyright, CTA |
-| **Settings** | Tabbed General / SEO defaults; SEO defaults feed the whole site |
-| **Media** | Drag & drop upload, search, metadata (title, alt, caption, description), PDF/SVG support with hardened serving |
-| **Dashboard** | Extended stats (drafts/scheduled/categories/tags), recent pages/articles/media, activity log (100 last actions), quick actions |
-| **SEO** | Per-entity meta + OG, dynamic `sitemap.php`, `robots.txt`, canonical tags, `useSeo` client-side tag manager |
-| **Admin UX** | Grouped collapsible sidebar (Contenu / Médias & menus / Site web / Système), lazy-loaded sections, mobile drawer, user badge, search + status filters, skeletons |
+| Area                        | What's new                                                                                                                                                                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Content workflow**        | `draft / pending / scheduled / published / archived` statuses, one-click publish toggle, scheduled publication date, revisions (last 20 auto-snapshots per page/article with restore)                                                              |
+| **Pages**                   | SEO tab (title/description/canonical/OG/robots), parent-page hierarchy, status filter + search, duplicate, revisions, scheduler                                                                                                                    |
+| **Articles**                | Rich-text editor (headings, bold/italic/underline, lists, quotes, links, tables, inline images from the media library, code-free workflow), categories, tags, SEO tab, duplicate, revisions, scheduler                                             |
+| **Taxonomy**                | Categories & tags CRUD with slugs, article counts, tag chips on article editor                                                                                                                                                                     |
+| **Menus**                   | Multiple named menus (main + footer), nested items (one dropdown level), enable/disable, open-in-new-tab, add pages or custom URLs, reorder; public navbar/footer consume them (legacy pages-based nav as fallback)                                |
+| **Homepage builder**        | 14 section types (hero, about, services, stats, features, projects, testimonials, team, articles, gallery, cta, contact, faq, html) with per-section fields, visibility toggles, ordering; falls back to the original designed homepage when empty |
+| **Header / Footer editors** | Logo, announcement bar, contact info, social links (7 networks), footer columns/links, copyright, CTA                                                                                                                                              |
+| **Settings**                | Tabbed General / SEO defaults; SEO defaults feed the whole site                                                                                                                                                                                    |
+| **Media**                   | Drag & drop upload, search, metadata (title, alt, caption, description), PDF/SVG support with hardened serving                                                                                                                                     |
+| **Dashboard**               | Extended stats (drafts/scheduled/categories/tags), recent pages/articles/media, activity log (100 last actions), quick actions                                                                                                                     |
+| **SEO**                     | Per-entity meta + OG, dynamic `sitemap.php`, `robots.txt`, canonical tags, `useSeo` client-side tag manager                                                                                                                                        |
+| **Admin UX**                | Grouped collapsible sidebar (Contenu / Médias & menus / Site web / Système), lazy-loaded sections, mobile drawer, user badge, search + status filters, skeletons                                                                                   |
 
 ## 4. Architecture notes
 

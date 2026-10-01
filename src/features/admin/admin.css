@@ -535,7 +535,9 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .admin-stat:hover {
@@ -933,7 +935,9 @@ button.admin-chip {
   border: 1px dashed #d7dcda;
   background: #fff;
   padding: 14px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .admin-media-dropzone.is-dragover {
@@ -1039,19 +1043,36 @@ label.admin-btn.is-dragover {
   color: #9aa1a2;
 }
 
-.admin-rte__area h2 { font-size: 1.5em; margin: 0.6em 0 0.3em; }
-.admin-rte__area h3 { font-size: 1.2em; margin: 0.5em 0 0.3em; }
-.admin-rte__area p { margin: 0 0 0.8em; }
+.admin-rte__area h2 {
+  font-size: 1.5em;
+  margin: 0.6em 0 0.3em;
+}
+.admin-rte__area h3 {
+  font-size: 1.2em;
+  margin: 0.5em 0 0.3em;
+}
+.admin-rte__area p {
+  margin: 0 0 0.8em;
+}
 .admin-rte__area blockquote {
   border-left: 3px solid var(--admin-red);
   margin: 0.8em 0;
   padding: 4px 14px;
   color: #525b5d;
 }
-.admin-rte__area img { max-width: 100%; height: auto; }
-.admin-rte__area table { border-collapse: collapse; margin: 0.8em 0; }
+.admin-rte__area img {
+  max-width: 100%;
+  height: auto;
+}
+.admin-rte__area table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+}
 .admin-rte__area td,
-.admin-rte__area th { border: 1px solid #d7dcda; padding: 6px 10px; }
+.admin-rte__area th {
+  border: 1px solid #d7dcda;
+  padding: 6px 10px;
+}
 
 /* Mobile: sidebar becomes a drawer */
 

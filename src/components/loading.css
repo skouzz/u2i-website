@@ -22,7 +22,14 @@
   top: 0;
   bottom: 0;
   width: 38%;
-  background: linear-gradient(90deg, transparent, var(--u2i-red) 45%, #ff6268 50%, var(--u2i-red) 55%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--u2i-red) 45%,
+    #ff6268 50%,
+    var(--u2i-red) 55%,
+    transparent
+  );
   animation: u2i-route-sweep 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
