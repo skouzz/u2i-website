@@ -288,6 +288,37 @@ try {
 
 ensure_column($pdo, 'page_blocks', 'is_visible', 'TINYINT(1) NOT NULL DEFAULT 1');
 
+ensure_column($pdo, 'settings', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'site_config', 'i18n_json', 'JSON NULL');
+
+// ── v3 i18n (English) ──────────────────────────────────────────────────────
+// French remains the source language in the existing columns; English lives in
+// dedicated columns (slug_en) / JSON blobs (i18n_json). Every i18n_json blob has
+// the shape {"en": {<field>: <value>}}, so other languages can be added later
+// without another migration. NULL / empty means "not translated yet" and the
+// public API falls back to French, flagging the item in the admin.
+ensure_column($pdo, 'pages', 'slug_en', 'VARCHAR(191) NULL');
+ensure_column($pdo, 'pages', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'articles', 'slug_en', 'VARCHAR(191) NULL');
+ensure_column($pdo, 'articles', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'page_blocks', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'content_blocks', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'menu_items', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'categories', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'tags', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'media', 'i18n_json', 'JSON NULL');
+
+// English slugs must stay unique, but only among rows that HAVE one — MySQL
+// allows many NULLs in a UNIQUE index, which is exactly the semantics wanted.
+try {
+    $pdo->exec('CREATE UNIQUE INDEX idx_pages_slug_en ON pages (slug_en)');
+} catch (Throwable $e) {
+}
+try {
+    $pdo->exec('CREATE UNIQUE INDEX idx_articles_slug_en ON articles (slug_en)');
+} catch (Throwable $e) {
+}
+
 try {
     $pdo->exec("CREATE INDEX idx_pages_pub ON pages (is_published, published_at)");
 } catch (Throwable $e) {

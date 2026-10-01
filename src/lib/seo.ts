@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { CmsSeo } from "./cms";
+import { localeFromPath, stripLocale } from "./i18n";
 
 function setMeta(attr: "name" | "property", key: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
@@ -23,6 +24,20 @@ function setCanonical(href: string) {
 
 function setRobots(content: string) {
   setMeta("name", "robots", content);
+}
+
+/** Upsert a <link rel="alternate" hreflang="…"> for the bilingual pair. */
+function setAlternate(hreflang: string, href: string) {
+  let el = document.head.querySelector<HTMLLinkElement>(
+    `link[rel="alternate"][hreflang="${hreflang}"]`,
+  );
+  if (!el) {
+    el = document.createElement("link");
+    el.rel = "alternate";
+    el.setAttribute("hreflang", hreflang);
+    document.head.appendChild(el);
+  }
+  el.href = href;
 }
 
 /** Upsert one JSON-LD <script> block, identified by its @type. */
@@ -81,6 +96,9 @@ export function useSeo(options: {
     breadcrumbs,
   } = options;
 
+  const locale = localeFromPath(
+    typeof window !== "undefined" ? window.location.pathname : "/",
+  );
   useEffect(() => {
     const url = `${SITE_URL}${path ?? window.location.pathname}`;
     const finalTitle = seo?.seoTitle || title;
@@ -109,7 +127,18 @@ export function useSeo(options: {
     setMeta("property", "og:type", ogType === "article" ? "article" : "website");
     setMeta("property", "og:url", url);
     setMeta("property", "og:site_name", SITE_NAME);
+    setMeta("property", "og:locale", locale === "en" ? "en_GB" : "fr_FR");
     setCanonical(seo?.canonicalUrl || url);
+
+    // ── hreflang alternates ──
+    // French lives at the root, English under /en. Emitted for both locales so
+    // search engines treat them as one page in two languages instead of two
+    // competing pages.
+    const altPath = path ?? window.location.pathname;
+    const frPath = stripLocale(altPath);
+    setAlternate("fr", `${SITE_URL}${frPath === "/" ? "" : frPath}`);
+    setAlternate("en", `${SITE_URL}/en${frPath === "/" ? "" : frPath}`);
+    setAlternate("x-default", `${SITE_URL}${frPath === "/" ? "" : frPath}`);
 
     // Robots: page-level directive wins; never weaken an explicit noindex.
     setRobots(seo?.robots && seo.robots.trim() !== "" ? seo.robots : "index, follow");

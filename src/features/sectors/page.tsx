@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n } from "@/lib/i18n";
 import "./sectors.css";
 
 type Photo = { src: string; path: string };
@@ -124,6 +125,7 @@ const HERO_PHOTO =
   allPhotos.find((photo) => cleanPath(photo.path).includes("hero-welding")) ?? allPhotos[0];
 
 export function SectorsPage() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [activePhoto, setActivePhoto] = useState<{
     sector: Sector;
@@ -179,8 +181,8 @@ export function SectorsPage() {
     <main className="sectors-page">
       <PageHero
         id="sectors"
-        breadcrumb="Secteurs"
-        eyebrow="L'expertise U2I, sur le terrain"
+        breadcrumb={t("sectors.hero.eyebrow")}
+        eyebrow={t("sectors.hero.eyebrow")}
         title={
           <>
             Des savoir-faire
@@ -188,8 +190,8 @@ export function SectorsPage() {
             <span>qui font avancer</span> l'industrie.
           </>
         }
-        description="Des environnements exigeants, des solutions conçues pour durer. Explorez nos métiers et nos réalisations en images."
-        linkLabel="Explorer nos secteurs"
+        description={t("sectors.hero.text")}
+        linkLabel={t("common.discover")}
         linkHref="#catalogue-secteurs"
         image={HERO_PHOTO?.src ?? ""}
         imagePosition="center 48%"

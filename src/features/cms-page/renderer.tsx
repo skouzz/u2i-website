@@ -5,6 +5,7 @@ import { PageHero } from "@/components/PageHero";
 import { PageBlocksSkeleton } from "@/components/loading";
 import workshopImage from "@/assets/about-workshop.jpg";
 import { cmsApi, type CmsBlock } from "@/lib/cms";
+import { useI18n } from "@/lib/i18n";
 import { useSeo } from "@/lib/seo";
 import { sanitizeArticleHtml as sanitizeBlockHtml } from "@/lib/sanitize-html";
 import "@/features/contact/contact.css";
@@ -161,14 +162,15 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
 }
 
 export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
+  const { locale, t, link } = useI18n();
   // Draft preview: the API only honors ?preview=1 for logged-in admins — this
   // flag just asks the backend; authorization is enforced server-side.
   const wantsPreview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("preview") === "1";
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["cms", "page", slug, wantsPreview ? "preview" : "live"],
-    queryFn: () => cmsApi.page(slug, wantsPreview),
+    queryKey: ["cms", "page", slug, wantsPreview ? "preview" : "live", locale],
+    queryFn: () => cmsApi.page(slug, wantsPreview, locale),
     retry: 1,
   });
 
@@ -181,7 +183,7 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
     ogImage: page?.heroImageUrl,
     path: `/p/${slug}`,
     breadcrumbs: [
-      { label: "Accueil", path: "/" },
+      { label: t("nav.home"), path: "/" },
       { label: page?.title ?? slug, path: `/p/${slug}` },
     ],
   });
@@ -199,10 +201,7 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
       <main className="contact-page">
         <div className="contact-main">
           <div className="contact-wrap">
-            <div className="news-empty">
-              Cette page n'est pas encore disponible — elle sera visible dès qu'elle sera publiée
-              dans le dashboard d'administration.
-            </div>
+            <div className="news-empty">{t("cms.notAvailable")}</div>
           </div>
         </div>
       </main>
@@ -217,8 +216,8 @@ export function CmsPageRoute({ slug, fallbackImage }: CmsPageRouteProps) {
         eyebrow={page.eyebrow ?? ""}
         title={<>{page.heroTitle ?? page.title}</>}
         description={page.heroText ?? ""}
-        linkLabel="Nous contacter"
-        linkHref="/contact"
+        linkLabel={t("common.contactUs")}
+        linkHref={link("/contact")}
         image={page.heroImageUrl ?? fallbackImage ?? workshopImage}
         imageAlt={page.title}
       />

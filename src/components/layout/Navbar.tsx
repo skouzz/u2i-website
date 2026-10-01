@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import {
   ChevronDown,
   Facebook,
@@ -14,6 +13,10 @@ import {
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
 import emailIcon from "@/assets/partners/email.png";
 import { cmsApi, type CmsNavItem, type CmsSettings } from "@/lib/cms";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/lib/i18n/LanguageSwitcher";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 
 type NavLink = {
   label: string;
@@ -32,6 +35,17 @@ const FALLBACK_LINKS: { label: string; url: string }[] = [
   { label: "Actualités", url: "/actualites" },
   { label: "Contact", url: "/contact" },
 ];
+
+/** Translation keys for the fallback nav, so it also speaks English. */
+const FALLBACK_LABEL_KEYS: Record<string, MessageKey> = {
+  "/": "nav.home",
+  "/about": "nav.about",
+  "/secteurs": "nav.sectors",
+  "/equipements": "nav.equipment",
+  "/references": "nav.references",
+  "/actualites": "nav.news",
+  "/contact": "nav.contact",
+};
 
 /** Normalize any nav item (menu tree or legacy page list) to a common shape. */
 function normalizeItems(items: CmsNavItem[]): NavLink[] {
@@ -52,6 +66,7 @@ function normalizeItems(items: CmsNavItem[]): NavLink[] {
 }
 
 export function Navbar() {
+  const { locale, t, link } = useI18n();
   const [open, setOpen] = useState(false);
   const [links, setLinks] = useState<NavLink[]>([]);
   const [settings, setSettings] = useState<CmsSettings | null>(null);
@@ -59,13 +74,13 @@ export function Navbar() {
   useEffect(() => {
     let alive = true;
     const fallback = FALLBACK_LINKS.map((l) => ({
-      label: l.label,
+      label: t(FALLBACK_LABEL_KEYS[l.url] ?? "nav.home"),
       url: l.url,
       newTab: false,
       children: [],
     }));
     cmsApi
-      .nav()
+      .nav(locale)
       .then((res) => {
         if (!alive) return;
         setLinks(res.items?.length ? normalizeItems(res.items) : fallback);
@@ -74,13 +89,15 @@ export function Navbar() {
         if (alive) setLinks(fallback);
       });
     cmsApi
-      .settings()
+      .settings(locale)
       .then((res) => alive && setSettings(res.settings))
       .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, []);
+    // Re-fetch when the visitor switches language: the API serves the
+    // translated menu labels and site strings for the active locale.
+  }, [locale, t]);
 
   const header = settings?.header_json;
   const social = settings?.social_json;
@@ -144,26 +161,27 @@ export function Navbar() {
               ))}
             </div>
           ) : null}
+          <LanguageSwitcher tone="dark" />
         </div>
       </div>
 
       {/* Main nav */}
       <div className="py-2">
         <div className="wrap flex items-center gap-6">
-          <Link to="/" aria-label="U2I" className="mr-4 shrink-0">
+          <LocalizedLink to="/" aria-label="U2I" className="mr-4 shrink-0">
             <img
               src={logo}
               alt="Univers Inox"
               className="h-9 w-auto rounded-md object-contain sm:h-10"
             />
-          </Link>
+          </LocalizedLink>
 
-          <nav className="hidden flex-1 lg:block" aria-label="Menu principal">
+          <nav className="hidden flex-1 lg:block" aria-label={t("nav.menu")}>
             <ul className="flex gap-6 [&:hover_a]:opacity-50">
               {links.map((item) => (
                 <li key={item.label} className="relative group">
                   <a
-                    href={item.url}
+                    href={link(item.url)}
                     target={item.newTab ? "_blank" : undefined}
                     rel={item.newTab ? "noreferrer" : undefined}
                     className="text-sm font-bold text-white transition-opacity hover:!opacity-100 hover:text-[#e0141c] relative"
@@ -176,7 +194,7 @@ export function Navbar() {
                       {item.children.map((child) => (
                         <li key={child.label}>
                           <a
-                            href={child.url}
+                            href={link(child.url)}
                             target={child.newTab ? "_blank" : undefined}
                             rel={child.newTab ? "noreferrer" : undefined}
                             className="flex items-center justify-between px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/5 hover:text-[#e0141c]"
@@ -197,7 +215,7 @@ export function Navbar() {
 
           <button
             className="ml-auto grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-[#e0141c]/20 lg:hidden"
-            aria-label="Menu"
+            aria-label={t("nav.menu")}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
@@ -215,17 +233,17 @@ export function Navbar() {
         <button
           className="absolute top-6 right-6 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white"
           onClick={() => setOpen(false)}
-          aria-label="Fermer le menu"
+          aria-label={t("nav.close")}
         >
           <X className="h-5 w-5" />
         </button>
 
-        <nav aria-label="Menu mobile">
+        <nav aria-label={t("nav.menu")}>
           <ul className="flex flex-col gap-5">
             {links.map((item) => (
               <li key={item.label}>
                 <a
-                  href={item.url}
+                  href={link(item.url)}
                   onClick={() => setOpen(false)}
                   className="text-2xl font-bold text-white transition-colors hover:text-[#e0141c]"
                 >
@@ -236,7 +254,7 @@ export function Navbar() {
                     {item.children.map((child) => (
                       <li key={child.label}>
                         <a
-                          href={child.url}
+                          href={link(child.url)}
                           onClick={() => setOpen(false)}
                           className="text-base font-semibold text-white/70 transition-colors hover:text-[#e0141c]"
                         >
@@ -249,6 +267,9 @@ export function Navbar() {
               </li>
             ))}
           </ul>
+          <div className="mt-8 border-t border-white/10 pt-6">
+            <LanguageSwitcher tone="dark" />
+          </div>
         </nav>
       </div>
     </header>

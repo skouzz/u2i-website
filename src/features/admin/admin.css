@@ -439,6 +439,37 @@
   color: #2e7d32;
 }
 
+.admin-alert--warn {
+  background: #fdf3e3;
+  color: #92610e;
+  border: 1px solid #f2ddb5;
+}
+
+/* Translation status badges (EN / partial / French only). */
+.admin-badge--ok {
+  background: #e5f2e6;
+  color: #2e7d32;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.admin-badge--warn {
+  background: #fdf3e3;
+  color: #92610e;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.admin-badge--muted {
+  background: #f3f4f6;
+  color: #9ca3af;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* Media grid */
 
 .admin-media-grid {

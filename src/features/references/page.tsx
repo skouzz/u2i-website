@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n } from "@/lib/i18n";
 import referencesHeroImage from "@/assets/axxair-1.jpg";
 import sanofiLogoImage from "@/assets/partners/Sanofi.png";
 import hikmaLogoImage from "@/assets/partners/LOGO HIKMA.jpg";
@@ -82,11 +83,12 @@ const CERTIFICATIONS = [
 ] as const;
 
 export function ReferencesPage() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-[#f5f7f8] text-slate-900">
       <PageHero
         id="references"
-        breadcrumb="Références"
+        breadcrumb={t("references.hero.eyebrow")}
         eyebrow="Ils nous font confiance"
         title={
           <>
@@ -95,8 +97,8 @@ export function ReferencesPage() {
             <span>références.</span>
           </>
         }
-        description="Des partenaires de confiance et des certifications qui témoignent de notre engagement qualité."
-        linkLabel="Découvrir nos partenaires"
+        description={t("references.hero.text")}
+        linkLabel={t("common.discover")}
         linkHref="#partenaires"
         image={referencesHeroImage}
         imageAlt="Installation inox réalisée par U2I"

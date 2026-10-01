@@ -18,6 +18,7 @@ import {
   SeoFields,
   StatusFields,
 } from "../components/editor-fields";
+import { TranslationBadge, TranslationFields } from "../components/translation-fields";
 
 export function ArticlesSection({ ctx }: { ctx: AdminCtx }) {
   const [articles, setArticles] = useState<CmsArticle[]>([]);
@@ -157,6 +158,10 @@ export function ArticlesSection({ ctx }: { ctx: AdminCtx }) {
                         ? "Archivé"
                         : "Brouillon"}
               </span>
+              <TranslationBadge
+                isTranslated={article.isTranslated}
+                missing={article.missingTranslation}
+              />
               <span className="admin-row__spacer" />
               <button
                 className={`admin-btn ${article.isPublished ? "" : "admin-btn--primary"}`}
@@ -239,6 +244,11 @@ function ArticleForm({
   const [status, setStatus] = useState<CmsStatus>(article?.status ?? "draft");
   const [scheduledAt, setScheduledAt] = useState((article?.scheduledAt ?? "").slice(0, 16));
   const [seo, setSeo] = useState<CmsSeo>(article?.seo ?? {});
+  const [slugEn, setSlugEn] = useState(article?.slugEn ?? "");
+  const [i18n, setI18n] = useState<Record<string, Record<string, string>>>(
+    article?.i18n ?? {},
+  );
+  const [missing, setMissing] = useState<string[]>(article?.missingTranslation ?? []);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [tags, setTags] = useState<CmsTag[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -265,6 +275,9 @@ function ArticleForm({
       .then((res) => {
         const a = res.article;
         setSlug(a.slug);
+        setSlugEn(a.slugEn ?? "");
+        setI18n(a.i18n ?? {});
+        setMissing(a.missingTranslation ?? []);
         setExcerpt(a.excerpt ?? "");
         setBody(a.body ?? "");
         setCoverImageUrl(a.coverImageUrl ?? "");
@@ -286,6 +299,7 @@ function ArticleForm({
     const payload: AdminArticlePayload = {
       title,
       slug: slug || undefined,
+      slugEn: slugEn || undefined,
       excerpt,
       body,
       coverImageUrl,
@@ -295,6 +309,7 @@ function ArticleForm({
       status,
       scheduledAt: status === "scheduled" ? scheduledAt : undefined,
       seo,
+      i18n,
     };
 
     try {
@@ -406,6 +421,30 @@ function ArticleForm({
           Utilisez 🖼 pour insérer une image de la médiathèque directement dans le texte.
         </span>
       </div>
+
+      <TranslationFields
+        slugEn={{ value: slugEn, onChange: setSlugEn, frenchSlug: slug }}
+        fields={[
+          { key: "title", label: "Titre", source: title, value: i18n.en?.title ?? "" },
+          {
+            key: "excerpt",
+            label: "Résumé",
+            source: excerpt,
+            value: i18n.en?.excerpt ?? "",
+            multiline: true,
+          },
+          {
+            key: "body",
+            label: "Contenu de l'article",
+            source: body,
+            value: i18n.en?.body ?? "",
+            multiline: true,
+          },
+          { key: "author", label: "Auteur", source: author, value: i18n.en?.author ?? "" },
+        ]}
+        onChange={setI18n}
+        missing={missing}
+      />
 
       <SeoFields seo={seo} onChange={setSeo} />
 

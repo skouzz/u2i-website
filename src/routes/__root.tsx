@@ -13,23 +13,24 @@ import appCss from "../styles.css?url";
 import logoImg from "../assets/logo-u2i-removebg-preview.png";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
+import { I18nProvider, useI18n } from "@/lib/i18n";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 
 function NotFoundComponent() {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{t("common.notFound")}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{t("common.notFoundBody")}</p>
         <div className="mt-6">
-          <Link
+          <LocalizedLink
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
-          </Link>
+            {t("common.backHome")}
+          </LocalizedLink>
         </div>
       </div>
     </div>
@@ -39,16 +40,15 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const { t, link } = useI18n();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          {t("common.errorTitle")}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("common.errorBody")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -57,13 +57,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            {t("common.retry")}
           </button>
           <a
-            href="/"
+            href={link("/")}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            {t("common.backHome")}
           </a>
         </div>
       </div>
@@ -114,10 +114,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // The shell is a single static file shared by every route, so the server
+  // cannot know which language it is rendering. Default to French (the source
+  // language) and correct it before the body paints, so an English page is
+  // never announced as French by a screen reader or parsed as French by a
+  // crawler. Kept inline and tiny so it runs synchronously in <head>.
   return (
     <html lang="fr">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(/^\\/en(\\/|$)/.test(location.pathname)){document.documentElement.lang='en'}}catch(e){}",
+          }}
+        />
       </head>
       <body>
         {children}
@@ -132,14 +143,16 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="w-full max-w-full overflow-x-hidden flex flex-col min-h-screen">
-        <Navbar />
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <div className="grow w-full max-w-full overflow-x-hidden">
-          <Outlet />
+      <I18nProvider>
+        <div className="w-full max-w-full overflow-x-hidden flex flex-col min-h-screen">
+          <Navbar />
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <div className="grow w-full max-w-full overflow-x-hidden">
+            <Outlet />
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

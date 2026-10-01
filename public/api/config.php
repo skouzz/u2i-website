@@ -211,23 +211,210 @@ function slugify(string $text): string
  * Guarantee a unique slug in $table. $table must come from the internal
  * allow-list — never from user input (identifier injection guard).
  */
-function unique_slug(string $table, string $base, int $excludeId = 0): string
+function unique_slug(string $table, string $base, int $excludeId = 0, string $column = 'slug'): string
 {
     static $allowed = ['pages', 'articles', 'categories', 'tags'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Unknown table for slug generation.');
     }
+    if (!in_array($column, ['slug', 'slug_en'], true)) {
+        throw new InvalidArgumentException('Unknown slug column.');
+    }
 
     $slug = $base;
     $i = 2;
     while (true) {
-        $stmt = db()->prepare("SELECT COUNT(*) AS c FROM {$table} WHERE slug = ? AND id != ?");
+        $stmt = db()->prepare("SELECT COUNT(*) AS c FROM {$table} WHERE {$column} = ? AND id != ?");
         $stmt->execute([$slug, $excludeId]);
         if ((int) $stmt->fetch()['c'] === 0) {
             return $slug;
         }
         $slug = $base . '-' . $i++;
     }
+}
+
+// ── i18n ────────────────────────────────────────────────────────────────────
+
+/** Source language: French. Never stored as a translation. */
+const U2I_SRC_LANG = 'fr';
+/** Languages the public site can serve. French stays at the root. */
+const U2I_LANGS = ['fr', 'en'];
+
+/**
+ * Resolve the language to serve.
+ *
+ * Precedence: explicit ?lang= → ?/path prefix hint (the front-end sends
+ * X-U2I-Lang) → Accept-Language → French. French is the source language and
+ * always resolves, so the public site keeps working on an older build.
+ */
+function current_lang(): string
+{
+    static $resolved = null;
+    if ($resolved !== null) {
+        return $resolved;
+    }
+
+    $candidates = [];
+    $explicit = $_GET['lang'] ?? null;
+    if (is_string($explicit) && $explicit !== '') {
+        $candidates[] = $explicit;
+    }
+    $header = $_SERVER['HTTP_X_U2I_LANG'] ?? null;
+    if (is_string($header) && $header !== '') {
+        $candidates[] = $header;
+    }
+    $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+    if (is_string($accept) && $accept !== '') {
+        foreach (explode(',', $accept) as $chunk) {
+            $tag = strtolower(trim(explode(';', $chunk)[0]));
+            if ($tag !== '') {
+                $candidates[] = substr($tag, 0, 2);
+            }
+        }
+    }
+
+    foreach ($candidates as $candidate) {
+        $candidate = strtolower(substr((string) $candidate, 0, 2));
+        if (in_array($candidate, U2I_LANGS, true)) {
+            return $resolved = $candidate;
+        }
+    }
+
+    return $resolved = U2I_SRC_LANG;
+}
+
+/** Decode an i18n_json column into ['en' => [field => value], …]. */
+function decode_i18n(?string $raw): array
+{
+    if ($raw === null || $raw === '') {
+        return [];
+    }
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+/** Encode a translation map for storage, dropping empty values. */
+function encode_i18n(array $byLang): string
+{
+    $clean = [];
+    foreach ($byLang as $lang => $fields) {
+        if (!is_array($fields)) {
+            continue;
+        }
+        $fields = array_filter(
+            $fields,
+            static fn ($v) => $v !== null && $v !== '' && $v !== []
+        );
+        if ($fields) {
+            $clean[$lang] = $fields;
+        }
+    }
+
+    // An empty map must serialize as {} not []: this lands in a MySQL JSON
+    // column and every consumer expects an object keyed by language.
+    $json = json_encode(
+        $clean === [] ? new stdClass() : $clean,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+    );
+
+    return $json === false ? '{}' : $json;
+}
+
+/** One language's fields for an entity, always an array. */
+function i18n_fields(array $i18n, string $lang): array
+{
+    $fields = $i18n[$lang] ?? null;
+    return is_array($fields) ? $fields : [];
+}
+
+/**
+ * Overlay the requested language onto a base (French) row.
+ *
+ * Each field is filled from the translation when present and non-empty,
+ * otherwise it keeps the French value. $fieldMap is [dbColumn => jsonKey].
+ * Returns the merged row plus a per-field list of what was actually
+ * translated, so the admin can flag gaps.
+ */
+function apply_i18n(array $row, array $fieldMap, string $lang): array
+{
+    if ($lang === U2I_SRC_LANG || $fieldMap === []) {
+        return $row;
+    }
+
+    $i18n = decode_i18n(isset($row['i18n_json']) ? (string) $row['i18n_json'] : null);
+    $fields = i18n_fields($i18n, $lang);
+
+    foreach ($fieldMap as $column => $key) {
+        if (!array_key_exists($key, $fields)) {
+            continue;
+        }
+        $value = $fields[$key];
+        if ($value === null || $value === '' || $value === []) {
+            continue;
+        }
+        $row[$column] = $value;
+    }
+
+    return $row;
+}
+
+/**
+ * Which fields still lack a translation, for the admin warning badge.
+ * Returns a flat list of JSON keys, e.g. ['title', 'body'].
+ */
+function i18n_missing(array $i18n, array $fieldMap, string $lang = 'en'): array
+{
+    $fields = i18n_fields($i18n, $lang);
+    $missing = [];
+    foreach ($fieldMap as $key) {
+        if (!isset($fields[$key]) || $fields[$key] === '' || $fields[$key] === []) {
+            $missing[] = $key;
+        }
+    }
+
+    return $missing;
+}
+
+/** True when at least one field of the entity is translated. */
+function i18n_is_translated(array $i18n, string $lang = 'en'): bool
+{
+    return i18n_fields($i18n, $lang) !== [];
+}
+
+/**
+ * Resolve a public slug in the active language.
+ * An untranslated entity is still reachable under its French slug, so old
+ * links and shared URLs never 404.
+ */
+function find_by_slug(string $table, string $slug, string $lang, bool $publishedOnly, bool $preview)
+{
+    static $allowed = ['pages', 'articles'];
+    if (!in_array($table, $allowed, true)) {
+        throw new InvalidArgumentException('Unknown table.');
+    }
+
+    $statusClause = $publishedOnly ? " AND status = 'published'" : '';
+    if (!$publishedOnly) {
+        $statusClause = '';
+    }
+
+    $attempts = [];
+    if ($lang !== U2I_SRC_LANG) {
+        $attempts[] = 'slug_en';
+    }
+    $attempts[] = 'slug';
+
+    foreach ($attempts as $column) {
+        $sql = "SELECT * FROM {$table} WHERE {$column} = ?{$statusClause} LIMIT 1";
+        $stmt = db()->prepare($sql);
+        $stmt->execute([$slug]);
+        $row = $stmt->fetch();
+        if ($row) {
+            return $row;
+        }
+    }
+
+    return null;
 }
 
 function admin_session_start(): void

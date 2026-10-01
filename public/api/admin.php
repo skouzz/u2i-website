@@ -194,7 +194,7 @@ function map_page_row(array $row): array
         }
     }
 
-    return [
+    return with_i18n_meta([
         'id' => (int) $row['id'],
         'slug' => (string) $row['slug'],
         'title' => (string) $row['title'],
@@ -211,7 +211,7 @@ function map_page_row(array $row): array
         'scheduledAt' => $row['scheduled_at'] ?? null,
         'seo' => $seo,
         'updatedAt' => $row['updated_at'] ?? null,
-    ];
+    ], $row, ['title', 'eyebrow', 'heroTitle', 'heroText', 'navLabel']);
 }
 
 /** Map a raw articles row to the camelCase shape the dashboard expects. */
@@ -225,7 +225,7 @@ function map_article_row(array $row): array
         }
     }
 
-    return [
+    return with_i18n_meta([
         'id' => (int) $row['id'],
         'slug' => (string) $row['slug'],
         'title' => (string) $row['title'],
@@ -240,7 +240,7 @@ function map_article_row(array $row): array
         'scheduledAt' => $row['scheduled_at'] ?? null,
         'seo' => $seo,
         'updatedAt' => $row['updated_at'] ?? null,
-    ];
+    ], $row, ['title', 'excerpt', 'body', 'author']);
 }
 
 /** Map a raw page_blocks row (images_json decoded into images[]). */
@@ -254,7 +254,7 @@ function map_block_row(array $row): array
         }
     }
 
-    return [
+    $mapped = [
         'type' => (string) $row['type'],
         'title' => $row['title'] ?? null,
         'body' => $row['body'] ?? null,
@@ -262,6 +262,8 @@ function map_block_row(array $row): array
         'images' => $images,
         'isVisible' => !isset($row['is_visible']) || (int) $row['is_visible'] === 1,
     ];
+
+    return with_i18n_meta($mapped, $row, ['title', 'body']);
 }
 
 /** Replace the blocks of a page with the provided payload. */
@@ -269,8 +271,8 @@ function save_blocks(int $pageId, array $blocks): void
 {
     db()->prepare('DELETE FROM page_blocks WHERE page_id = ?')->execute([$pageId]);
     $stmt = db()->prepare(
-        'INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json, is_visible)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO page_blocks (page_id, type, sort_order, title, body, image_url, images_json, is_visible, i18n_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $order = 0;
     foreach ($blocks as $block) {
@@ -282,6 +284,16 @@ function save_blocks(int $pageId, array $blocks): void
             continue;
         }
         $images = $block['images'] ?? null;
+        // Each block carries its own English overlay: only title/body are
+        // translatable, images and layout stay shared.
+        $en = is_array($block['i18n']['en'] ?? null) ? $block['i18n']['en'] : [];
+        $i18n = [];
+        foreach (['title', 'body'] as $key) {
+            $value = is_string($en[$key] ?? null) ? trim($en[$key]) : '';
+            if ($value !== '') {
+                $i18n[$key] = $value;
+            }
+        }
         $stmt->execute([
             $pageId,
             $type,
@@ -291,13 +303,65 @@ function save_blocks(int $pageId, array $blocks): void
             field($block, 'imageUrl') !== '' ? field($block, 'imageUrl') : null,
             is_array($images) ? json_encode(array_values(array_filter(array_map('strval', $images)))) : null,
             array_key_exists('isVisible', $block) && !$block['isVisible'] ? 0 : 1,
+            $i18n ? encode_i18n(['en' => $i18n]) : null,
         ]);
     }
 }
 
+/**
+ * Normalize an `i18n` payload from the admin into the storage shape.
+ * Only known languages and only non-empty strings survive.
+ */
+function sanitize_i18n_payload($raw, array $allowedKeys = []): ?string
+{
+    if (!is_array($raw)) {
+        return null;
+    }
+    $out = [];
+    foreach (U2I_LANGS as $lang) {
+        if ($lang === U2I_SRC_LANG || !isset($raw[$lang]) || !is_array($raw[$lang])) {
+            continue;
+        }
+        $fields = [];
+        foreach ($raw[$lang] as $key => $value) {
+            if ($allowedKeys && !in_array($key, $allowedKeys, true)) {
+                continue;
+            }
+            if (is_string($value)) {
+                $value = trim($value);
+            } elseif (!is_array($value)) {
+                continue;
+            }
+            if ($value === '' || $value === []) {
+                continue;
+            }
+            $fields[$key] = $value;
+        }
+        if ($fields) {
+            $out[$lang] = $fields;
+        }
+    }
+
+    return $out ? encode_i18n($out) : '{}';
+}
+
+/** Attach translation coverage metadata to a mapped row (admin badges). */
+function with_i18n_meta(array $mapped, array $row, array $fieldMap): array
+{
+    $i18n = decode_i18n(isset($row['i18n_json']) ? (string) $row['i18n_json'] : null);
+    $mapped['i18n'] = $i18n;
+    $mapped['isTranslated'] = i18n_is_translated($i18n);
+    $mapped['missingTranslation'] = i18n_missing($i18n, $fieldMap);
+    if (isset($row['slug_en'])) {
+        $mapped['slugEn'] = $row['slug_en'] !== null && $row['slug_en'] !== '' ? (string) $row['slug_en'] : null;
+    }
+
+    return $mapped;
+}
+
 function list_articles(): array
 {
-    $rows = db()->query('SELECT id, slug, title, excerpt, cover_image_url, author, category_id, status, is_published, published_at, scheduled_at, updated_at FROM articles ORDER BY COALESCE(published_at, created_at) DESC')->fetchAll();
+    $rows = db()->query('SELECT id, slug, slug_en, i18n_json, title, excerpt, cover_image_url, author, category_id, status, is_published, published_at, scheduled_at, updated_at FROM articles ORDER BY COALESCE(published_at, created_at) DESC')->fetchAll();
 
     return $rows;
 }
@@ -547,6 +611,10 @@ try {
                 }
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
                 $slug = unique_slug('pages', $slug, $id);
+                // English slug is optional: blank keeps the French one working
+                // under /en so an untranslated page never 404s.
+                $slugEnRaw = field($data, 'slugEn');
+                $slugEn = $slugEnRaw !== '' ? unique_slug('pages', slugify($slugEnRaw), $id, 'slug_en') : null;
                 [$status, $scheduledAt] = derive_status($data, (string) ($page['status'] ?? 'draft'));
                 $publishedAt = $page['published_at'] ?? null;
                 if ($status === 'published' && $publishedAt === null) {
@@ -555,10 +623,15 @@ try {
                     $publishedAt = null;
                 }
                 $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
+                $i18n = sanitize_i18n_payload(
+                    $data['i18n'] ?? null,
+                    ['title', 'eyebrow', 'heroTitle', 'heroText', 'navLabel']
+                );
                 db()->prepare(
-                    'UPDATE pages SET slug = ?, title = ?, eyebrow = ?, hero_title = ?, hero_text = ?, hero_image_url = ?, nav_label = ?, nav_order = ?, parent_id = ?, status = ?, is_published = ?, published_at = ?, scheduled_at = ?, seo_json = COALESCE(?, seo_json), updated_by = ? WHERE id = ?'
+                    'UPDATE pages SET slug = ?, slug_en = ?, title = ?, eyebrow = ?, hero_title = ?, hero_text = ?, hero_image_url = ?, nav_label = ?, nav_order = ?, parent_id = ?, status = ?, is_published = ?, published_at = ?, scheduled_at = ?, seo_json = COALESCE(?, seo_json), i18n_json = ?, updated_by = ? WHERE id = ?'
                 )->execute([
                     $slug,
+                    $slugEn,
                     $title,
                     field($data, 'eyebrow') ?: null,
                     field($data, 'heroTitle') ?: null,
@@ -572,6 +645,7 @@ try {
                     $publishedAt,
                     $scheduledAt,
                     $seo,
+                    $i18n,
                     current_actor(),
                     $id,
                 ]);
@@ -691,6 +765,8 @@ try {
                 }
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
                 $slug = unique_slug('articles', $slug, $id);
+                $slugEnRaw = field($data, 'slugEn');
+                $slugEn = $slugEnRaw !== '' ? unique_slug('articles', slugify($slugEnRaw), $id, 'slug_en') : null;
                 [$status, $scheduledAt] = derive_status($data, (string) ($article['status'] ?? 'draft'));
                 $publishedAt = $article['published_at'] ?? null;
                 if ($status === 'published' && $publishedAt === null) {
@@ -699,10 +775,15 @@ try {
                     $publishedAt = null;
                 }
                 $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
+                $i18n = sanitize_i18n_payload(
+                    $data['i18n'] ?? null,
+                    ['title', 'excerpt', 'body', 'author']
+                );
                 db()->prepare(
-                    'UPDATE articles SET slug = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ?, category_id = ?, status = ?, is_published = ?, published_at = ?, scheduled_at = ?, seo_json = COALESCE(?, seo_json), updated_by = ? WHERE id = ?'
+                    'UPDATE articles SET slug = ?, slug_en = ?, title = ?, excerpt = ?, body = ?, cover_image_url = ?, author = ?, category_id = ?, status = ?, is_published = ?, published_at = ?, scheduled_at = ?, seo_json = COALESCE(?, seo_json), i18n_json = ?, updated_by = ? WHERE id = ?'
                 )->execute([
                     $slug,
+                    $slugEn,
                     $title,
                     field($data, 'excerpt') ?: null,
                     field($data, 'body') ?: null,
@@ -714,6 +795,7 @@ try {
                     $publishedAt,
                     $scheduledAt,
                     $seo,
+                    $i18n,
                     current_actor(),
                     $id,
                 ]);
@@ -1171,13 +1253,62 @@ try {
             $rows = db()->query('SELECT * FROM activity_log ORDER BY id DESC LIMIT 100')->fetchAll();
             json_response(['ok' => true, 'items' => $rows]);
 
+        // ── Translation coverage: what still needs an English version ────
+        case 'i18n_coverage':
+            csrf_or_fail();
+            if ($method !== 'GET') {
+                json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+            }
+            $pageFields = ['title', 'eyebrow', 'heroTitle', 'heroText', 'navLabel'];
+            $articleFields = ['title', 'excerpt', 'body', 'author'];
+            $report = ['pages' => [], 'articles' => [], 'homeBlocks' => [], 'menus' => []];
+
+            foreach (db()->query('SELECT id, slug, slug_en, i18n_json, title FROM pages ORDER BY title ASC')->fetchAll() as $row) {
+                $missing = i18n_missing(decode_i18n((string) ($row['i18n_json'] ?? '')), $pageFields);
+                $report['pages'][] = [
+                    'id' => (int) $row['id'],
+                    'title' => (string) $row['title'],
+                    'slug' => (string) $row['slug'],
+                    'slugEn' => $row['slug_en'] ?: null,
+                    'isTranslated' => $missing !== $pageFields,
+                    'missing' => $missing,
+                ];
+            }
+            foreach (db()->query('SELECT id, slug, slug_en, i18n_json, title FROM articles ORDER BY COALESCE(published_at, created_at) DESC')->fetchAll() as $row) {
+                $missing = i18n_missing(decode_i18n((string) ($row['i18n_json'] ?? '')), $articleFields);
+                $report['articles'][] = [
+                    'id' => (int) $row['id'],
+                    'title' => (string) $row['title'],
+                    'slug' => (string) $row['slug'],
+                    'slugEn' => $row['slug_en'] ?: null,
+                    'isTranslated' => $missing !== $articleFields,
+                    'missing' => $missing,
+                ];
+            }
+            foreach (db()->query('SELECT id, type, title, i18n_json FROM content_blocks ORDER BY sort_order ASC')->fetchAll() as $row) {
+                $report['homeBlocks'][] = [
+                    'id' => (int) $row['id'],
+                    'type' => (string) $row['type'],
+                    'title' => (string) ($row['title'] ?? ''),
+                    'isTranslated' => i18n_is_translated(decode_i18n((string) ($row['i18n_json'] ?? ''))),
+                ];
+            }
+            foreach (db()->query('SELECT id, label, i18n_json FROM menu_items ORDER BY sort_order ASC')->fetchAll() as $row) {
+                $report['menus'][] = [
+                    'id' => (int) $row['id'],
+                    'label' => (string) $row['label'],
+                    'isTranslated' => i18n_is_translated(decode_i18n((string) ($row['i18n_json'] ?? ''))),
+                ];
+            }
+            json_response(['ok' => true, 'coverage' => $report, 'lang' => 'en']);
+
         // ── Dashboard stats ──────────────────────────────────────────────
         case 'stats':
             csrf_or_fail();
             if ($method !== 'GET') {
                 json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
             }
-            json_response(['ok' => true, 'stats' => [
+            $stats = [
                 'pages' => (int) db()->query('SELECT COUNT(*) AS c FROM pages')->fetch()['c'],
                 'pagesPublished' => (int) db()->query("SELECT COUNT(*) AS c FROM pages WHERE status = 'published'")->fetch()['c'],
                 'pagesDraft' => (int) db()->query("SELECT COUNT(*) AS c FROM pages WHERE status = 'draft'")->fetch()['c'],
@@ -1191,7 +1322,11 @@ try {
                 'media' => (int) db()->query('SELECT COUNT(*) AS c FROM media')->fetch()['c'],
                 'messages' => (int) db()->query('SELECT COUNT(*) AS c FROM contact_messages')->fetch()['c'],
                 'messagesUnread' => (int) db()->query('SELECT COUNT(*) AS c FROM contact_messages WHERE is_read = 0')->fetch()['c'],
-            ]]);
+            ];
+            // Untranslated-content counters drive the dashboard warning badge.
+            $stats['pagesUntranslated'] = (int) db()->query('SELECT COUNT(*) AS c FROM pages')->fetch()['c'] - (int) db()->query("SELECT COUNT(*) AS c FROM pages WHERE i18n_json IS NOT NULL AND i18n_json NOT IN ('{}', '[]')")->fetch()['c'];
+            $stats['articlesUntranslated'] = (int) db()->query('SELECT COUNT(*) AS c FROM articles')->fetch()['c'] - (int) db()->query("SELECT COUNT(*) AS c FROM articles WHERE i18n_json IS NOT NULL AND i18n_json NOT IN ('{}', '[]')")->fetch()['c'];
+            json_response(['ok' => true, 'stats' => $stats]);
 
         // ── Latest content (dashboard lists) ─────────────────────────────
         case 'recent':

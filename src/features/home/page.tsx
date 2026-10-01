@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { cmsApi, type CmsHomeBlock } from "@/lib/cms";
+import { useI18n } from "@/lib/i18n";
 import { DefaultHomePage } from "./default-page";
 
 /**
@@ -8,9 +9,10 @@ import { DefaultHomePage } from "./default-page";
  * (Homepage builder), otherwise falls back to the original designed homepage.
  */
 export function HomePage() {
+  const { locale } = useI18n();
   const { data, isLoading } = useQuery({
-    queryKey: ["cms", "home"],
-    queryFn: cmsApi.home,
+    queryKey: ["cms", "home", locale],
+    queryFn: () => cmsApi.home(locale),
     staleTime: 60_000,
     retry: 1,
   });
@@ -319,9 +321,10 @@ function HomeBlock({ block }: { block: CmsHomeBlock }) {
 }
 
 function HomeArticlesBlock({ title }: { title?: string | null }) {
+  const { locale, t } = useI18n();
   const { data } = useQuery({
-    queryKey: ["cms", "articles"],
-    queryFn: cmsApi.articles,
+    queryKey: ["cms", "articles", locale],
+    queryFn: () => cmsApi.articles(locale),
     staleTime: 60_000,
   });
 
@@ -333,7 +336,7 @@ function HomeArticlesBlock({ title }: { title?: string | null }) {
     <section className="section-paper">
       <div className="wrap">
         <h2 className="mb-10 text-center text-3xl font-black text-neutral-900">
-          {title ?? "Dernières actualités"}
+          {title ?? t("news.hero.title")}
         </h2>
         <div className="grid gap-6 md:grid-cols-3">
           {articles.map((article) => (

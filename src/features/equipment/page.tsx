@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Camera, Maximize2, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n } from "@/lib/i18n";
 import workshopImage from "@/assets/about-workshop.jpg";
 import endo1 from "@/assets/equipments/Endoscopie/20200910_114715.jpg";
 import endo2 from "@/assets/equipments/Endoscopie/20200910_114715 (1).jpg";
@@ -135,6 +136,7 @@ const EQUIPMENTS: Equipment[] = [
 ];
 
 export function EquipmentsPage() {
+  const { t } = useI18n();
   const [activeId, setActiveId] = useState(EQUIPMENTS[0].id);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
@@ -185,7 +187,7 @@ export function EquipmentsPage() {
     <main className="equipment-page">
       <PageHero
         id="equipment"
-        breadcrumb="Équipements"
+        breadcrumb={t("equipment.hero.eyebrow")}
         eyebrow="Notre parc machines"
         title={
           <>
@@ -194,8 +196,8 @@ export function EquipmentsPage() {
             <span>en action.</span>
           </>
         }
-        description="Les bons outils, à chaque étape de vos installations inox."
-        linkLabel="Explorer le catalogue"
+        description={t("equipment.hero.text")}
+        linkLabel={t("common.discover")}
         linkHref="#catalogue"
         image={workshopImage}
         imageAlt="Atelier de fabrication U2I"

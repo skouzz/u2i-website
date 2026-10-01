@@ -6,6 +6,7 @@ import {
   FileText,
   FolderTree,
   Image as ImageIcon,
+  Languages,
   LayoutTemplate,
   Mail,
   Newspaper,
@@ -114,6 +115,9 @@ export function DashboardHome({
     },
   ];
 
+  // Translation coverage: how much content still has no English version.
+  const untranslated = (stats?.pagesUntranslated ?? 0) + (stats?.articlesUntranslated ?? 0);
+
   return (
     <div className="admin-section">
       <div className="admin-quick">
@@ -135,6 +139,19 @@ export function DashboardHome({
       </div>
 
       {error ? <p className="admin-alert admin-alert--error">{error}</p> : null}
+
+      {untranslated > 0 ? (
+        <div
+          className="admin-alert admin-alert--warn"
+          style={{ display: "flex", alignItems: "center", gap: 10 }}
+        >
+          <Languages size={16} />
+          <span>
+            <strong>{untranslated}</strong> contenu(s) sans version anglaise — ils s'affichent en
+            français sous /en. Ouvrez l'éditeur pour ajouter la traduction.
+          </span>
+        </div>
+      ) : null}
 
       <div className="admin-stats">
         {cards.map(({ label, value, sub, section, icon: Icon }) => (

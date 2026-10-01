@@ -1,30 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, UserRound } from "lucide-react";
 
 import { cmsApi } from "@/lib/cms";
+import { useI18n } from "@/lib/i18n";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 import { useSeo } from "@/lib/seo";
 import { sanitizeArticleHtml } from "@/lib/sanitize-html";
 import { ArticleSkeleton } from "@/components/loading";
 import "./news.css";
 import { formatDate } from "./list";
-import { Route } from "@/routes/actualites/$slug";
 
-export function ArticleDetailPage() {
-  const { slug } = Route.useParams();
+/**
+ * Shared by the French (/actualites/$slug) and English (/en/actualites/$slug)
+ * routes — the slug is passed in so one implementation serves both.
+ */
+export function ArticleDetailPage({ slug }: { slug: string }) {
+  const { locale, t } = useI18n();
   const wantsPreview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("preview") === "1";
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["cms", "article", slug, wantsPreview ? "preview" : "live"],
-    queryFn: () => cmsApi.article(slug, wantsPreview),
+    queryKey: ["cms", "article", slug, wantsPreview ? "preview" : "live", locale],
+    queryFn: () => cmsApi.article(slug, wantsPreview, locale),
     retry: 1,
   });
 
   const article = data?.article;
 
   useSeo({
-    title: article ? `${article.title} — Actualités U2I` : undefined,
+    title: article
+      ? `${article.title} — ${locale === "en" ? "U2I News" : "Actualités U2I"}`
+      : undefined,
     description: article?.excerpt ?? undefined,
     seo: article?.seo,
     ogImage: article?.coverImageUrl,
@@ -41,8 +47,8 @@ export function ArticleDetailPage() {
         }
       : null,
     breadcrumbs: [
-      { label: "Accueil", path: "/" },
-      { label: "Actualités", path: "/actualites" },
+      { label: t("nav.home"), path: "/" },
+      { label: t("nav.news"), path: "/actualites" },
       { label: article?.title ?? slug, path: `/actualites/${slug}` },
     ],
   });
@@ -51,13 +57,13 @@ export function ArticleDetailPage() {
     <main className="news-page">
       <article className="article-page">
         <div className="article-wrap">
-          <Link to="/actualites" className="article-back">
-            <ArrowLeft size={14} /> Toutes les actualités
-          </Link>
+          <LocalizedLink to="/actualites" className="article-back">
+            <ArrowLeft size={14} /> {t("news.detail.back")}
+          </LocalizedLink>
 
           {isLoading && <ArticleSkeleton />}
 
-          {isError && <div className="news-empty">Article introuvable.</div>}
+          {isError && <div className="news-empty">{t("news.detail.notFound")}</div>}
 
           {article && (
             <>
@@ -66,7 +72,7 @@ export function ArticleDetailPage() {
                 {article.publishedAt ? (
                   <span>
                     <CalendarDays size={11} style={{ verticalAlign: "-1px" }} />{" "}
-                    {formatDate(article.publishedAt)}
+                    {formatDate(article.publishedAt, locale)}
                   </span>
                 ) : null}
                 {article.author ? (

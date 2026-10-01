@@ -36,11 +36,17 @@ export interface CmsBlock {
   images?: string[] | null;
   /** Builder: hidden sections stay in the page but are not rendered publicly. */
   isVisible?: boolean | null;
+  /** English overlay, as edited in the dashboard. */
+  i18n?: Record<string, Record<string, string>>;
+  isTranslated?: boolean;
+  missingTranslation?: string[];
 }
 
 export interface CmsPage {
   id: number;
   slug: string;
+  /** English slug when the page has one; drives the /en URL. */
+  slugEn?: string | null;
   title: string;
   eyebrow?: string | null;
   heroTitle?: string | null;
@@ -55,11 +61,17 @@ export interface CmsPage {
   scheduledAt?: string | null;
   seo?: CmsSeo | null;
   updatedAt?: string | null;
+  /** Server-side translation coverage (public API + admin). */
+  isTranslated?: boolean;
+  missingTranslation?: string[];
+  i18n?: Record<string, Record<string, string>>;
 }
 
 export interface CmsArticle {
   id: number;
   slug: string;
+  /** English slug when the article has one; drives the /en URL. */
+  slugEn?: string | null;
   title: string;
   excerpt?: string | null;
   body?: string | null;
@@ -74,6 +86,9 @@ export interface CmsArticle {
   updatedAt?: string | null;
   tagIds?: number[];
   tags?: { slug: string; name: string }[];
+  isTranslated?: boolean;
+  missingTranslation?: string[];
+  i18n?: Record<string, Record<string, string>>;
 }
 
 export interface CmsMedia {
@@ -170,6 +185,7 @@ export interface CmsMenuItem {
 
 export interface CmsNavItem {
   slug?: string;
+  slugEn?: string | null;
   label: string;
   nav_order?: number;
   url?: string;
@@ -234,6 +250,28 @@ export interface AdminStats {
   media: number;
   messages: number;
   messagesUnread: number;
+  /** Items with no English version yet — drives the dashboard warning badge. */
+  pagesUntranslated?: number;
+  articlesUntranslated?: number;
+}
+
+/** One entity's English-translation state, as reported by the admin API. */
+export interface I18nCoverageItem {
+  id: number;
+  title?: string;
+  slug?: string;
+  slugEn?: string | null;
+  type?: string;
+  isTranslated: boolean;
+  /** Field keys still untranslated (pages/articles only). */
+  missing?: string[];
+}
+
+export interface I18nCoverage {
+  pages: I18nCoverageItem[];
+  articles: I18nCoverageItem[];
+  homeBlocks: I18nCoverageItem[];
+  menus: I18nCoverageItem[];
 }
 
 export interface CmsRevisionMeta {
@@ -278,28 +316,68 @@ function jsonBody(body: unknown): RequestInit {
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
+/**
+ * The language the API should serve. Sent as ?lang= so the PHP layer can apply
+ * the English overlay; the X-U2I-Lang header is set too for any future caching
+ * in front of the API.
+ */
+function langQuery(lang?: string): string {
+  const value = lang && lang !== "fr" ? lang : "";
+  return value ? `&lang=${encodeURIComponent(value)}` : "";
+}
+
+function langHeaders(lang?: string): RequestInit {
+  return lang && lang !== "fr" ? { headers: { "X-U2I-Lang": lang } } : {};
+}
+
 export const cmsApi = {
-  settings: () => getJson<{ ok: true; settings: CmsSettings | null }>("/api/cms.php?r=settings"),
-
-  nav: () => getJson<{ ok: true; items: CmsNavItem[]; source?: string }>("/api/cms.php?r=nav"),
-
-  footerMenu: () => getJson<{ ok: true; items: CmsNavItem[] }>("/api/cms.php?r=footer_menu"),
-
-  page: (slug: string, preview = false) =>
-    getJson<{ ok: true; page: CmsPage; blocks: CmsBlock[] }>(
-      `/api/cms.php?r=page&p=${encodeURIComponent(slug)}${preview ? "&preview=1" : ""}`,
+  settings: (lang?: string) =>
+    getJson<{ ok: true; settings: CmsSettings | null; lang?: string }>(
+      `/api/cms.php?r=settings${langQuery(lang)}`,
+      langHeaders(lang),
     ),
 
-  articles: () => getJson<{ ok: true; items: CmsArticle[] }>("/api/cms.php?r=articles"),
-
-  article: (slug: string, preview = false) =>
-    getJson<{ ok: true; article: CmsArticle }>(
-      `/api/cms.php?r=article&p=${encodeURIComponent(slug)}${preview ? "&preview=1" : ""}`,
+  nav: (lang?: string) =>
+    getJson<{ ok: true; items: CmsNavItem[]; source?: string; lang?: string }>(
+      `/api/cms.php?r=nav${langQuery(lang)}`,
+      langHeaders(lang),
     ),
 
-  home: () => getJson<{ ok: true; items: CmsHomeBlock[] }>("/api/cms.php?r=home"),
+  footerMenu: (lang?: string) =>
+    getJson<{ ok: true; items: CmsNavItem[]; lang?: string }>(
+      `/api/cms.php?r=footer_menu${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
 
-  categories: () => getJson<{ ok: true; items: CmsCategory[] }>("/api/cms.php?r=categories"),
+  page: (slug: string, preview = false, lang?: string) =>
+    getJson<{ ok: true; page: CmsPage; blocks: CmsBlock[]; lang?: string }>(
+      `/api/cms.php?r=page&p=${encodeURIComponent(slug)}${preview ? "&preview=1" : ""}${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
+
+  articles: (lang?: string) =>
+    getJson<{ ok: true; items: CmsArticle[]; lang?: string }>(
+      `/api/cms.php?r=articles${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
+
+  article: (slug: string, preview = false, lang?: string) =>
+    getJson<{ ok: true; article: CmsArticle; lang?: string }>(
+      `/api/cms.php?r=article&p=${encodeURIComponent(slug)}${preview ? "&preview=1" : ""}${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
+
+  home: (lang?: string) =>
+    getJson<{ ok: true; items: CmsHomeBlock[]; lang?: string }>(
+      `/api/cms.php?r=home${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
+
+  categories: (lang?: string) =>
+    getJson<{ ok: true; items: CmsCategory[]; lang?: string }>(
+      `/api/cms.php?r=categories${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
 };
 
 // ── Admin API ────────────────────────────────────────────────────────────────
@@ -307,6 +385,8 @@ export const cmsApi = {
 export interface AdminPagePayload {
   title: string;
   slug?: string;
+  /** English slug; blank keeps the French slug working under /en. */
+  slugEn?: string;
   eyebrow?: string;
   heroTitle?: string;
   heroText?: string;
@@ -320,11 +400,15 @@ export interface AdminPagePayload {
   scheduledAt?: string;
   seo?: CmsSeo;
   blocks?: (CmsBlock & { images?: string[] })[];
+  /** English overlay, keyed by field name. */
+  i18n?: Record<string, Record<string, string>>;
 }
 
 export interface AdminArticlePayload {
   title: string;
   slug?: string;
+  /** English slug; blank keeps the French slug working under /en. */
+  slugEn?: string;
   excerpt?: string;
   body?: string;
   coverImageUrl?: string;
@@ -336,6 +420,8 @@ export interface AdminArticlePayload {
   scheduledAt?: string;
   seo?: CmsSeo;
   tagIds?: number[];
+  /** English overlay, keyed by field name. */
+  i18n?: Record<string, Record<string, string>>;
 }
 
 export const adminApi = {
@@ -345,6 +431,13 @@ export const adminApi = {
 
   stats: (csrf: string) =>
     getJson<{ ok: true; stats: AdminStats }>("/api/admin.php?a=stats", withCsrf({}, csrf)),
+
+  /** What still needs an English version — powers the untranslated-content panel. */
+  i18nCoverage: (csrf: string) =>
+    getJson<{ ok: true; coverage: I18nCoverage; lang: string }>(
+      "/api/admin.php?a=i18n_coverage",
+      withCsrf({}, csrf),
+    ),
 
   recent: (csrf: string) =>
     getJson<{ ok: true; pages: CmsPage[]; articles: CmsArticle[]; media: CmsMedia[] }>(

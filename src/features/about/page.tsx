@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n } from "@/lib/i18n";
 import workshopImage from "@/assets/about-workshop.jpg";
 import processImage from "@/assets/IMG-20240214-WA0000.jpg";
 import siteImage from "@/assets/IMG-20260408-WA0067.jpg";
@@ -100,6 +101,7 @@ const qualityChecks = [
 ];
 
 export function AboutPage() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const reveal = reduceMotion ? false : { opacity: 0, y: 28 };
 
@@ -107,8 +109,8 @@ export function AboutPage() {
     <main className="about-page">
       <PageHero
         id="about"
-        breadcrumb="Qui sommes-nous"
-        eyebrow="Univers Inox Industriel · depuis 2015"
+        breadcrumb={t("about.hero.eyebrow")}
+        eyebrow={t("about.hero.eyebrow")}
         title={
           <>
             Univers Inox
@@ -116,8 +118,8 @@ export function AboutPage() {
             <span>Industriel.</span>
           </>
         }
-        description="Une équipe de terrain, des moyens dédiés et une exigence constante, de l’étude à la mise en service."
-        linkLabel="Découvrir notre entreprise"
+        description={t("about.hero.text")}
+        linkLabel={t("common.discover")}
         linkHref="#notre-histoire"
         image={workshopImage}
       />

@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Clock3, Loader2, Mail, MapPin, Phone } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n } from "@/lib/i18n";
 import workshopImage from "@/assets/about-workshop.jpg";
 
 import "./contact.css";
@@ -16,6 +17,7 @@ type SubmitState =
 const CONTACT_ENDPOINT = "/api/contact.php";
 
 export function ContactPage() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
 
@@ -73,7 +75,7 @@ export function ContactPage() {
     <main className="contact-page">
       <PageHero
         id="contact"
-        breadcrumb="Contact"
+        breadcrumb={t("contact.hero.eyebrow")}
         eyebrow="Une équipe à votre écoute"
         title={
           <>
@@ -82,8 +84,8 @@ export function ContactPage() {
             <span>de votre projet.</span>
           </>
         }
-        description="Une question, un besoin en tuyauterie ou un projet à construire ? Nous sommes là pour en parler."
-        linkLabel="Nos coordonnées"
+        description={t("contact.hero.text")}
+        linkLabel={t("contact.info.title")}
         linkHref="#coordonnees"
         image={workshopImage}
         imageAlt="L’atelier de fabrication U2I à Akouda"
