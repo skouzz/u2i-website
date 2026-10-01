@@ -31,7 +31,7 @@ try {
             $urls[] = ['loc' => $base . '/actualites/' . rawurlencode($a['slug']), 'lastmod' => $lastmod ?: date('Y-m-d')];
         }
     }
-} catch (Throwable) {
+} catch (Throwable $e) {
     // Sitemap stays with static routes when the DB is unavailable.
 }
 

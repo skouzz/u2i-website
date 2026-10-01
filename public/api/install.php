@@ -25,7 +25,7 @@ function column_exists(PDO $pdo, string $table, string $column): bool
         $stmt->execute([$table, $column]);
 
         return (int) $stmt->fetch()['c'] > 0;
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return false;
     }
 }
@@ -290,28 +290,28 @@ ensure_column($pdo, 'page_blocks', 'is_visible', 'TINYINT(1) NOT NULL DEFAULT 1'
 
 try {
     $pdo->exec("CREATE INDEX idx_pages_pub ON pages (is_published, published_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("CREATE INDEX idx_pages_sched ON pages (scheduled_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("CREATE INDEX idx_articles_sched ON articles (scheduled_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("CREATE INDEX idx_media_created ON media (created_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 try {
     $pdo->exec("ALTER TABLE pages ADD CONSTRAINT fk_pages_parent FOREIGN KEY (parent_id) REFERENCES pages(id) ON DELETE SET NULL");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("ALTER TABLE articles ADD CONSTRAINT fk_articles_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 // ── Legacy data backfill (idempotent) ───────────────────────────────────

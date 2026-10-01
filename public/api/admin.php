@@ -116,7 +116,7 @@ function log_activity(string $action, ?string $entityType = null, ?int $entityId
     try {
         $stmt = db()->prepare('INSERT INTO activity_log (actor, action, entity_type, entity_id, detail) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([current_actor(), substr($action, 0, 60), $entityType, $entityId, $detail !== null ? substr($detail, 0, 500) : null]);
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         // Logging must never break the actual operation.
     }
 }
@@ -136,7 +136,7 @@ function prune_revisions(string $entityType, int $entityId, int $keep = 20): voi
                  ) AS keep_rows
                )'
         )->execute([$entityType, $entityId, $entityType, $entityId, $keep]);
-    } catch (Throwable) {
+    } catch (Throwable $e) {
     }
 }
 

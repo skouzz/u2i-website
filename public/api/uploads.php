@@ -10,7 +10,9 @@ declare(strict_types=1);
 require __DIR__ . '/config.php';
 
 $name = $_GET['f'] ?? '';
-if (!is_string($name) || $name === '' || str_contains($name, '/') || str_contains($name, '\\')) {
+// strpos() rather than str_contains(): the project targets PHP 7.4+, where
+// str_contains() does not exist and this file would fatal on every request.
+if (!is_string($name) || $name === '' || strpos($name, '/') !== false || strpos($name, '\\') !== false) {
     http_response_code(400);
     exit('Bad request');
 }

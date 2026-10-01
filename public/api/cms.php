@@ -168,7 +168,7 @@ try {
                 if ($menu) {
                     json_response(['ok' => true, 'items' => public_menu_tree((int) $menu['id']), 'source' => 'menu']);
                 }
-            } catch (Throwable) {
+            } catch (Throwable $e) {
                 // Fall through to legacy pages-based nav.
             }
             // Legacy fallback: pages with a nav label (pre-v2 behavior).
@@ -186,7 +186,7 @@ try {
                 if ($menu) {
                     json_response(['ok' => true, 'items' => public_menu_tree((int) $menu['id'])]);
                 }
-            } catch (Throwable) {
+            } catch (Throwable $e) {
             }
             json_response(['ok' => true, 'items' => []]);
 
@@ -243,7 +243,7 @@ try {
                 $tags = db()->prepare('SELECT t.slug, t.name FROM tags t JOIN article_tags x ON x.tag_id = t.id WHERE x.article_id = ? ORDER BY t.name');
                 $tags->execute([(int) $article['id']]);
                 $payload['tags'] = $tags->fetchAll();
-            } catch (Throwable) {
+            } catch (Throwable $e) {
                 $payload['tags'] = [];
             }
             json_response(['ok' => true, 'article' => $payload]);
