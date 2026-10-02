@@ -13,6 +13,13 @@ Built with **React 19, TanStack Start/Router, Tailwind CSS 4** (front-end) and *
 >
 > **Upgrading an existing install:** re-run `/api/install.php?key=u2i-install-2024` once —
 > it applies all v2 tables/columns idempotently without touching existing data.
+>
+> `database/schema.sql` contains only `CREATE TABLE IF NOT EXISTS` and guarded
+> seed inserts, so it is safe to import into an existing database (it creates any
+> missing table and changes nothing else). The v2 `ALTER` statements live in
+> `database/migrations.sql` for reference — never import that file, because
+> MySQL has no `ADD COLUMN IF NOT EXISTS` and the import will abort with error
+> #1060 the moment a column already exists.
 
 This README explains **exactly** how to run the project, step by step.
 
@@ -87,7 +94,7 @@ The rest of this guide assumes that folder name.
 1. Open `http://localhost/phpmyadmin`
 2. Click **New** in the left sidebar → database name: **`u2i_cms`** → collation `utf8mb4_unicode_ci` → **Create**
 3. Select the `u2i_cms` database → **Import** tab → choose the file **`database/schema.sql`** from the project → **Go**
-4. You should see 7 tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `admins`
+4. You should see the tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `admins`, plus the v2 tables (`menus`, `menu_items`, `categories`, `tags`, `article_tags`, `content_blocks`, `site_references`, `content_revisions`, `activity_log`, `site_config`). Re-running this import is safe.
 
 #### B4. Create the local PHP config
 
