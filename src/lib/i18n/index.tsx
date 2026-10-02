@@ -19,6 +19,7 @@ export {
   SOURCE_LOCALE,
   hasTranslation,
   missingKeys,
+  translateNavLabel,
 } from "./catalog";
 
 /** Read the active locale from the URL: /en/... is English, everything else French. */

@@ -13,8 +13,7 @@ import {
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
 import emailIcon from "@/assets/partners/email.png";
 import { cmsApi, type CmsNavItem, type CmsSettings } from "@/lib/cms";
-import { useI18n } from "@/lib/i18n";
-import type { MessageKey } from "@/lib/i18n";
+import { useI18n, translateNavLabel, type Locale, type MessageKey } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/lib/i18n/LanguageSwitcher";
 import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 
@@ -48,17 +47,19 @@ const FALLBACK_LABEL_KEYS: Record<string, MessageKey> = {
 };
 
 /** Normalize any nav item (menu tree or legacy page list) to a common shape. */
-function normalizeItems(items: CmsNavItem[]): NavLink[] {
+function normalizeItems(items: CmsNavItem[], locale: Locale): NavLink[] {
   return items
     .filter((item) => item.label)
     .map((item) => ({
-      label: item.label,
+      // Menu labels are authored in French in the dashboard; map the common
+      // ones to the catalog so the English navbar is not left in French.
+      label: translateNavLabel(item.label, locale),
       url: item.url ?? (item.slug ? `/p/${item.slug}` : "#"),
       newTab: Boolean(item.opensNewTab),
       children: (item.children ?? [])
         .filter((child) => child.label)
         .map((child) => ({
-          label: child.label,
+          label: translateNavLabel(child.label, locale),
           url: child.url ?? (child.slug ? `/p/${child.slug}` : "#"),
           newTab: Boolean(child.opensNewTab),
         })),
@@ -70,6 +71,38 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [links, setLinks] = useState<NavLink[]>([]);
   const [settings, setSettings] = useState<CmsSettings | null>(null);
+
+  // Drawer behaviour: lock the page behind it so touch scrolling doesn't move
+  // the page underneath, close on Escape, and close when the viewport grows
+  // past the breakpoint where the desktop nav takes over.
+  useEffect(() => {
+    if (!open) return;
+
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousPadding = body.style.paddingRight;
+    // Compensate for the vanishing scrollbar so the page doesn't jump.
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    body.style.overflow = "hidden";
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const onBreakpoint = (event: MediaQueryListEvent | MediaQueryList) => {
+      if (event.matches) setOpen(false);
+    };
+
+    window.addEventListener("keydown", onKey);
+    desktop.addEventListener("change", onBreakpoint as EventListener);
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.paddingRight = previousPadding;
+      window.removeEventListener("keydown", onKey);
+      desktop.removeEventListener("change", onBreakpoint as EventListener);
+    };
+  }, [open]);
 
   useEffect(() => {
     let alive = true;
@@ -83,7 +116,7 @@ export function Navbar() {
       .nav(locale)
       .then((res) => {
         if (!alive) return;
-        setLinks(res.items?.length ? normalizeItems(res.items) : fallback);
+        setLinks(res.items?.length ? normalizeItems(res.items, locale) : fallback);
       })
       .catch(() => {
         if (alive) setLinks(fallback);
@@ -114,11 +147,8 @@ export function Navbar() {
   ].filter(Boolean) as { href: string; label: string; Icon: typeof Facebook }[];
 
   return (
-    <header
-      className={`sticky inset-x-0 top-0 z-50 border-b border-white/10 bg-black shadow-lg shadow-black/20 ${
-        open ? "backdrop-blur-xl" : ""
-      }`}
-    >
+    <>
+      <header className="sticky inset-x-0 top-0 z-50 border-b border-white/10 bg-black shadow-lg shadow-black/20">
       {/* Utility bar */}
       <div className="hidden border-b border-white/10 py-1 text-[11px] font-semibold text-white/80 md:block">
         <div className="wrap flex items-center justify-end gap-7">
@@ -228,40 +258,71 @@ export function Navbar() {
           </button>
         </div>
       </div>
+      </header>
 
-      {/* Mobile drawer */}
+      {/*
+        Mobile drawer.
+
+        Rendered as a SIBLING of <header>, not a child: the header picks up
+        backdrop-filter styling while the menu is open, and backdrop-filter
+        creates a containing block that re-anchors `position: fixed`
+        descendants to the header. That collapses a full-height drawer down to
+        the header's own height, so tapping the toggle looks like nothing
+        happened. Keeping the drawer outside the header makes that impossible.
+      */}
       <div
-        className={`fixed inset-y-0 right-0 z-60 w-4/5 max-w-sm overflow-y-auto bg-black backdrop-blur-xl px-8 pt-24 pb-8 transition-transform duration-300 lg:hidden border-l border-white/10 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed inset-0 z-[60] lg:hidden ${open ? "" : "pointer-events-none"}`}
+        aria-hidden={!open}
       >
+        {/* Tap anywhere outside the panel to dismiss. */}
         <button
-          className="absolute top-6 right-6 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white"
-          onClick={() => setOpen(false)}
+          type="button"
+          tabIndex={open ? 0 : -1}
           aria-label={t("nav.close")}
-        >
-          <X className="h-5 w-5" />
-        </button>
+          onClick={() => setOpen(false)}
+          className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
+            open ? "opacity-100" : "opacity-0"
+          }`}
+        />
 
-        <nav aria-label={t("nav.menu")}>
-          <ul className="flex flex-col gap-5">
+        <nav
+          role="dialog"
+          aria-modal={open ? true : undefined}
+          aria-label={t("nav.menu")}
+          className={`absolute inset-y-0 right-0 flex w-[86%] max-w-sm flex-col overflow-y-auto overscroll-contain border-l border-white/10 bg-black/95 pt-[max(4.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-300 ease-out will-change-transform ${
+            open ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <button
+            type="button"
+            tabIndex={open ? 0 : -1}
+            className="absolute right-4 top-[max(1.25rem,env(safe-area-inset-top))] grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-[#e0141c]/25"
+            onClick={() => setOpen(false)}
+            aria-label={t("nav.close")}
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          <ul className="flex flex-col gap-1 px-7">
             {links.map((item) => (
-              <li key={item.label}>
+              <li key={item.label} className="border-b border-white/5 last:border-b-0">
                 <a
                   href={link(item.url)}
+                  tabIndex={open ? 0 : -1}
                   onClick={() => setOpen(false)}
-                  className="text-2xl font-bold text-white transition-colors hover:text-[#e0141c]"
+                  className="block py-4 text-xl font-bold text-white transition-colors hover:text-[#e0141c]"
                 >
                   {item.label}
                 </a>
                 {item.children.length > 0 ? (
-                  <ul className="mt-2 ml-1 flex flex-col gap-2 border-l border-white/10 pl-4">
+                  <ul className="mb-3 ml-1 flex flex-col gap-1 border-l border-white/10 pl-4">
                     {item.children.map((child) => (
                       <li key={child.label}>
                         <a
                           href={link(child.url)}
+                          tabIndex={open ? 0 : -1}
                           onClick={() => setOpen(false)}
-                          className="text-base font-semibold text-white/70 transition-colors hover:text-[#e0141c]"
+                          className="block py-2.5 text-base font-semibold text-white/70 transition-colors hover:text-[#e0141c]"
                         >
                           {child.label}
                         </a>
@@ -272,11 +333,12 @@ export function Navbar() {
               </li>
             ))}
           </ul>
-          <div className="mt-8 border-t border-white/10 pt-6">
+
+          <div className="mt-auto border-t border-white/10 px-7 pt-6">
             <LanguageSwitcher tone="dark" />
           </div>
         </nav>
       </div>
-    </header>
+    </>
   );
 }

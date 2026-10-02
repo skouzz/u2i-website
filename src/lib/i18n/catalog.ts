@@ -915,6 +915,61 @@ export type MessageKey = keyof typeof fr;
 
 const catalog: Record<Locale, Partial<Record<MessageKey, string>>> = { fr, en };
 
+/**
+ * Navigation labels that the dashboard menu is likely to hold, mapped to their
+ * catalog key.
+ *
+ * Menu items are authored in French in the admin. Until an English version is
+ * saved for an item, the API returns the French label, so the English navbar
+ * would read "Accueil / Secteurs / …". This maps the common French labels to
+ * the catalog so the navigation is usable in English immediately. A label that
+ * has an actual English translation in the database never matches these French
+ * source strings, so the real translation always wins.
+ */
+const NAV_LABEL_KEYS: Record<string, MessageKey> = {
+  "accueil": "nav.home",
+  "home": "nav.home",
+  "a propos": "nav.about",
+  "à propos": "nav.about",
+  "qui sommes-nous": "nav.about",
+  "qui sommes nous": "nav.about",
+  "about": "nav.about",
+  "about us": "nav.about",
+  "secteurs": "nav.sectors",
+  "secteur": "nav.sectors",
+  "industries": "nav.sectors",
+  "nos secteurs": "nav.sectors",
+  "equipements": "nav.equipment",
+  "équipements": "nav.equipment",
+  "equipement": "nav.equipment",
+  "équipement": "nav.equipment",
+  "equipment": "nav.equipment",
+  "references": "nav.references",
+  "références": "nav.references",
+  "reference": "nav.references",
+  "référence": "nav.references",
+  "nos références": "nav.references",
+  "actualites": "nav.news",
+  "actualités": "nav.news",
+  "news": "nav.news",
+  "contact": "nav.contact",
+  "nous contacter": "nav.contact",
+  "contactez-nous": "nav.contact",
+};
+
+/**
+ * Translate a CMS-authored navigation label for the active locale.
+ *
+ * Only acts when the label matches a known French source string; anything else
+ * (an English label coming back from the API, or a custom label) is returned
+ * untouched.
+ */
+export function translateNavLabel(label: string, locale: Locale): string {
+  if (locale === SOURCE_LOCALE) return label;
+  const key = NAV_LABEL_KEYS[label.trim().toLowerCase()];
+  return key ? translate(locale, key) : label;
+}
+
 /** Translate a key. Falls back to French, then to the key itself. */
 export function translate(locale: Locale, key: MessageKey): string {
   return catalog[locale]?.[key] ?? fr[key] ?? key;
