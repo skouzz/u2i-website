@@ -52,21 +52,19 @@ export function ContactPage() {
       if (response.ok && payload?.ok) {
         setSubmitState({
           status: "success",
-          message: payload.message ?? "Merci ! Votre message a bien été envoyé.",
+          message: payload.message ?? t("contact.form.success"),
         });
         form.reset();
       } else {
         setSubmitState({
           status: "error",
-          message:
-            payload?.message ??
-            "Une erreur est survenue. Merci de réessayer ou d’écrire directement à u2i@u2iprocess.com.",
+          message: payload?.message ?? t("contact.form.error"),
         });
       }
     } catch {
       setSubmitState({
         status: "error",
-        message: "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
+        message: t("contact.form.offline"),
       });
     }
   };
@@ -76,19 +74,19 @@ export function ContactPage() {
       <PageHero
         id="contact"
         breadcrumb={t("contact.hero.eyebrow")}
-        eyebrow="Une équipe à votre écoute"
+        eyebrow={t("contact.hero.eyebrow2")}
         title={
           <>
-            Parlons
+            {t("contact.hero.titleLine1")}
             <br />
-            <span>de votre projet.</span>
+            <span>{t("contact.hero.titleLine2")}</span>
           </>
         }
         description={t("contact.hero.text")}
         linkLabel={t("contact.info.title")}
         linkHref="#coordonnees"
         image={workshopImage}
-        imageAlt="L’atelier de fabrication U2I à Akouda"
+        imageAlt={t("contact.alt.workshop")}
       />
 
       <section className="contact-main" id="coordonnees">
@@ -113,7 +111,7 @@ export function ContactPage() {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5 }}
             >
-              <h3 id="contact-details-title">Coordonnées</h3>
+              <h3 id="contact-details-title">{t("contact.info.title")}</h3>
               <a className="contact-detail" href="tel:+21650191004">
                 <span className="contact-detail__icon">
                   <Phone size={19} aria-hidden="true" />
@@ -122,7 +120,7 @@ export function ContactPage() {
                   <small>{t("contact.info.phone")}</small>
                   <strong>+216 50 191 004</strong>
                   <em>
-                    Appeler notre équipe <ArrowUpRight size={13} aria-hidden="true" />
+                    {t("contact.info.callTeam")} <ArrowUpRight size={13} aria-hidden="true" />
                   </em>
                 </span>
               </a>
@@ -131,10 +129,10 @@ export function ContactPage() {
                   <Mail size={19} aria-hidden="true" />
                 </span>
                 <span>
-                  <small>E-mail</small>
+                  <small>{t("contact.info.emailLabel")}</small>
                   <strong>u2i@u2iprocess.com</strong>
                   <em>
-                    Écrire à U2I <ArrowUpRight size={13} aria-hidden="true" />
+                    {t("contact.info.writeUs")} <ArrowUpRight size={13} aria-hidden="true" />
                   </em>
                 </span>
               </a>
@@ -145,12 +143,12 @@ export function ContactPage() {
                 <span>
                   <small>{t("contact.info.hq")}</small>
                   <strong>{t("contact.info.hqValue")}</strong>
-                  <em>Tunisie</em>
+                  <em>{t("contact.info.country")}</em>
                 </span>
               </div>
               <div className="contact-hours">
                 <Clock3 size={16} aria-hidden="true" />
-                <span>Du lundi au vendredi</span>
+                <span>{t("contact.hours.days")}</span>
                 <strong>08:00 — 17:00</strong>
               </div>
             </motion.section>
@@ -190,7 +188,7 @@ export function ContactPage() {
                     />
                   </label>
                   <label>
-                    Nom
+                    {t("contact.form.lastName")}
                     <input
                       name="lastName"
                       autoComplete="family-name"
@@ -211,7 +209,7 @@ export function ContactPage() {
                     />
                   </label>
                   <label>
-                    Société <span>(facultatif)</span>
+                    {t("contact.form.company")} <span>{t("contact.form.optional")}</span>
                     <input
                       name="company"
                       autoComplete="organization"
@@ -220,7 +218,7 @@ export function ContactPage() {
                   </label>
                 </div>
                 <label>
-                  Sujet
+                  {t("contact.form.subject")}
                   <input
                     name="subject"
                     placeholder={t("contact.form.phSubject")}
@@ -245,7 +243,7 @@ export function ContactPage() {
                       </>
                     ) : (
                       <>
-                        Envoyer le message <ArrowRight size={17} aria-hidden="true" />
+                        {t("contact.form.submit")} <ArrowRight size={17} aria-hidden="true" />
                       </>
                     )}
                   </button>

@@ -89,19 +89,19 @@ export function ReferencesPage() {
       <PageHero
         id="references"
         breadcrumb={t("references.hero.eyebrow")}
-        eyebrow="Ils nous font confiance"
+        eyebrow={t("references.hero.eyebrow2")}
         title={
           <>
-            Nos
+            {t("references.hero.titleLine1")}
             <br />
-            <span>références.</span>
+            <span>{t("references.hero.titleLine2")}</span>
           </>
         }
         description={t("references.hero.text")}
         linkLabel={t("common.discover")}
         linkHref="#partenaires"
         image={referencesHeroImage}
-        imageAlt="Installation inox réalisée par U2I"
+        imageAlt={t("references.alt.hero")}
         imagePosition="center 52%"
       />
 

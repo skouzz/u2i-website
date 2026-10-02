@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 import "./sectors.css";
 
 type Photo = { src: string; path: string };
@@ -191,9 +191,9 @@ export function SectorsPage() {
         imagePosition="center 48%"
       />
 
-      <nav className="sectors-nav" id="catalogue-secteurs" aria-label="Explorer un secteur">
+      <nav className="sectors-nav" id="catalogue-secteurs" aria-label={t("sectors.nav.aria")}>
         <div className="wrap sectors-nav__inner">
-          <span className="sectors-nav__label">Explorer</span>
+          <span className="sectors-nav__label">{t("sectors.nav.label")}</span>
           <div className="sectors-nav__links">
             {sectorPhotoSets.map((sector) => (
               <a
@@ -242,23 +242,23 @@ export function SectorsPage() {
                   <Check size={16} aria-hidden="true" />
                   <span>{t(sector.focusKey)}</span>
                 </div>
-                <Link to="/contact" className="sector-copy__cta">
-                  Parler de votre projet <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
+                <LocalizedLink to="/contact" className="sector-copy__cta">
+                  {t("sectors.item.cta")} <ArrowUpRight size={17} aria-hidden="true" />
+                </LocalizedLink>
               </div>
 
-              <div className="sector-gallery" aria-label={`Galerie ${t(sector.titleKey)}`}>
+              <div className="sector-gallery" aria-label={`${t("sectors.gallery.aria")} ${t(sector.titleKey)}`}>
                 {sector.photos.length > 0 ? (
                   <div className="sector-gallery__grid">
                     {sector.photos.map((photo, photoIndex) => {
-                      const photoLabel = `${t(sector.titleKey)} · réalisation ${String(photoIndex + 1).padStart(2, "0")}`;
+                      const photoLabel = `${t(sector.titleKey)} · ${t("sectors.gallery.shot")} ${String(photoIndex + 1).padStart(2, "0")}`;
                       return (
                         <motion.button
                           key={photo.path}
                           type="button"
                           className={`sector-photo ${photoIndex === 0 ? "sector-photo--feature" : ""}`}
                           onClick={() => setActivePhoto({ sector, index: photoIndex })}
-                          aria-label={`Agrandir ${photoLabel}, ${photoIndex + 1} sur ${sector.photos.length}`}
+                          aria-label={`${t("sectors.gallery.zoom")} ${photoLabel}, ${photoIndex + 1} ${t("sectors.gallery.of")} ${sector.photos.length}`}
                           initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
                           whileInView={{ opacity: 1, scale: 1 }}
                           viewport={{ once: true, amount: 0.1 }}
@@ -289,12 +289,12 @@ export function SectorsPage() {
       <section className="sectors-contact">
         <div className="wrap sectors-contact__inner">
           <div>
-            <p className="sectors-eyebrow">Un projet industriel en vue ?</p>
-            <h2>Parlons de votre prochain défi.</h2>
+            <p className="sectors-eyebrow">{t("sectors.cta.eyebrow")}</p>
+            <h2>{t("sectors.cta.heading")}</h2>
           </div>
-          <Link to="/contact" className="sectors-contact__button">
-            Contacter nos équipes <ArrowUpRight size={18} aria-hidden="true" />
-          </Link>
+          <LocalizedLink to="/contact" className="sectors-contact__button">
+            {t("about.cta.contact")} <ArrowUpRight size={18} aria-hidden="true" />
+          </LocalizedLink>
         </div>
       </section>
 
@@ -304,7 +304,7 @@ export function SectorsPage() {
             className="sector-lightbox"
             role="dialog"
             aria-modal="true"
-            aria-label={`Galerie ${t(activePhoto.sector.titleKey)}`}
+            aria-label={`${t("sectors.gallery.aria")} ${t(activePhoto.sector.titleKey)}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -318,13 +318,13 @@ export function SectorsPage() {
                 <span>{t(activePhoto.sector.titleKey)}</span> /{" "}
                 {String(activePhoto.index + 1).padStart(2, "0")}{" "}
                 <span className="sector-lightbox__muted">
-                  sur {String(activePhoto.sector.photos.length).padStart(2, "0")}
+                  {t("sectors.gallery.of")} {String(activePhoto.sector.photos.length).padStart(2, "0")}
                 </span>
               </p>
               <button
                 type="button"
                 onClick={() => setActivePhoto(null)}
-                aria-label="Fermer la galerie"
+                aria-label={t("sectors.gallery.close")}
               >
                 <X size={22} />
               </button>
@@ -332,7 +332,7 @@ export function SectorsPage() {
             <button
               type="button"
               className="sector-lightbox__arrow sector-lightbox__arrow--prev"
-              aria-label="Photo précédente"
+              aria-label={t("sectors.gallery.prev")}
               onClick={() =>
                 setActivePhoto((current) => {
                   if (!current) return current;
@@ -357,10 +357,10 @@ export function SectorsPage() {
               >
                 <img
                   src={activePhoto.sector.photos[activePhoto.index]?.src}
-                  alt={`${t(activePhoto.sector.titleKey)} · réalisation ${String(activePhoto.index + 1).padStart(2, "0")}`}
+                  alt={`${t(activePhoto.sector.titleKey)} · ${t("sectors.gallery.shot")} ${String(activePhoto.index + 1).padStart(2, "0")}`}
                 />
                 <figcaption>
-                  {t(activePhoto.sector.titleKey)} · réalisation{" "}
+                  {t(activePhoto.sector.titleKey)} · {t("sectors.gallery.shot")}
                   {String(activePhoto.index + 1).padStart(2, "0")}
                 </figcaption>
               </motion.figure>
@@ -368,7 +368,7 @@ export function SectorsPage() {
             <button
               type="button"
               className="sector-lightbox__arrow sector-lightbox__arrow--next"
-              aria-label="Photo suivante"
+              aria-label={t("sectors.gallery.next")}
               onClick={() =>
                 setActivePhoto((current) => {
                   if (!current) return current;

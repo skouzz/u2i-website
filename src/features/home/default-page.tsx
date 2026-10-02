@@ -233,9 +233,10 @@ function Hero() {
               letterSpacing: "-0.025em",
             }}
           >
-            Pourquoi la <span className="text-[#e0141c]">précision</span>
+            {t("home.hero.headline1")}{" "}
+            <span className="text-[#e0141c]">{t("home.hero.headlineAccent")}</span>
             <br />
-            continue de guider l'ambition de
+            {t("home.hero.headline2")}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60">
               {t("home.groupName")}
@@ -252,7 +253,7 @@ function Hero() {
               href="#presentation"
               className="group inline-flex items-center gap-2 text-sm font-bold text-white transition hover:text-[#e0141c]"
             >
-              Découvrir
+              {t("common.discover")}
               <span className="grid h-10 w-10 place-items-center rounded-full border border-white/30 transition-all duration-300 group-hover:border-[#e0141c] group-hover:bg-[#e0141c]">
                 <ArrowUpRight className="h-4 w-4" />
               </span>
@@ -376,20 +377,20 @@ function VideoBanner() {
               <div className="w-1 bg-gradient-to-b from-[#e0141c] to-[#e0141c]/30 flex-shrink-0" />
               <div>
                 <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-6">
-                  L'exigence à chaque étape
+                  {t("home.video.title")}
                 </h2>
                 <p className="text-lg md:text-xl text-white/90 font-medium leading-relaxed mb-8 max-w-2xl">
                   {t("home.process.text")}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <div className="px-4 py-2 bg-[#e0141c]/10 border border-[#e0141c]/30 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-[#e0141c]">Qualité Certifiée</p>
+                    <p className="text-sm font-semibold text-[#e0141c]">{t("home.video.badgeQuality")}</p>
                   </div>
                   <div className="px-4 py-2 bg-white/5 border border-white/10 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-white/70">Précision Industrielle</p>
+                    <p className="text-sm font-semibold text-white/70">{t("home.video.badgePrecision")}</p>
                   </div>
                   <div className="px-4 py-2 bg-white/5 border border-white/10 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-white/70">Sécurité Garantie</p>
+                    <p className="text-sm font-semibold text-white/70">{t("home.video.badgeSafety")}</p>
                   </div>
                 </div>
               </div>
@@ -434,10 +435,10 @@ function Presentation() {
                 </div>
                 <div>
                   <div className="text-xs lg:text-sm font-bold text-neutral-900 leading-tight">
-                    Années
+                    {t("home.stat.years")}
                   </div>
                   <div className="text-xs lg:text-sm font-medium text-neutral-500 leading-tight">
-                    d'expérience
+                    {t("home.stat.experience")}
                   </div>
                 </div>
               </div>
@@ -697,7 +698,7 @@ function Equipments() {
                   </h3>
                   <div className="h-auto opacity-100 md:h-0 md:opacity-0 md:overflow-hidden md:transition-all md:duration-500 md:group-hover:h-8 md:group-hover:opacity-100">
                     <p className="text-[#e0141c] text-sm mt-2 flex items-center gap-2 font-bold uppercase tracking-wider">
-                      Découvrir <ArrowUpRight className="h-4 w-4" />
+                      {t("common.discover")} <ArrowUpRight className="h-4 w-4" />
                     </p>
                   </div>
                 </div>
@@ -746,7 +747,9 @@ function References() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-4xl text-center"
         >
-          <p className="mb-4 text-sm uppercase tracking-[0.28em] text-white/60">Références</p>
+          <p className="mb-4 text-sm uppercase tracking-[0.28em] text-white/60">
+            {t("home.references.label")}
+          </p>
           <div className="flex justify-center mb-6">
             <img
               src={axxairLogoImage}
@@ -892,7 +895,7 @@ function CertLightbox({
                 onNav(i);
               }}
               className={`rounded-full transition-all duration-300 ${i === index ? "w-6 h-2 bg-[#e0141c]" : "w-2 h-2 bg-white/25 hover:bg-white/50"}`}
-              aria-label={`Aller à ${i + 1}`}
+              aria-label={`${t("home.certs.goto")} ${i + 1}`}
             />
           ))}
         </div>

@@ -323,7 +323,7 @@ function HomeBlock({ block }: { block: CmsHomeBlock }) {
 }
 
 function HomeArticlesBlock({ title }: { title?: string | null }) {
-  const { locale, t } = useI18n();
+  const { locale, t, link } = useI18n();
   // Shares its key with the Footer, so landing on the home page no longer
   // triggers the same article list twice.
   const { data } = useCmsArticles(locale);
@@ -342,7 +342,7 @@ function HomeArticlesBlock({ title }: { title?: string | null }) {
           {articles.map((article) => (
             <a
               key={article.id}
-              href={`/actualites/${article.slug}`}
+              href={link(`/actualites/${locale === "en" ? (article.slugEn ?? article.slug) : article.slug}`)}
               className="group block overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition hover:shadow-lg"
             >
               {article.coverImageUrl ? (

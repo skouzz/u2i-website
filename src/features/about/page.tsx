@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -15,6 +14,7 @@ import {
 
 import { PageHero } from "@/components/PageHero";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 import workshopImage from "@/assets/about-workshop.jpg";
 import processImage from "@/assets/IMG-20240214-WA0000.jpg";
 import siteImage from "@/assets/IMG-20260408-WA0067.jpg";
@@ -105,9 +105,9 @@ export function AboutPage() {
         eyebrow={t("about.hero.eyebrow")}
         title={
           <>
-            Univers Inox
+            {t("about.hero.titleLine1")}
             <br />
-            <span>Industriel.</span>
+            <span>{t("about.hero.titleLine2")}</span>
           </>
         }
         description={t("about.hero.text")}
@@ -127,11 +127,11 @@ export function AboutPage() {
           >
             <img
               src={processImage}
-              alt="Équipements process en acier inoxydable dans l’atelier U2I"
+              alt={t("about.alt.workshop")}
               loading="lazy"
             />
             <div className="about-story__caption">
-              <span>Le savoir-faire inox, au cœur du process</span>
+              <span>{t("about.story.caption")}</span>
               <span>01 / U2I PROCESS</span>
             </div>
           </motion.div>
@@ -143,23 +143,19 @@ export function AboutPage() {
             transition={{ duration: 0.55, delay: 0.08 }}
           >
             <p className="about-section-label">
-              <span>01</span> Qui nous sommes
+              <span>01</span> {t("about.section.who")}
             </p>
-            <h2>Le bon geste technique commence par l’écoute.</h2>
-            <p>
-              Fondée en 2015 à Akouda, près de Sousse,{" "}
-              <strong>Univers Inox Industriel (U2I)</strong> accompagne les industriels en
-              chaudronnerie, tuyauterie process et soudure inox.
-            </p>
+            <h2>{t("about.story.heading")}</h2>
+            <p>{t("about.story.intro")}</p>
             <p>
               {t("about.story.p1")}
             </p>
             <p>
               {t("about.story.p2")}
             </p>
-            <Link className="about-text-link" to="/secteurs">
-              Nos secteurs d’activité <ArrowUpRight size={17} aria-hidden="true" />
-            </Link>
+            <LocalizedLink className="about-text-link" to="/secteurs">
+              {t("about.story.sectorsCta")} <ArrowUpRight size={17} aria-hidden="true" />
+            </LocalizedLink>
           </motion.div>
         </div>
       </section>
@@ -169,7 +165,7 @@ export function AboutPage() {
           <div className="about-project__heading">
             <div>
               <p className="about-section-label about-section-label--light">
-                <span>02</span> Notre méthode
+                <span>02</span> {t("about.section.method")}
               </p>
               <h2 id="about-project-title">
                 {t("about.method.titleLine1")}
@@ -247,9 +243,9 @@ export function AboutPage() {
         <div className="wrap about-resources__layout">
           <div className="about-resources__copy">
             <p className="about-section-label">
-              <span>04</span> Nos équipes & nos moyens
+              <span>04</span> {t("about.section.resources")}
             </p>
-            <h2>À la bonne échelle pour vos projets.</h2>
+            <h2>{t("about.resources.title")}</h2>
             <p className="about-resources__intro">
               {t("about.workshop.text")}
             </p>
@@ -272,22 +268,22 @@ export function AboutPage() {
               ))}
             </div>
           </div>
-          <div className="about-team-photos" aria-label="Équipe U2I et réalisations">
+          <div className="about-team-photos" aria-label={t("about.alt.team")}>
             <figure className="about-team-photos__main">
               <img
                 src={siteImage}
-                alt="Technicien U2I en intervention sur une tuyauterie inox"
+                alt={t("about.alt.onsite")}
                 loading="lazy"
               />
-              <figcaption>Intervention sur site</figcaption>
+              <figcaption>{t("about.resources.onsite")}</figcaption>
             </figure>
             <figure className="about-team-photos__secondary">
               <img
                 src={inspectionImage}
-                alt="Contrôle d’une soudure inox avec un équipement AXXAIR"
+                alt={t("about.alt.inspection")}
                 loading="lazy"
               />
-              <figcaption>Contrôle & précision</figcaption>
+              <figcaption>{t("about.resources.inspection")}</figcaption>
             </figure>
             <div className="about-team-photos__note">
               <Factory size={20} aria-hidden="true" />
@@ -312,11 +308,11 @@ export function AboutPage() {
           >
             <img
               src={weldingImage}
-              alt="Soudure inox de précision réalisée en atelier"
+              alt={t("about.alt.welding")}
               loading="lazy"
             />
             <div className="about-quality__image-label">
-              <BadgeCheck size={17} /> Qualité & traçabilité
+              <BadgeCheck size={17} /> {t("about.quality.badge")}
             </div>
           </motion.div>
           <motion.div
@@ -327,9 +323,9 @@ export function AboutPage() {
             transition={{ duration: 0.55, delay: 0.08 }}
           >
             <p className="about-section-label about-section-label--light">
-              <span>05</span> Notre exigence
+              <span>05</span> {t("about.section.quality")}
             </p>
-            <h2>La qualité se vérifie à chaque étape.</h2>
+            <h2>{t("about.quality.title")}</h2>
             <p>
               {t("about.quality.text")}
             </p>
@@ -353,14 +349,14 @@ export function AboutPage() {
         <div className="wrap about-partner__inner">
           <div className="about-partner__identity">
             <p className="about-section-label">
-              <span>06</span> Un partenariat de confiance
+              <span>06</span> {t("about.section.partner")}
             </p>
-            <h2>Des équipements de référence. Un savoir-faire de terrain.</h2>
+            <h2>{t("about.partner.heading")}</h2>
           </div>
           <div className="about-partner__detail">
             <img src={axxairLogo} alt="AXXAIR" loading="lazy" />
             <div>
-              <p>Distributeur officiel AXXAIR depuis 2015</p>
+              <p>{t("about.partner.badge")}</p>
               <span>
                 {t("about.partner.text")}
               </span>
@@ -372,17 +368,17 @@ export function AboutPage() {
       <section className="about-contact">
         <div className="wrap about-contact__inner">
           <div>
-            <p className="about-eyebrow">Votre prochain projet</p>
-            <h2>Mettons votre installation en mouvement.</h2>
-            <p>Parlons ensemble de vos contraintes, de vos délais et de vos objectifs.</p>
+            <p className="about-eyebrow">{t("about.cta.eyebrow")}</p>
+            <h2>{t("about.cta.title")}</h2>
+            <p>{t("about.cta.text")}</p>
           </div>
           <div className="about-contact__actions">
-            <Link to="/contact" className="about-contact__button">
-              Contacter nos équipes <ArrowUpRight size={18} aria-hidden="true" />
-            </Link>
-            <Link to="/secteurs" className="about-contact__secondary">
+            <LocalizedLink to="/contact" className="about-contact__button">
+              {t("about.cta.contact")} <ArrowUpRight size={18} aria-hidden="true" />
+            </LocalizedLink>
+            <LocalizedLink to="/secteurs" className="about-contact__secondary">
               {t("about.cta.sectors")}
-            </Link>
+            </LocalizedLink>
           </div>
         </div>
       </section>

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Camera, Maximize2, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 import workshopImage from "@/assets/about-workshop.jpg";
 import endo1 from "@/assets/equipments/Endoscopie/20200910_114715.jpg";
 import endo2 from "@/assets/equipments/Endoscopie/20200910_114715 (1).jpg";
@@ -264,15 +264,15 @@ export function EquipmentsPage() {
                       <li key={key}>{t(key)}</li>
                     ))}
                   </ul>
-                  <Link className="equipment-contact-link" to="/contact">
-                    Parlons de votre projet <ArrowUpRight size={16} aria-hidden="true" />
-                  </Link>
+                  <LocalizedLink className="equipment-contact-link" to="/contact">
+                    {t("equipment.detail.cta")} <ArrowUpRight size={16} aria-hidden="true" />
+                  </LocalizedLink>
                 </div>
               </div>
 
               <div
                 className="equipment-gallery"
-                aria-label={`Galerie ${t(activeEquipment.titleKey)}`}
+                aria-label={`${t("equipment.gallery.aria")} ${t(activeEquipment.titleKey)}`}
               >
                 {activeEquipment.images.map((image, index) => (
                   <motion.button
@@ -280,7 +280,7 @@ export function EquipmentsPage() {
                     type="button"
                     className={`equipment-gallery__item${index === 0 ? " equipment-gallery__item--lead" : ""}`}
                     onClick={() => setLightboxIndex(index)}
-                    aria-label={`Agrandir la photo ${index + 1} sur ${activeEquipment.images.length} : ${t(activeEquipment.titleKey)}`}
+                    aria-label={`${t("equipment.gallery.zoom")} ${index + 1} ${t("equipment.gallery.of")} ${activeEquipment.images.length} : ${t(activeEquipment.titleKey)}`}
                     initial={reduceMotion ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -291,7 +291,7 @@ export function EquipmentsPage() {
                   >
                     <img
                       src={image}
-                      alt={`${t(activeEquipment.titleKey)} — vue ${index + 1}`}
+                      alt={`${t(activeEquipment.titleKey)} — ${t("equipment.gallery.view")} ${index + 1}`}
                       loading={index < 4 ? "eager" : "lazy"}
                     />
                     <span className="equipment-gallery__expand" aria-hidden="true">
@@ -308,15 +308,15 @@ export function EquipmentsPage() {
       <section className="equipment-cta">
         <div className="equipment-wrap equipment-cta__inner">
           <div>
-            <span>Votre prochain projet</span>
+            <span>{t("about.cta.eyebrow")}</span>
             <h2>
-              Un besoin spécifique ?<br />
-              Échangeons.
+              {t("equipment.cta.line1")}<br />
+              {t("equipment.cta.line2")}
             </h2>
           </div>
-          <Link to="/contact" aria-label="Contacter l’équipe U2I">
+          <LocalizedLink to="/contact" aria-label={t("equipment.cta.aria")}>
             <ArrowUpRight size={23} />
-          </Link>
+          </LocalizedLink>
         </div>
       </section>
 
@@ -326,7 +326,7 @@ export function EquipmentsPage() {
             className="equipment-lightbox"
             role="dialog"
             aria-modal="true"
-            aria-label={`Galerie ${t(activeEquipment.titleKey)}`}
+            aria-label={`${t("equipment.gallery.aria")} ${t(activeEquipment.titleKey)}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -337,33 +337,33 @@ export function EquipmentsPage() {
           >
             <header className="equipment-lightbox__header">
               <div>
-                <span>U2I / GALERIE</span>
+                <span>{t("equipment.gallery.label")}</span>
                 <h2>{t(activeEquipment.titleKey)}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setLightboxIndex(null)}
-                aria-label="Fermer la galerie"
+                aria-label={t("equipment.gallery.close")}
               >
                 <X size={22} />
               </button>
             </header>
             <div className="equipment-lightbox__stage">
-              <button type="button" onClick={() => moveLightbox(-1)} aria-label="Photo précédente">
+              <button type="button" onClick={() => moveLightbox(-1)} aria-label={t("equipment.gallery.prev")}>
                 <ArrowLeft />
               </button>
               <AnimatePresence mode="wait">
                 <motion.img
                   key={activeEquipment.images[lightboxIndex]}
                   src={activeEquipment.images[lightboxIndex]}
-                  alt={`${t(activeEquipment.titleKey)} — photo ${lightboxIndex + 1}`}
+                  alt={`${t(activeEquipment.titleKey)} — ${t("equipment.gallery.photo")} ${lightboxIndex + 1}`}
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: reduceMotion ? 0 : 0.18 }}
                 />
               </AnimatePresence>
-              <button type="button" onClick={() => moveLightbox(1)} aria-label="Photo suivante">
+              <button type="button" onClick={() => moveLightbox(1)} aria-label={t("equipment.gallery.next")}>
                 <ArrowRight />
               </button>
             </div>

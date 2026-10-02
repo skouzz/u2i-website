@@ -34,12 +34,10 @@ export function NewsListPage() {
   const articles = data?.items ?? [];
 
   useSeo({
-    title:
-      locale === "en" ? "News — U2I Process" : "Actualités — U2I Process",
-    description:
-      locale === "en"
-        ? "Projects, new equipment, certifications: follow life at the U2I workshop."
-        : "Projets, nouveaux équipements, certifications : suivez la vie de l'atelier et de l'équipe U2I.",
+    title: locale === "en" ? "News — U2I Process" : "Actualités — U2I Process",
+    description: locale === "en"
+      ? "Projects, new equipment, certifications: follow life at the U2I workshop."
+      : "Projets, nouveaux équipements, certifications : suivez la vie de l'atelier et de l'équipe U2I.",
   });
 
   return (
@@ -49,25 +47,17 @@ export function NewsListPage() {
         breadcrumb={t("news.hero.eyebrow")}
         eyebrow={t("news.hero.eyebrow")}
         title={
-          locale === "en" ? (
-            <>
-              Our
-              <br />
-              <span>news.</span>
-            </>
-          ) : (
-            <>
-              Nos
-              <br />
-              <span>actualités.</span>
-            </>
-          )
+          <>
+            {t("news.hero.titleLine1")}
+            <br />
+            <span>{t("news.hero.titleLine2")}</span>
+          </>
         }
         description={t("news.hero.text")}
         linkLabel={t("common.contactUs")}
         linkHref={link("/contact")}
         image={workshopImage}
-        imageAlt={locale === "en" ? "The U2I workshop in Akouda" : "L'atelier U2I à Akouda"}
+        imageAlt={t("news.alt.workshop")}
       />
 
       <section className="contact-main" style={{ background: "#fff" }}>
@@ -76,9 +66,7 @@ export function NewsListPage() {
 
           {isError && (
             <div className="news-empty">
-              {locale === "en"
-                ? "News is not available yet. The CMS goes live once the database is installed on the host."
-                : "Les actualités ne sont pas encore disponibles. Le CMS sera actif après l'installation de la base de données sur l'hébergement."}
+              {t("news.list.unavailable")}
             </div>
           )}
 

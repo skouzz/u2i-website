@@ -17,6 +17,7 @@ interface CmsPageRouteProps {
 }
 
 function BlockRenderer({ block }: { block: CmsBlock }) {
+  const { t } = useI18n();
   switch (block.type) {
     case "heading":
       return block.title ? <h2 className="cms-block-heading">{block.title}</h2> : null;
@@ -73,7 +74,7 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
           <div className="cms-block-video__frame">
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${embed[1]}`}
-              title={block.title ?? "Vidéo"}
+              title={block.title ?? t("cms.block.video")}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               loading="lazy"
@@ -84,7 +85,7 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
       ) : (
         <p className="cms-block-text">
           <a href={src} target="_blank" rel="noreferrer">
-            {block.title || "Voir la vidéo"}
+            {block.title || t("cms.block.watchVideo")}
           </a>
         </p>
       );
@@ -121,13 +122,13 @@ function BlockRenderer({ block }: { block: CmsBlock }) {
     case "contact_info":
       return (
         <div className="contact-details cms-block-contact" style={{ gridColumn: "1 / -1" }}>
-          <h3>Coordonnées</h3>
+          <h3>{t("cms.block.contactInfo")}</h3>
           <a className="contact-detail" href={`tel:${(block.title ?? "").replace(/\s+/g, "")}`}>
             <span className="contact-detail__icon">
               <Phone size={19} aria-hidden="true" />
             </span>
             <span>
-              <small>Téléphone</small>
+              <small>{t("cms.block.phone")}</small>
               <strong>{block.title ?? ""}</strong>
             </span>
           </a>
