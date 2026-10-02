@@ -193,6 +193,24 @@ export interface CmsNavItem {
   children?: CmsNavItem[];
 }
 
+export type CmsReferenceKind = "partner" | "certification";
+
+/** A client reference (partner logo or certification) shown on /references. */
+export interface CmsReference {
+  id?: number;
+  kind: CmsReferenceKind;
+  title: string;
+  imageUrl?: string | null;
+  websiteUrl?: string | null;
+  sortOrder?: number;
+  isVisible?: boolean;
+  /** English overlay, as edited in the dashboard. */
+  i18n?: Record<string, Record<string, string>>;
+}
+
+/** Admin payload for saving the references list. */
+export type CmsReferencePayload = Omit<CmsReference, "sortOrder">;
+
 export interface CmsCategory {
   id: number;
   slug: string;
@@ -370,6 +388,12 @@ export const cmsApi = {
   home: (lang?: string) =>
     getJson<{ ok: true; items: CmsHomeBlock[]; lang?: string }>(
       `/api/cms.php?r=home${langQuery(lang)}`,
+      langHeaders(lang),
+    ),
+
+  references: (lang?: string) =>
+    getJson<{ ok: true; items: CmsReference[]; lang?: string }>(
+      `/api/cms.php?r=references${langQuery(lang)}`,
       langHeaders(lang),
     ),
 
@@ -647,6 +671,19 @@ export const adminApi = {
 
   saveHomeBlocks: (csrf: string, blocks: CmsHomeBlock[]) =>
     getJson<{ ok: true }>("/api/admin.php?a=home_blocks", withCsrf(jsonBody({ blocks }), csrf)),
+
+  // ── References ──
+  references: (csrf: string) =>
+    getJson<{ ok: true; items: CmsReference[] }>(
+      "/api/admin.php?a=references",
+      withCsrf({}, csrf),
+    ),
+
+  saveReferences: (csrf: string, items: CmsReferencePayload[]) =>
+    getJson<{ ok: true }>(
+      "/api/admin.php?a=references",
+      withCsrf(jsonBody({ items }), csrf),
+    ),
 
   // ── Revisions ──
   revisions: (csrf: string, type: "page" | "article", id: number) =>

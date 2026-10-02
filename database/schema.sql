@@ -171,6 +171,23 @@ CREATE TABLE IF NOT EXISTS content_blocks (
     INDEX idx_content_blocks (is_visible, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Client references shown on /references: partner logos + certifications.
+-- Named site_references because REFERENCES is a reserved word in MySQL and
+-- would need backticks in every query.
+CREATE TABLE IF NOT EXISTS site_references (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    kind ENUM('partner','certification') NOT NULL DEFAULT 'partner',
+    title VARCHAR(255) NOT NULL,
+    image_url VARCHAR(500) NULL,
+    website_url VARCHAR(500) NULL,
+    sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    is_visible TINYINT(1) NOT NULL DEFAULT 1,
+    i18n_json JSON NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_site_references (kind, is_visible, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Content revisions (restore point for pages & articles).
 CREATE TABLE IF NOT EXISTS content_revisions (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

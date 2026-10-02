@@ -469,6 +469,63 @@ function save_home_blocks(array $blocks): void
     }
 }
 
+/** Map a site_references row for the dashboard. */
+function map_reference(array $row): array
+{
+    $i18n = decode_i18n(isset($row['i18n_json']) ? (string) $row['i18n_json'] : null);
+
+    return [
+        'id' => (int) $row['id'],
+        'kind' => (string) $row['kind'],
+        'title' => (string) $row['title'],
+        'imageUrl' => $row['image_url'] ?? null,
+        'websiteUrl' => $row['website_url'] ?? null,
+        'sortOrder' => (int) $row['sort_order'],
+        'isVisible' => (bool) $row['is_visible'],
+        'i18n' => $i18n,
+    ];
+}
+
+/**
+ * Replace the whole references list from the dashboard payload.
+ *
+ * Same delete-then-insert shape as the homepage blocks: the editor always
+ * submits the complete ordered list, so there is nothing to merge and no way
+ * for a stale row to survive a delete performed in the UI.
+ */
+function save_references(array $items): void
+{
+    db()->exec('DELETE FROM site_references');
+    $stmt = db()->prepare(
+        'INSERT INTO site_references (kind, title, image_url, website_url, sort_order, is_visible, i18n_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+    $order = 0;
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $kind = field($item, 'kind');
+        if (!in_array($kind, ['partner', 'certification'], true)) {
+            continue;
+        }
+        $title = field($item, 'title');
+        if ($title === '') {
+            continue;
+        }
+        $i18n = $item['i18n'] ?? null;
+        $stmt->execute([
+            $kind,
+            $title,
+            field($item, 'imageUrl') ?: null,
+            field($item, 'websiteUrl') ?: null,
+            $order++,
+            !empty($item['isVisible']) ? 1 : 0,
+            is_array($i18n) ? encode_i18n($i18n) : '{}',
+        ]);
+    }
+}
+
 /** Sync article_tags for an article. */
 function sync_article_tags(int $articleId, array $tagIds): void
 {
@@ -1128,6 +1185,23 @@ try {
                 $data = read_json_body();
                 save_home_blocks(is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
                 log_activity('home.update', 'home', 1);
+                json_response(['ok' => true]);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
+        // ── Client references (partners & certifications) ────────────────
+        case 'references':
+            csrf_or_fail();
+            if ($method === 'GET') {
+                $rows = db()->query(
+                    'SELECT * FROM site_references ORDER BY kind ASC, sort_order ASC, id ASC'
+                )->fetchAll();
+                json_response(['ok' => true, 'items' => array_map('map_reference', $rows)]);
+            }
+            if ($method === 'PUT' || $method === 'POST') {
+                $data = read_json_body();
+                save_references(is_array($data['items'] ?? null) ? $data['items'] : []);
+                log_activity('references.update', 'references', 1);
                 json_response(['ok' => true]);
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);

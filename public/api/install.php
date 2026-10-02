@@ -204,6 +204,20 @@ $statements = [
         INDEX idx_content_blocks (is_visible, sort_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+    'site_references' => "CREATE TABLE IF NOT EXISTS site_references (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        kind ENUM('partner','certification') NOT NULL DEFAULT 'partner',
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500) NULL,
+        website_url VARCHAR(500) NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        is_visible TINYINT(1) NOT NULL DEFAULT 1,
+        i18n_json JSON NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_site_references (kind, is_visible, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
     'content_revisions' => "CREATE TABLE IF NOT EXISTS content_revisions (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         entity_type ENUM('page','article') NOT NULL,
@@ -264,6 +278,11 @@ ensure_column($pdo, 'settings', 'footer_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'seo_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'social_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'home_json', 'JSON NULL');
+
+// Client references — the i18n column is added here so an existing database
+// created before this feature picks it up on the next installer run.
+ensure_column($pdo, 'site_references', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'site_references', 'website_url', 'VARCHAR(500) NULL');
 
 // v2.1 — page builder: per-section visibility + richer block types.
 // ENUM widen must be guarded (an ALTER on an up-to-date column is harmless but

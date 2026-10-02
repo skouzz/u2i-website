@@ -68,6 +68,11 @@ const I18N_MENU_FIELDS = [
     'label' => 'label',
 ];
 
+/** Translatable columns for a site_references row. */
+const I18N_REFERENCE_FIELDS = [
+    'title' => 'title',
+];
+
 /** Translatable columns for a categories / tags row. */
 const I18N_TAXONOMY_FIELDS = [
     'name' => 'name',
@@ -336,6 +341,23 @@ try {
         case 'home':
             $rows = db()->query('SELECT * FROM content_blocks WHERE is_visible = 1 ORDER BY sort_order ASC, id ASC')->fetchAll();
             json_response(['ok' => true, 'items' => array_map('map_public_home_block', $rows), 'lang' => $lang]);
+
+        case 'references':
+            $rows = db()->query(
+                'SELECT * FROM site_references WHERE is_visible = 1 ORDER BY kind ASC, sort_order ASC, id ASC'
+            )->fetchAll();
+            $items = [];
+            foreach ($rows as $row) {
+                $merged = apply_i18n($row, I18N_REFERENCE_FIELDS, $lang);
+                $items[] = [
+                    'id' => (int) $merged['id'],
+                    'kind' => (string) $merged['kind'],
+                    'title' => (string) $merged['title'],
+                    'imageUrl' => $merged['image_url'] ?? null,
+                    'websiteUrl' => $merged['website_url'] ?? null,
+                ];
+            }
+            json_response(['ok' => true, 'items' => $items, 'lang' => $lang]);
 
         case 'categories':
             $rows = db()->query('SELECT c.id, c.slug, c.name, c.description, c.i18n_json, (SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id AND a.status = \'published\') AS article_count FROM categories c ORDER BY c.name ASC')->fetchAll();

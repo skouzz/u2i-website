@@ -1,7 +1,8 @@
-import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { cmsApi, type CmsReference } from "@/lib/cms";
 import { useI18n } from "@/lib/i18n";
 import referencesHeroImage from "@/assets/axxair-1.jpg";
 import sanofiLogoImage from "@/assets/partners/Sanofi.png";
@@ -41,6 +42,7 @@ import cert6 from "@/assets/certif/IMG_8071.jpg";
 import cert7 from "@/assets/certif/iso-1.png";
 import cert8 from "@/assets/certif/UIT-officiel-distributeur-_page-0001_001-1.jpg";
 
+/** Logos coded into the bundle — used until an admin saves references. */
 const PARTNER_LOGOS = [
   { title: "Sanofi", image: sanofiLogoImage },
   { title: "Hikma", image: hikmaLogoImage },
@@ -71,6 +73,7 @@ const PARTNER_LOGOS = [
   { title: "Pierre Fabre", image: logoPierreFabre },
 ] as const;
 
+/** Certificates coded into the bundle — same fallback rule as above. */
 const CERTIFICATIONS = [
   { title: "Certificat Axxair - Bouker Amen Allah", image: cert1 },
   { title: "Certificat Axxair - Imed Manfoukh", image: cert2 },
@@ -83,7 +86,33 @@ const CERTIFICATIONS = [
 ] as const;
 
 export function ReferencesPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+
+  // Admin-managed references take over as soon as any are saved; until then the
+  // bundle's logo list renders, so the page is never empty.
+  const { data } = useQuery({
+    queryKey: ["cms", "references", locale],
+    queryFn: () => cmsApi.references(locale),
+    staleTime: 60_000,
+  });
+
+  const managed = data?.items ?? [];
+  const managedPartners = managed.filter((r) => r.kind === "partner" && r.imageUrl);
+  const managedCertifications = managed.filter((r) => r.kind === "certification" && r.imageUrl);
+
+  const partners =
+    managedPartners.length > 0
+      ? managedPartners.map((r: CmsReference) => ({ title: r.title, image: r.imageUrl as string }))
+      : PARTNER_LOGOS;
+
+  const certifications =
+    managedCertifications.length > 0
+      ? managedCertifications.map((r: CmsReference) => ({
+          title: r.title,
+          image: r.imageUrl as string,
+        }))
+      : CERTIFICATIONS;
+
   return (
     <div className="min-h-screen bg-[#f5f7f8] text-slate-900">
       <PageHero
@@ -122,7 +151,7 @@ export function ReferencesPage() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {PARTNER_LOGOS.map((partner) => (
+              {partners.map((partner) => (
                 <div
                   key={partner.title}
                   className="group flex h-28 items-center justify-center border border-slate-200 bg-white p-4 transition duration-200 hover:border-[#e0141c]/50 hover:shadow-md sm:h-32"
@@ -155,7 +184,7 @@ export function ReferencesPage() {
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {CERTIFICATIONS.map((cert, index) => (
+              {certifications.map((cert, index) => (
                 <article
                   key={cert.title}
                   className="group overflow-hidden border border-slate-200 bg-[#f8fafb] transition-shadow hover:shadow-lg"
