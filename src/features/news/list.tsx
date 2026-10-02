@@ -60,8 +60,8 @@ export function NewsListPage() {
         imageAlt={t("news.alt.workshop")}
       />
 
-      <section className="contact-main" style={{ background: "#fff" }}>
-        <div className="contact-wrap">
+      <section className="news-main">
+        <div className="news-wrap">
           {isLoading && <NewsGridSkeleton count={6} />}
 
           {isError && (

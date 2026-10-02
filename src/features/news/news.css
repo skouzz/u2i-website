@@ -11,32 +11,73 @@
   margin: 0;
 }
 
+/* ── Listing layout ──────────────────────────────────────────────────────
+   This page used to borrow .contact-main / .contact-wrap from the contact
+   feature, but it never loaded contact.css — so on /actualites those classes
+   were undefined and the grid ran edge to edge with no side padding. It now
+   owns its own container instead of depending on another feature's CSS.
+   Vertical rhythm lives on the section so the skeleton grid, the empty state
+   and the real grid all align to the same box.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.news-main {
+  background: #fff;
+  padding: 60px 0 90px;
+}
+
+.news-wrap {
+  width: min(1280px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
 .news-grid {
   display: grid;
-  gap: 26px;
+  gap: 30px;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  padding: 60px 0 90px;
+}
+
+/* The shared skeleton grid carries its own page padding and a slightly
+   different gap. This section owns that rhythm now, so align the placeholder
+   to the real grid — otherwise the cards jump when the articles arrive. */
+.news-wrap .u2i-skel-grid {
+  gap: 30px;
+  padding: 0;
+}
+
+.news-wrap .u2i-skel-card {
+  border-radius: 16px;
 }
 
 .news-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e0e3e0;
+  border: 1px solid #e4e7e4;
+  border-radius: 16px;
   background: #fff;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
+  box-shadow: 0 1px 2px rgb(23 27 28 / 4%);
   transition:
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    box-shadow 220ms ease,
+    transform 220ms ease,
+    border-color 220ms ease;
 }
 
-.news-card:hover {
-  box-shadow: 0 14px 34px rgb(23 27 28 / 10%);
-  transform: translateY(-2px);
+.news-card:hover,
+.news-card:focus-visible {
+  box-shadow: 0 18px 40px rgb(23 27 28 / 12%);
+  transform: translateY(-4px);
+  border-color: rgb(224 20 28 / 35%);
+}
+
+.news-card:focus-visible {
+  outline: 2px solid var(--contact-red);
+  outline-offset: 3px;
 }
 
 .news-card__media {
+  position: relative;
   aspect-ratio: 16 / 9;
   background: #e8ebe8;
   overflow: hidden;
@@ -46,19 +87,45 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Slow zoom on hover — the card reads as one object rather than two stacked
+   boxes, and it stops the whole grid feeling static. */
+.news-card:hover .news-card__media img,
+.news-card:focus-visible .news-card__media img {
+  transform: scale(1.06);
+}
+
+/* Articles saved without a cover still need a readable placeholder rather
+   than a flat grey block sitting at the top of the card. */
+.news-card__media:not(:has(img)) {
+  background:
+    linear-gradient(135deg, rgb(224 20 28 / 8%), rgb(23 27 28 / 6%)),
+    repeating-linear-gradient(
+      45deg,
+      #eef0ee,
+      #eef0ee 10px,
+      #e7eae7 10px,
+      #e7eae7 20px
+    );
 }
 
 .news-card__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 10px;
-  padding: 20px 22px 24px;
+  gap: 12px;
+  padding: 22px 24px 26px;
 }
 
 .news-card__date {
-  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--contact-red);
 }
@@ -68,27 +135,85 @@
   font-size: 21px;
   line-height: 1.15;
   text-transform: uppercase;
+  transition: color 220ms ease;
 }
 
+.news-card:hover .news-card__title,
+.news-card:focus-visible .news-card__title {
+  color: var(--contact-red);
+}
+
+/* Clamp the excerpt so every card in a row keeps the same height and the
+   "read article" row stays aligned across the grid. */
 .news-card__excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
   color: #525b5d;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .news-card__more {
   margin-top: auto;
-  padding-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #eef0ee;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--contact-red);
 }
 
+.news-card__more svg {
+  transition: transform 220ms ease;
+}
+
+.news-card:hover .news-card__more svg,
+.news-card:focus-visible .news-card__more svg {
+  transform: translateX(4px);
+}
+
+@media (max-width: 560px) {
+  .news-main {
+    padding: 40px 0 64px;
+  }
+
+  .news-wrap {
+    width: min(1280px, calc(100% - 32px));
+  }
+
+  .news-grid {
+    gap: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .news-card,
+  .news-card__media img,
+  .news-card__title,
+  .news-card__more svg {
+    transition: none;
+  }
+
+  .news-card:hover,
+  .news-card:focus-visible {
+    transform: none;
+  }
+
+  .news-card:hover .news-card__media img,
+  .news-card:focus-visible .news-card__media img {
+    transform: none;
+  }
+}
+
 .news-empty {
-  padding: 90px 0 110px;
+  padding: 30px 0 40px;
   text-align: center;
   color: #525b5d;
   font-size: 14px;
