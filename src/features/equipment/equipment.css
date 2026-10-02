@@ -18,6 +18,66 @@
   margin-inline: auto;
 }
 
+/*
+ * Stage jump list.
+ *
+ * The tab strip below scrolls horizontally on narrow screens, so the stages are
+ * also exposed as a real ordered list of in-page links: deep-linkable, and
+ * reachable on a phone without swiping a tab strip sideways.
+ */
+.equipment-stage-nav {
+  display: grid;
+  gap: 1px;
+  margin: 0 0 2.5rem;
+  padding: 0;
+  list-style: none;
+  background: #e2e5e3;
+  border: 1px solid #e2e5e3;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.equipment-stage-nav a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--equipment-ink);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.equipment-stage-nav a:hover {
+  background: #f4f5f3;
+  color: var(--equipment-red);
+}
+
+.equipment-stage-nav a.is-active {
+  background: var(--equipment-ink);
+  color: #fff;
+}
+
+.equipment-stage-nav__num {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--equipment-red);
+}
+
+.equipment-stage-nav a.is-active .equipment-stage-nav__num {
+  color: #fff;
+}
+
+/* Deep-link target for a stage; offset for the sticky header. */
+.equipment-stage {
+  scroll-margin-top: 8rem;
+}
+
 .equipment-hero {
   position: relative;
   display: flex;

@@ -8,7 +8,20 @@ const tableEnd = src.indexOf("};", tableStart);
 const table = src.slice(tableStart, tableEnd);
 
 const entries = new Map();
-for (const m of table.matchAll(/"([^"]+)":\s*"([a-zA-Z0-9.]+)"/g)) entries.set(m[1], m[2]);
+/*
+ * Keys in this table may be quoted or bare. Prettier's default `quoteProps:
+ * "as-needed"` drops the quotes from every key that is a valid identifier and
+ * keeps them only where they are required — so `"accueil"`, `"équipements"`
+ * and `"références"` all become bare, while `"a propos"` (it contains a space)
+ * stays quoted. Matching only quoted keys made this script report false MISSes
+ * as soon as `npm run format` had been run over the catalog, so accept both
+ * forms and treat them as the same key. The bare form uses Unicode property
+ * escapes because accented letters are perfectly good identifier characters.
+ */
+const KEY = '(?:"([^"]+)"|([\\p{L}_$][\\p{L}\\p{N}_$]*))';
+for (const m of table.matchAll(new RegExp(`${KEY}\\s*:\\s*"([a-zA-Z0-9.]+)"`, "gu"))) {
+  entries.set(m[1] ?? m[2], m[3]);
+}
 
 // The exact labels reported as showing up untranslated on /en.
 const reported = [

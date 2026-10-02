@@ -45,6 +45,42 @@ function ensure_column(PDO $pdo, string $table, string $column, string $definiti
     }
 }
 
+/**
+ * Widen site_references.kind so it accepts 'client' alongside 'partner' and
+ * 'certification'.
+ *
+ * Widening an ENUM keeps every existing row valid, so this is safe to run on a
+ * live database. Guarded on the current definition so re-running the installer
+ * is a no-op rather than a second pointless ALTER.
+ */
+function ensure_reference_kind(PDO $pdo): void
+{
+    global $results;
+    try {
+        $row = $pdo->query(
+            "SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'site_references' AND COLUMN_NAME = 'kind'"
+        )->fetchColumn();
+    } catch (Throwable $e) {
+        $results['failed'][] = ['sql' => 'site_references.kind', 'error' => $e->getMessage()];
+        return;
+    }
+
+    if ($row === false || $row === null || strpos((string) $row, "'client'") !== false) {
+        return;
+    }
+
+    try {
+        $pdo->exec(
+            "ALTER TABLE site_references
+             MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner'"
+        );
+        $results['migrated'][] = 'site_references.kind';
+    } catch (Throwable $e) {
+        $results['failed'][] = ['sql' => 'site_references.kind', 'error' => $e->getMessage()];
+    }
+}
+
 $results = ['created' => [], 'migrated' => [], 'already_existed' => [], 'failed' => []];
 $pdo = db();
 
@@ -206,7 +242,7 @@ $statements = [
 
     'site_references' => "CREATE TABLE IF NOT EXISTS site_references (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-        kind ENUM('partner','certification') NOT NULL DEFAULT 'partner',
+        kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500) NULL,
         website_url VARCHAR(500) NULL,
@@ -282,6 +318,11 @@ ensure_column($pdo, 'settings', 'home_json', 'JSON NULL');
 // Client references — the i18n column is added here so an existing database
 // created before this feature picks it up on the next installer run.
 ensure_column($pdo, 'site_references', 'i18n_json', 'JSON NULL');
+// The references section gained a third kind ("client") when /references was
+// split into clients / partners / certifications. Widening the ENUM is not
+// something ensure_column() can do, and a re-run of the CREATE above would be
+// a no-op on an existing table, so the migration is explicit here.
+ensure_reference_kind($pdo);
 ensure_column($pdo, 'site_references', 'website_url', 'VARCHAR(500) NULL');
 
 // v2.1 — page builder: per-section visibility + richer block types.

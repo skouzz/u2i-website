@@ -2,17 +2,10 @@ import { Facebook, Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-reac
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
 import type { CmsNavItem } from "@/lib/cms";
 import { useCmsArticles, useCmsFooterMenu, useCmsSettings } from "@/lib/cms-queries";
-import { useI18n, type MessageKey } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/lib/i18n/LanguageSwitcher";
 import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
-
-const FALLBACK_FOOTER_LINKS: { label: string; url: string; key: MessageKey }[] = [
-  { label: "Qui sommes nous", url: "/about", key: "nav.about" },
-  { label: "Secteurs", url: "/secteurs", key: "nav.sectors" },
-  { label: "Equipements", url: "/equipements", key: "nav.equipment" },
-  { label: "References", url: "/references", key: "nav.references" },
-  { label: "Contact", url: "/contact", key: "nav.contact" },
-];
+import { buildNavigation } from "@/lib/site/navigation";
 
 const SOCIALS = [
   { key: "facebook", label: "Facebook", Icon: Facebook },
@@ -38,6 +31,17 @@ export function Footer() {
     }));
   const latest = (articlesData?.items ?? []).slice(0, 2);
 
+  /**
+   * Footer columns come from the IA unless the dashboard supplies its own menu.
+   *
+   * The IA drives both, so a section added there shows up in the footer for
+   * free — the previous hard-coded list had to be edited by hand and silently
+   * kept advertising /secteurs after the page had moved to /industries.
+   */
+  const iaLinks = buildNavigation(locale)
+    .filter((item) => item.kind === "link" && item.path !== "/")
+    .map((item) => ({ label: item.label, url: item.path }));
+
   const footer = settings?.footer_json;
   const social = settings?.social_json;
   const siteName = settings?.site_name || "U2I Process";
@@ -46,9 +50,7 @@ export function Footer() {
   const address = settings?.address || "Akouda, Sousse — Tunisie";
   const copyright =
     footer?.copyright || `© ${new Date().getFullYear()} ${siteName} — Univers Inox Industriel`;
-  const links = footerLinks.length
-    ? footerLinks
-    : FALLBACK_FOOTER_LINKS.map((l) => ({ label: t(l.key), url: l.url }));
+  const links = footerLinks.length ? footerLinks : iaLinks;
 
   return (
     <footer className="border-t border-white/10 bg-black pt-20 text-white">

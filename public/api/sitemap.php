@@ -12,7 +12,49 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' :
 $host = $_SERVER['HTTP_HOST'] ?? 'u2iprocess.com';
 $base = $scheme . '://' . $host;
 
-$staticRoutes = ['', '/about', '/secteurs', '/equipements', '/references', '/actualites', '/contact'];
+/*
+ * Static routes.
+ *
+ * This list mirrors the IA in src/lib/site/ia.ts: the five sections with their
+ * children, plus the three standalone pages. It is duplicated rather than
+ * generated because the sitemap is a PHP endpoint that runs without the
+ * frontend build; when a section is added, add its entries here too or the page
+ * will be reachable but unlisted.
+ */
+$staticRoutes = [
+    '',
+    '/industries',
+    '/industries/pharmaceutique',
+    '/industries/biotechnologie',
+    '/industries/agroalimentaire',
+    '/industries/chimie',
+    '/expertises',
+    '/expertises/tuyauterie-process',
+    '/expertises/soudage-orbital',
+    '/expertises/fabrication-inox',
+    '/expertises/ingenierie-conception',
+    '/expertises/eau-purifiee-wfi',
+    '/expertises/vapeur-pure',
+    '/expertises/cip-sip',
+    '/expertises/solutions-sur-mesure',
+    '/equipements',
+    '/projets',
+    '/projets/etudes-ingenierie',
+    '/projets/fabrication',
+    '/projets/installation',
+    '/projets/mise-en-service',
+    '/projets/etudes-de-cas',
+    '/references',
+    '/references/references-clients',
+    '/references/partenaires',
+    '/references/certifications',
+    '/u2i',
+    '/u2i/a-propos',
+    '/u2i/points-forts',
+    '/u2i/savoir-faire',
+    '/actualites',
+    '/contact',
+];
 
 $urls = [];
 foreach ($staticRoutes as $route) {

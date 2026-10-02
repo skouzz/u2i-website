@@ -506,7 +506,7 @@ function save_references(array $items): void
             continue;
         }
         $kind = field($item, 'kind');
-        if (!in_array($kind, ['partner', 'certification'], true)) {
+        if (!in_array($kind, ['client', 'partner', 'certification'], true)) {
             continue;
         }
         $title = field($item, 'title');

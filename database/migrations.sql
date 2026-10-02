@@ -70,3 +70,9 @@ ALTER TABLE settings
 ALTER TABLE site_references
     ADD COLUMN i18n_json JSON NULL,
     ADD COLUMN website_url VARCHAR(500) NULL;
+
+-- /references split into clients / partners / certifications: give the table a
+-- third kind. Widening an ENUM preserves existing rows, so this is safe on a
+-- live database.
+ALTER TABLE site_references
+    MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner';

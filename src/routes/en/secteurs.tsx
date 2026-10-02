@@ -1,5 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { SectorsPage } from "@/features/sectors/page";
-
-export const Route = createFileRoute("/en/secteurs")({ component: SectorsPage });
+/** English mirror of the /secteurs → /industries redirect. */
+export const Route = createFileRoute("/en/secteurs")({
+  beforeLoad: () => {
+    throw redirect({ to: "/en/industries" });
+  },
+});

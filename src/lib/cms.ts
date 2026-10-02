@@ -193,9 +193,15 @@ export interface CmsNavItem {
   children?: CmsNavItem[];
 }
 
-export type CmsReferenceKind = "partner" | "certification";
+export type CmsReferenceKind = "client" | "partner" | "certification";
 
-/** A client reference (partner logo or certification) shown on /references. */
+/**
+ * A reference row shown under /references.
+ *
+ * The three kinds map one-to-one onto the three pages in that section:
+ * "client" logos on Références clients, "partner" logos on Partenaires, and
+ * "certification" scans on Certifications.
+ */
 export interface CmsReference {
   id?: number;
   /**

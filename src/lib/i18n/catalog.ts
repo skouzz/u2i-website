@@ -55,10 +55,34 @@ const fr = {
   "common.notFound": "Page introuvable",
   "common.notFoundBody": "La page que vous cherchez n'existe pas ou a été déplacée.",
   "common.errorTitle": "Cette page n'a pas pu se charger",
-  "common.errorBody":
-    "Une erreur est survenue de notre côté. Réessayez ou revenez à l'accueil.",
+  "common.errorBody": "Une erreur est survenue de notre côté. Réessayez ou revenez à l'accueil.",
   "common.retry": "Réessayer",
   "common.unavailable": "Contenu indisponible pour le moment",
+
+  // ── IA-driven pages (src/lib/site) ───────────────────────────────────────
+  "site.explore": "Explorer la section",
+  "site.keyPoints": "Points clés",
+  "site.otherSections": "Autres rubriques",
+  "site.entryCtaTitle": "Un projet comme le vôtre ?",
+  "site.entryCtaText":
+    "Décrivez-nous votre besoin : notre équipe d'ingénieurs vous répond sous 48 heures.",
+  "site.entryCta": "Parler à un ingénieur",
+  "site.entryMissingTitle": "Page introuvable",
+  "site.entryMissingBody": "Cette page n'existe pas ou a été déplacée.",
+  "site.equipmentPath": "Voir la méthode",
+  "site.equipmentTeaser":
+    "Nos équipements sont organisés par étape de fabrication, de la coupe à l'outillage. Voici comment une pièce traverse l'atelier.",
+  "site.equipmentCta": "Découvrir nos équipements",
+
+  // ── References section ───────────────────────────────────────────────────
+  "references.clients.intro":
+    "Voici les industriels qui nous ont confié leurs lignes de procédé. Chaque logo correspond à une installation réalisée par nos équipes.",
+  "references.clients.managedTitle": "Autres références",
+  "references.partners.intro":
+    "Nous distribuons et appliquons les technologies de nos partenaires. C'est ce qui nous permet de vous livrer une machine et la compétence qui va avec.",
+  "references.certifications.intro":
+    "Nos certifications qualité et les formations de nos soudeurs. Les documents originaux sont communicables sur demande.",
+  "references.empty": "Aucune référence publiée pour le moment.",
 
   "footer.explore": "Navigation",
   "footer.contact": "Contact",
@@ -131,8 +155,7 @@ const fr = {
   // ── Sectors ──────────────────────────────────────────────────────────────
   "sectors.hero.eyebrow": "Secteurs d'activité",
   "sectors.hero.title": "Nos secteurs d'expertise",
-  "sectors.hero.text":
-    "Une expertise métier adaptée aux exigences de chaque industrie.",
+  "sectors.hero.text": "Une expertise métier adaptée aux exigences de chaque industrie.",
   "sectors.pharma.title": "Industrie pharmaceutique",
   "sectors.pharma.text":
     "Circuits inox hygiéniques, qualification et respect des Bonnes Pratiques de Fabrication.",
@@ -140,11 +163,9 @@ const fr = {
   "sectors.food.text":
     "Installations conformes aux exigences d'hygiène et de sécurité alimentaire.",
   "sectors.chemical.title": "Industrie chimique",
-  "sectors.chemical.text":
-    "Résistance à la corrosion et sécurité pour les procédés chimiques.",
+  "sectors.chemical.text": "Résistance à la corrosion et sécurité pour les procédés chimiques.",
   "sectors.cosmetics.title": "Cosmétique",
-  "sectors.cosmetics.text":
-    "Circuits inox haute finition pour les chaînes cosmétiques.",
+  "sectors.cosmetics.text": "Circuits inox haute finition pour les chaînes cosmétiques.",
   "sectors.metal.title": "Mobilier métallique",
   "sectors.metal.text": "Conception et fabrication sur mesure de mobilier inox.",
   "sectors.cta.title": "Votre secteur n'est pas listé ?",
@@ -172,8 +193,7 @@ const fr = {
   // ── References ───────────────────────────────────────────────────────────
   "references.hero.eyebrow": "Références",
   "references.hero.title": "Nos réalisations & clients",
-  "references.hero.text":
-    "Un aperçu des industries et projets auxquels nous avons contribué.",
+  "references.hero.text": "Un aperçu des industries et projets auxquels nous avons contribué.",
   "references.clients.title": "Nos clients",
 
   // ── News ─────────────────────────────────────────────────────────────────
@@ -190,8 +210,7 @@ const fr = {
   // ── Contact ──────────────────────────────────────────────────────────────
   "contact.hero.eyebrow": "Contact",
   "contact.hero.title": "Parlons de votre projet",
-  "contact.hero.text":
-    "Une question, un besoin, un devis ? Notre équipe vous répond sous 24h.",
+  "contact.hero.text": "Une question, un besoin, un devis ? Notre équipe vous répond sous 24h.",
   "contact.form.title": "Envoyez-nous un message",
   "contact.form.firstName": "Prénom",
   "contact.form.lastName": "Nom",
@@ -218,15 +237,13 @@ const fr = {
 
   // ── Home — hero slides ───────────────────────────────────────────────────
   "home.slide1.label": "Tuyauterie & Soudure",
-  "home.slide1.title":
-    "La précision continue de guider l'ambition de Groupe Univers Inox",
+  "home.slide1.title": "La précision continue de guider l'ambition de Groupe Univers Inox",
   "home.slide2.label": "Soudure Orbitale",
   "home.slide2.title":
     "Partenaire officiel AXXAIR — une solution complète au service des industries à haute exigence.",
   "home.slide2.date": "Depuis 2015",
   "home.slide3.label": "Agroalimentaire",
-  "home.slide3.title":
-    "Tuyauteries inox conçues pour les normes d'hygiène les plus strictes.",
+  "home.slide3.title": "Tuyauteries inox conçues pour les normes d'hygiène les plus strictes.",
   "home.slide3.date": "Pharma · Agro · Chimie",
   "home.slide4.label": "Nouvel Atelier",
   "home.slide4.title":
@@ -338,14 +355,11 @@ const fr = {
   "about.story.text":
     "Une équipe de terrain, des moyens dédiés et une exigence constante, de l'étude à la mise en service.",
   "about.svc.engineering.title": "Études & ingénierie",
-  "about.svc.engineering.text":
-    "Analyse de vos besoins, conception 3D et notes de calcul.",
+  "about.svc.engineering.text": "Analyse de vos besoins, conception 3D et notes de calcul.",
   "about.svc.fabrication.title": "Fabrication & installation",
-  "about.svc.fabrication.text":
-    "Préfabrication en atelier, cintrage, soudure et montage sur site.",
+  "about.svc.fabrication.text": "Préfabrication en atelier, cintrage, soudure et montage sur site.",
   "about.svc.control.title": "Contrôle & maintenance",
-  "about.svc.control.text":
-    "Endoscopie, essais de pression et maintenance préventive.",
+  "about.svc.control.text": "Endoscopie, essais de pression et maintenance préventive.",
   "about.who.text1":
     "Basés en Tunisie, nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie industrielle pour les secteurs les plus exigeants.",
   "about.who.text2":
@@ -517,15 +531,12 @@ const fr = {
   "about.partner.badge": "Distributeur officiel AXXAIR depuis 2015",
   "about.cta.eyebrow": "Votre prochain projet",
   "about.cta.title": "Mettons votre installation en mouvement.",
-  "about.cta.text":
-    "Parlons ensemble de vos contraintes, de vos délais et de vos objectifs.",
+  "about.cta.text": "Parlons ensemble de vos contraintes, de vos délais et de vos objectifs.",
   "about.cta.contact": "Contacter nos équipes",
-  "about.alt.workshop":
-    "Équipements process en acier inoxydable dans l'atelier U2I",
+  "about.alt.workshop": "Équipements process en acier inoxydable dans l'atelier U2I",
   "about.alt.team": "Équipe U2I et réalisations",
   "about.alt.onsite": "Technicien U2I en intervention sur une tuyauterie inox",
-  "about.alt.inspection":
-    "Contrôle d'une soudure inox avec un équipement AXXAIR",
+  "about.alt.inspection": "Contrôle d'une soudure inox avec un équipement AXXAIR",
   "about.alt.welding": "Soudure inox de précision réalisée en atelier",
 
   "equipment.detail.cta": "Parlons de votre projet",
@@ -573,8 +584,7 @@ const fr = {
   "contact.form.subjectLabel": "Sujet",
   "contact.form.errorFull":
     "Une erreur est survenue. Merci de réessayer ou d'écrire directement à u2i@u2iprocess.com.",
-  "contact.form.offline":
-    "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
+  "contact.form.offline": "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
 
   "news.hero.titleLine1": "Nos",
   "news.hero.titleLine2": "actualités.",
@@ -616,6 +626,30 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "common.errorBody": "Something went wrong on our end. Try again or head back home.",
   "common.retry": "Try again",
   "common.unavailable": "Content temporarily unavailable",
+
+  // ── IA-driven pages (src/lib/site) ───────────────────────────────────────
+  "site.explore": "Explore the section",
+  "site.keyPoints": "Key points",
+  "site.otherSections": "Other sections",
+  "site.entryCtaTitle": "A project like yours?",
+  "site.entryCtaText": "Tell us about your need: our engineering team replies within 48 hours.",
+  "site.entryCta": "Talk to an engineer",
+  "site.entryMissingTitle": "Page not found",
+  "site.entryMissingBody": "This page does not exist or has been moved.",
+  "site.equipmentPath": "See the method",
+  "site.equipmentTeaser":
+    "Our equipment is organised by manufacturing stage, from cutting to tooling. Here is how a part travels through the workshop.",
+  "site.equipmentCta": "Discover our equipment",
+
+  // ── References section ───────────────────────────────────────────────────
+  "references.clients.intro":
+    "These are the manufacturers who entrusted their process lines to us. Every logo corresponds to an installation delivered by our teams.",
+  "references.clients.managedTitle": "Other references",
+  "references.partners.intro":
+    "We distribute and apply our partners' technologies. That is what lets us deliver a machine together with the expertise to run it.",
+  "references.certifications.intro":
+    "Our quality certifications and our welders' training. The original documents are available on request.",
+  "references.empty": "No reference published yet.",
 
   "footer.explore": "Navigation",
   "footer.contact": "Contact",
@@ -666,8 +700,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "about.cta.sectors": "Explore our industries",
   "about.values.title": "Our values",
   "about.values.quality.title": "Quality",
-  "about.values.quality.text":
-    "High quality standards and a QMS certified to ISO 9001.",
+  "about.values.quality.text": "High quality standards and a QMS certified to ISO 9001.",
   "about.values.reliability.title": "Reliability",
   "about.values.reliability.text":
     "Committed lead times and delivery deadlines honoured on every project.",
@@ -686,14 +719,11 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "sectors.hero.title": "Our industries of expertise",
   "sectors.hero.text": "Sector expertise matched to the requirements of each industry.",
   "sectors.pharma.title": "Pharmaceutical industry",
-  "sectors.pharma.text":
-    "Hygienic stainless steel circuits, qualification and GMP compliance.",
+  "sectors.pharma.text": "Hygienic stainless steel circuits, qualification and GMP compliance.",
   "sectors.food.title": "Food & beverage",
-  "sectors.food.text":
-    "Installations that meet hygiene and food safety requirements.",
+  "sectors.food.text": "Installations that meet hygiene and food safety requirements.",
   "sectors.chemical.title": "Chemical industry",
-  "sectors.chemical.text":
-    "Corrosion resistance and safety for chemical processes.",
+  "sectors.chemical.text": "Corrosion resistance and safety for chemical processes.",
   "sectors.cosmetics.title": "Cosmetics",
   "sectors.cosmetics.text": "High-finish stainless steel circuits for cosmetic production lines.",
   "sectors.metal.title": "Metal furniture",
@@ -736,8 +766,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
 
   "contact.hero.eyebrow": "Contact",
   "contact.hero.title": "Let's talk about your project",
-  "contact.hero.text":
-    "A question, a need, a quote? Our team replies within 24 hours.",
+  "contact.hero.text": "A question, a need, a quote? Our team replies within 24 hours.",
   "contact.form.title": "Send us a message",
   "contact.form.firstName": "First name",
   "contact.form.lastName": "Last name",
@@ -762,19 +791,16 @@ const en: Partial<Record<keyof typeof fr, string>> = {
     "This page is not available yet — it will appear once published from the dashboard.",
 
   "home.slide1.label": "Piping & Welding",
-  "home.slide1.title":
-    "Precision continues to drive the ambition of the Univers Inox group",
+  "home.slide1.title": "Precision continues to drive the ambition of the Univers Inox group",
   "home.slide2.label": "Orbital Welding",
   "home.slide2.title":
     "Official AXXAIR partner — a complete solution for high-exigence industries.",
   "home.slide2.date": "Since 2015",
   "home.slide3.label": "Food & beverage",
-  "home.slide3.title":
-    "Stainless steel piping designed for the strictest hygiene standards.",
+  "home.slide3.title": "Stainless steel piping designed for the strictest hygiene standards.",
   "home.slide3.date": "Pharma · Food · Chemical",
   "home.slide4.label": "New workshop",
-  "home.slide4.title":
-    "A new prefabrication workshop to speed up our industrial projects.",
+  "home.slide4.title": "A new prefabrication workshop to speed up our industrial projects.",
   "home.slide4.date": "Akouda, Tunisia",
   "home.alt.logo": "Univers Inox Industriel",
   "home.alt.axxair": "AXXAIR",
@@ -796,8 +822,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "home.who.title": "About us",
   "home.who.text1":
     "Based in Tunisia, we specialise in sheet metal work, welding and industrial piping for the most demanding industries.",
-  "home.who.text2":
-    "Our team of qualified engineers and technicians supports you at every step.",
+  "home.who.text2": "Our team of qualified engineers and technicians supports you at every step.",
   "home.who.text3":
     "We handle engineering, workshop prefabrication, on-site works, commissioning, maintenance and support.",
   "home.who.cta": "Contact us",
@@ -878,18 +903,14 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "about.story.text":
     "A hands-on team, dedicated resources and constant rigour, from engineering to commissioning.",
   "about.svc.engineering.title": "Engineering & design",
-  "about.svc.engineering.text":
-    "Needs analysis, 3D design and engineering calculations.",
+  "about.svc.engineering.text": "Needs analysis, 3D design and engineering calculations.",
   "about.svc.fabrication.title": "Fabrication & installation",
-  "about.svc.fabrication.text":
-    "Workshop prefabrication, bending, welding and on-site assembly.",
+  "about.svc.fabrication.text": "Workshop prefabrication, bending, welding and on-site assembly.",
   "about.svc.control.title": "Inspection & maintenance",
-  "about.svc.control.text":
-    "Endoscopy, pressure testing and preventive maintenance.",
+  "about.svc.control.text": "Endoscopy, pressure testing and preventive maintenance.",
   "about.who.text1":
     "Based in Tunisia, we specialise in sheet metal work, welding and industrial piping for the most demanding industries.",
-  "about.who.text2":
-    "Our team of qualified engineers and technicians supports you at every step.",
+  "about.who.text2": "Our team of qualified engineers and technicians supports you at every step.",
   "about.who.text3":
     "We handle engineering, workshop prefabrication, on-site works, commissioning, maintenance and support.",
   "about.step.study.title": "Study",
@@ -1052,8 +1073,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "about.partner.badge": "Official AXXAIR distributor since 2015",
   "about.cta.eyebrow": "Your next project",
   "about.cta.title": "Let's get your installation moving.",
-  "about.cta.text":
-    "Let's talk about your constraints, your deadlines and your objectives.",
+  "about.cta.text": "Let's talk about your constraints, your deadlines and your objectives.",
   "about.cta.contact": "Contact our teams",
   "about.alt.workshop": "Stainless steel process equipment in the U2I workshop",
   "about.alt.team": "U2I team and completed projects",
@@ -1136,32 +1156,32 @@ const catalog: Record<Locale, Partial<Record<MessageKey, string>>> = { fr, en };
  * source strings, so the real translation always wins.
  */
 const NAV_LABEL_KEYS: Record<string, MessageKey> = {
-  "accueil": "nav.home",
-  "home": "nav.home",
+  accueil: "nav.home",
+  home: "nav.home",
   "a propos": "nav.about",
   "à propos": "nav.about",
   "qui sommes-nous": "nav.about",
   "qui sommes nous": "nav.about",
-  "about": "nav.about",
+  about: "nav.about",
   "about us": "nav.about",
-  "secteurs": "nav.sectors",
-  "secteur": "nav.sectors",
-  "industries": "nav.sectors",
+  secteurs: "nav.sectors",
+  secteur: "nav.sectors",
+  industries: "nav.sectors",
   "nos secteurs": "nav.sectors",
-  "equipements": "nav.equipment",
-  "équipements": "nav.equipment",
-  "equipement": "nav.equipment",
-  "équipement": "nav.equipment",
-  "equipment": "nav.equipment",
-  "references": "nav.references",
-  "références": "nav.references",
-  "reference": "nav.references",
-  "référence": "nav.references",
+  equipements: "nav.equipment",
+  équipements: "nav.equipment",
+  equipement: "nav.equipment",
+  équipement: "nav.equipment",
+  equipment: "nav.equipment",
+  references: "nav.references",
+  références: "nav.references",
+  reference: "nav.references",
+  référence: "nav.references",
   "nos références": "nav.references",
-  "actualites": "nav.news",
-  "actualités": "nav.news",
-  "news": "nav.news",
-  "contact": "nav.contact",
+  actualites: "nav.news",
+  actualités: "nav.news",
+  news: "nav.news",
+  contact: "nav.contact",
   "nous contacter": "nav.contact",
   "contactez-nous": "nav.contact",
 };

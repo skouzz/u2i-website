@@ -9,6 +9,7 @@ import {
 } from "@/lib/cms";
 import {
   BUNDLED_CERTIFICATIONS,
+  BUNDLED_CLIENTS_FLAT,
   BUNDLED_PARTNERS,
   titleFromImageUrl,
 } from "@/lib/references-bundled";
@@ -30,9 +31,14 @@ const newClientId = () => `u2i-ref-${Date.now().toString(36)}-${++clientSeq}`;
 
 const GROUPS: { kind: CmsReferenceKind; label: string; hint: string }[] = [
   {
+    kind: "client",
+    label: "Références clients",
+    hint: "Logos des industriels pour qui nous avons réalisé des lignes, sur la page Références clients.",
+  },
+  {
     kind: "partner",
     label: "Partenaires",
-    hint: "Logos affichés dans la grille « Nos clients » de la page Références.",
+    hint: "Fournisseurs de technologies et distributeurs d'équipement, sur la page Partenaires.",
   },
   {
     kind: "certification",
@@ -181,6 +187,14 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   const importBundled = () => {
     const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
     const missing: Item[] = [
+      ...BUNDLED_CLIENTS_FLAT.filter((p) => !present.has(p.image)).map((p) => ({
+        clientId: newClientId(),
+        kind: "client" as const,
+        title: p.title,
+        imageUrl: p.image,
+        websiteUrl: "",
+        isVisible: true,
+      })),
       ...BUNDLED_PARTNERS.filter((p) => !present.has(p.image)).map((p) => ({
         clientId: newClientId(),
         kind: "partner" as const,
@@ -211,7 +225,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
     const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
     const count = (list: { image: string }[]) =>
       list.filter((entry) => !present.has(entry.image)).length;
-    return count(BUNDLED_PARTNERS) + count(BUNDLED_CERTIFICATIONS);
+    return count(BUNDLED_CLIENTS_FLAT) + count(BUNDLED_PARTNERS) + count(BUNDLED_CERTIFICATIONS);
   }, [items]);
 
   const save = async () => {

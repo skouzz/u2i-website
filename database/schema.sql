@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS content_blocks (
 -- would need backticks in every query.
 CREATE TABLE IF NOT EXISTS site_references (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    kind ENUM('partner','certification') NOT NULL DEFAULT 'partner',
+    kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
     title VARCHAR(255) NOT NULL,
     image_url VARCHAR(500) NULL,
     website_url VARCHAR(500) NULL,
