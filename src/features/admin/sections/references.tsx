@@ -48,6 +48,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   const [error, setError] = useState<string | null>(null);
   // Type used by the "Ajouter" button; each row can override it afterwards.
   const [newKind, setNewKind] = useState<CmsReferenceKind>("partner");
+  // Row most recently added, used to scroll it into view and highlight it.
+  const [pendingFocus, setPendingFocus] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -78,9 +80,10 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   };
 
   const add = (kind: CmsReferenceKind) => {
+    const clientId = newClientId();
     setItems((prev) => {
       const blank: Item = {
-        clientId: newClientId(),
+        clientId,
         kind,
         title: "",
         imageUrl: "",
@@ -89,7 +92,32 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
       };
       return insertAtEndOfKind(prev, blank);
     });
+    setPendingFocus(clientId);
   };
+
+  /**
+   * Reveal and focus a freshly added row.
+   *
+   * The Ajouter button sits at the top of the section, but a new row is
+   * appended at the end of its group — with the 28 bundled partners imported
+   * that is some way down the page. The row was rendering, just off-screen,
+   * so the counter moved and it looked like nothing had happened.
+   */
+  useEffect(() => {
+    if (!pendingFocus) return;
+    const scrollTimer = window.setTimeout(() => {
+      const row = document.querySelector<HTMLElement>(`[data-ref-id="${pendingFocus}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.querySelector<HTMLInputElement>('input[data-field="title"]')?.focus();
+      }
+    }, 80);
+    const clearTimer = window.setTimeout(() => setPendingFocus(null), 3000);
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [pendingFocus]);
 
   /**
    * Move a row into another group (partenaire ↔ certification).
@@ -303,6 +331,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
                 isLast={position === groupIndexes.length - 1}
                 onChange={(patch) => update(index, patch)}
                 onKindChange={(kind) => changeKind(index, kind)}
+                isNew={item.clientId === pendingFocus}
                 onMove={(delta) => move(index, delta)}
                 onRemove={() => setItems((prev) => prev.filter((_, i) => i !== index))}
               />
@@ -325,6 +354,7 @@ function ReferenceRow({
   item,
   isFirst,
   isLast,
+  isNew,
   onChange,
   onKindChange,
   onMove,
@@ -334,6 +364,8 @@ function ReferenceRow({
   item: Item;
   isFirst: boolean;
   isLast: boolean;
+  /** Highlight a just-added row so it is obvious where it landed. */
+  isNew?: boolean;
   onChange: (patch: Partial<Item>) => void;
   onKindChange: (kind: CmsReferenceKind) => void;
   onMove: (delta: number) => void;
@@ -345,12 +377,14 @@ function ReferenceRow({
   return (
     <div
       className="admin-form"
+      data-ref-id={item.clientId}
       style={{
         gap: 10,
-        background: "#fff",
-        border: "1px solid #e4e7e4",
+        background: isNew ? "#fff8f8" : "#fff",
+        border: `1px solid ${isNew ? "#e0141c" : "#e4e7e4"}`,
         borderRadius: 10,
         padding: 12,
+        scrollMargin: 96,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -438,7 +472,11 @@ function ReferenceRow({
         </label>
         <label>
           Titre
-          <input value={item.title ?? ""} onChange={(e) => onChange({ title: e.target.value })} />
+          <input
+            data-field="title"
+            value={item.title ?? ""}
+            onChange={(e) => onChange({ title: e.target.value })}
+          />
         </label>
         <label>
           Titre (EN)
