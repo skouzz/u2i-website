@@ -256,3 +256,129 @@
     display: none;
   }
 }
+
+/* ── Route-transition page skeleton ────────────────────────────────────── */
+
+/*
+ * Reserves roughly a viewport of content-shaped space while a route's chunk
+ * loads, so the footer never slides up under the navbar. The hero band mirrors
+ * PageHero's proportions and the grid mirrors the card sections, which keeps the
+ * hand-off to the real page visually stable.
+ */
+.u2i-page-skeleton {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.u2i-page-skeleton__hero {
+  display: flex;
+  align-items: center;
+  min-height: 58vh;
+  padding: 96px 24px;
+  background: linear-gradient(160deg, #101213 0%, #1c1f21 55%, #26292b 100%);
+}
+
+.u2i-page-skeleton__hero-inner {
+  display: grid;
+  gap: 18px;
+  width: min(1180px, 100%);
+  margin-inline: auto;
+}
+
+.u2i-page-skeleton__body {
+  display: grid;
+  gap: 30px;
+  width: min(1180px, 100%);
+  margin-inline: auto;
+  padding: 88px 24px 110px;
+}
+
+.u2i-page-skeleton__cols {
+  display: grid;
+  gap: 34px;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+}
+
+.u2i-page-skeleton__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Dark hero: invert the base fill so the shimmer still reads on black. */
+.u2i-page-skeleton__hero .u2i-skel {
+  background: rgb(255 255 255 / 8%);
+}
+
+.u2i-page-skeleton__hero .u2i-skel::after {
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 10%), transparent);
+}
+
+.u2i-skel--eyebrow {
+  height: 12px;
+  width: 160px;
+}
+
+.u2i-skel--h1 {
+  height: 58px;
+  width: min(620px, 92%);
+}
+
+.u2i-skel--h2 {
+  height: 58px;
+  width: min(420px, 74%);
+}
+
+.u2i-skel--lede {
+  height: 16px;
+  width: min(540px, 88%);
+  margin-top: 6px;
+}
+
+.u2i-skel--cta {
+  height: 52px;
+  width: 210px;
+  margin-top: 16px;
+  border-radius: 999px;
+}
+
+.u2i-skel--h3 {
+  height: 34px;
+  width: min(420px, 80%);
+}
+
+.u2i-skel--media {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+}
+
+.u2i-skel--text {
+  height: 190px;
+  width: 100%;
+}
+
+.u2i-skel--card {
+  height: 260px;
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .u2i-page-skeleton__cols {
+    grid-template-columns: 1fr;
+  }
+
+  .u2i-page-skeleton__hero {
+    min-height: 46vh;
+    padding: 72px 20px;
+  }
+
+  .u2i-page-skeleton__body {
+    padding: 60px 20px 80px;
+  }
+
+  .u2i-skel--h1,
+  .u2i-skel--h2 {
+    height: 38px;
+  }
+}

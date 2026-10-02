@@ -146,8 +146,15 @@ function RootComponent() {
       <I18nProvider>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col min-h-screen">
           <Navbar />
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <div className="grow w-full max-w-full overflow-x-hidden">
+          {/*
+            Required: nested routes render here. Removing <Outlet /> breaks all
+            child routes.
+
+            min-h-[60vh] keeps the content column tall enough that the footer
+            cannot slide up under the navbar while a route is resolving — the
+            `grow` alone collapses to zero height when the outlet is empty.
+          */}
+          <div className="grow min-h-[60vh] w-full max-w-full overflow-x-hidden">
             <Outlet />
           </div>
           <Footer />
