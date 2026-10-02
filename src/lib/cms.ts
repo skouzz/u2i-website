@@ -203,6 +203,7 @@ export interface CmsReference {
   imageUrl?: string | null;
   websiteUrl?: string | null;
   sortOrder?: number;
+  /** False when the dashboard has hidden it; the page then omits the row. */
   isVisible?: boolean;
   /** English overlay, as edited in the dashboard. */
   i18n?: Record<string, Record<string, string>>;

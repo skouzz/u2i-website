@@ -343,8 +343,12 @@ try {
             json_response(['ok' => true, 'items' => array_map('map_public_home_block', $rows), 'lang' => $lang]);
 
         case 'references':
+            // Hidden rows are returned too, flagged. The page merges these on
+            // top of the logos bundled in the JS, and it needs to know that a
+            // row exists but is hidden — otherwise hiding a bundled logo in the
+            // dashboard would simply let the bundled copy reappear.
             $rows = db()->query(
-                'SELECT * FROM site_references WHERE is_visible = 1 ORDER BY kind ASC, sort_order ASC, id ASC'
+                'SELECT * FROM site_references ORDER BY kind ASC, sort_order ASC, id ASC'
             )->fetchAll();
             $items = [];
             foreach ($rows as $row) {
@@ -355,6 +359,7 @@ try {
                     'title' => (string) $merged['title'],
                     'imageUrl' => $merged['image_url'] ?? null,
                     'websiteUrl' => $merged['website_url'] ?? null,
+                    'isVisible' => (bool) $merged['is_visible'],
                 ];
             }
             json_response(['ok' => true, 'items' => $items, 'lang' => $lang]);

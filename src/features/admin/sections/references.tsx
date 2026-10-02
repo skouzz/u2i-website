@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Save, Trash2 } from "lucide-react";
 
 import {
@@ -7,6 +7,11 @@ import {
   type CmsReferenceKind,
   type CmsReferencePayload,
 } from "@/lib/cms";
+import {
+  BUNDLED_CERTIFICATIONS,
+  BUNDLED_PARTNERS,
+  titleFromImageUrl,
+} from "@/lib/references-bundled";
 import type { AdminCtx } from "../types";
 import { MediaPicker } from "../components/media-picker";
 
@@ -69,24 +74,78 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
     });
   };
 
+  /**
+   * Append the bundled logos that are not in the editor yet.
+   *
+   * Without this the section starts empty on a fresh database and every one of
+   * the 30+ existing logos would have to be typed in by hand before it could be
+   * edited or reordered. It appends rather than replaces so importing can never
+   * discard logos that were just added by hand.
+   */
+  const importBundled = () => {
+    const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
+    const missing: Item[] = [
+      ...BUNDLED_PARTNERS.filter((p) => !present.has(p.image)).map((p) => ({
+        kind: "partner" as const,
+        title: p.title,
+        imageUrl: p.image,
+        websiteUrl: "",
+        isVisible: true,
+      })),
+      ...BUNDLED_CERTIFICATIONS.filter((c) => !present.has(c.image)).map((c) => ({
+        kind: "certification" as const,
+        title: c.title,
+        imageUrl: c.image,
+        websiteUrl: "",
+        isVisible: true,
+      })),
+    ];
+
+    if (missing.length === 0) {
+      ctx.notify("Tous les logos d'origine sont déjà dans la liste.");
+      return;
+    }
+    setItems((prev) => [...prev, ...missing]);
+    ctx.notify(`${missing.length} logo(s) ajouté(s) — enregistrez pour les appliquer.`);
+  };
+
+  const missingBundled = useMemo(() => {
+    const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
+    const count = (list: { image: string }[]) =>
+      list.filter((entry) => !present.has(entry.image)).length;
+    return count(BUNDLED_PARTNERS) + count(BUNDLED_CERTIFICATIONS);
+  }, [items]);
+
   const save = async () => {
     setBusy(true);
     setError(null);
     try {
-      // The server owns sort_order and rejects rows without a title, so the
-      // payload drops ids and any blank rows the editor left behind.
+      // A row is worth keeping when it has an image even if the title was left
+      // blank — the previous version filtered those out, so uploading a logo
+      // and pressing Save silently discarded it with no error anywhere.
+      // Fall back to a title derived from the filename instead of dropping it.
       const payload: CmsReferencePayload[] = items
-        .filter((item) => item.title.trim() !== "")
-        .map(({ kind, title, imageUrl, websiteUrl, isVisible, i18n }) => ({
-          kind,
-          title: title.trim(),
-          imageUrl: imageUrl ?? "",
-          websiteUrl: websiteUrl ?? "",
-          isVisible: isVisible ?? true,
-          i18n,
-        }));
+        .filter((item) => item.title.trim() !== "" || (item.imageUrl ?? "").trim() !== "")
+        .map(({ kind, title, imageUrl, websiteUrl, isVisible, i18n }) => {
+          const cleanTitle = title.trim();
+          const image = (imageUrl ?? "").trim();
+          return {
+            kind,
+            title: cleanTitle !== "" ? cleanTitle : titleFromImageUrl(image),
+            imageUrl: image,
+            websiteUrl: (websiteUrl ?? "").trim(),
+            isVisible: isVisible ?? true,
+            i18n,
+          };
+        });
+
+      const dropped = items.length - payload.length;
       await adminApi.saveReferences(ctx.csrf, payload);
-      ctx.notify("Références enregistrées.");
+      ctx.notify(
+        dropped > 0
+          ? `Références enregistrées (${dropped} ligne(s) ignorée(s) : sans titre ni image).`
+          : "Références enregistrées.",
+      );
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur d'enregistrement.");
@@ -116,6 +175,30 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         Ces éléments remplacent les logos codés en dur sur la page Références. Tant qu'aucune
         référence n'est enregistrée, la page affiche la liste d'origine.
       </p>
+
+      <div
+        className="admin-form"
+        style={{ gap: 8, background: "#f7f8f6", borderRadius: 10, padding: 14 }}
+      >
+        <p className="admin-hint">
+          {items.length === 0
+            ? "La liste est vide. Importez les logos d'origine pour les rendre modifiables, ou ajoutez-les à la main."
+            : "Ajoutez en lot les logos d'origine qui ne sont pas encore dans la liste."}
+        </p>
+        <div>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={importBundled}
+            disabled={missingBundled === 0}
+          >
+            <Plus size={14} />
+            {missingBundled === 0
+              ? "Tous les logos d'origine sont présents"
+              : `Ajouter les ${missingBundled} logo(s) d'origine manquant(s)`}
+          </button>
+        </div>
+      </div>
 
       {error ? <p className="admin-alert admin-alert--error">{error}</p> : null}
 
@@ -247,13 +330,30 @@ function ReferenceRow({
         >
           {item.isVisible ? <Eye size={13} /> : <EyeOff size={13} />}
         </button>
-        <button type="button" className="admin-btn" title="Monter" onClick={() => onMove(-1)} disabled={isFirst}>
+        <button
+          type="button"
+          className="admin-btn"
+          title="Monter"
+          onClick={() => onMove(-1)}
+          disabled={isFirst}
+        >
           <ArrowUp size={13} />
         </button>
-        <button type="button" className="admin-btn" title="Descendre" onClick={() => onMove(1)} disabled={isLast}>
+        <button
+          type="button"
+          className="admin-btn"
+          title="Descendre"
+          onClick={() => onMove(1)}
+          disabled={isLast}
+        >
           <ArrowDown size={13} />
         </button>
-        <button type="button" className="admin-btn admin-btn--danger" title="Supprimer" onClick={onRemove}>
+        <button
+          type="button"
+          className="admin-btn admin-btn--danger"
+          title="Supprimer"
+          onClick={onRemove}
+        >
           <Trash2 size={13} />
         </button>
       </div>
