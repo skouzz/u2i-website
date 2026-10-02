@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Camera, Maximize2, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import workshopImage from "@/assets/about-workshop.jpg";
 import endo1 from "@/assets/equipments/Endoscopie/20200910_114715.jpg";
 import endo2 from "@/assets/equipments/Endoscopie/20200910_114715 (1).jpg";
@@ -47,90 +47,73 @@ import "./equipment.css";
 
 type Equipment = {
   id: string;
-  title: string;
-  tag: string;
-  description: string;
-  applications: string[];
+  /** Catalog keys — resolved through t() so the card renders in either language. */
+  titleKey: MessageKey;
+  tagKey: MessageKey;
+  descKey: MessageKey;
+  appKeys: MessageKey[];
   images: string[];
 };
 
 const EQUIPMENTS: Equipment[] = [
   {
     id: "soudure-orbitale",
-    title: "Soudure orbitale",
-    tag: "Assemblage de précision",
-    description:
-      "Un parc de générateurs et de têtes de soudage orbitale pour réaliser des assemblages réguliers sur les réseaux inox. Le procédé est adapté aux lignes process qui demandent maîtrise du geste, répétabilité et traçabilité.",
-    applications: [
-      "Assemblage de tubes inox",
-      "Têtes ouvertes et fermées",
-      "Réseaux process et fluides propres",
+    titleKey: "equipment.orbital.title",
+    tagKey: "equipment.orbital.tag",
+    descKey: "equipment.orbital.desc",
+    appKeys: [
+      "equipment.orbital.app1",
+      "equipment.orbital.app2",
+      "equipment.orbital.app3",
     ],
     images: [weld1, weld2, weld3, weld4, weld5, weld6, weld7, weld8, weld9, weld10, weld11, weld12],
   },
   {
     id: "coupe-rectification",
-    title: "Coupe & rectification",
-    tag: "Préparation des tubes",
-    description:
-      "Des machines dédiées à la coupe orbitale et au dressage de face préparent les extrémités avant assemblage. Une coupe régulière et des faces bien préparées facilitent l’alignement et la qualité de la soudure.",
-    applications: [
-      "Coupe orbitale de tubes",
-      "Dressage des extrémités",
-      "Préparation avant soudage",
+    titleKey: "equipment.cutting.title",
+    tagKey: "equipment.cutting.tag",
+    descKey: "equipment.cutting.desc",
+    appKeys: [
+      "equipment.cutting.app1",
+      "equipment.cutting.app2",
+      "equipment.cutting.app3",
     ],
     images: [cut1, cut2, cut3, cut4, cut5, cut6],
   },
   {
     id: "commande-numerique",
-    title: "Commande numérique",
-    tag: "Usinage en atelier",
-    description:
-      "Les équipements à commande numérique accompagnent la préparation et la fabrication de pièces en atelier. Ils contribuent à produire des éléments adaptés aux dimensions et à la géométrie attendues sur chaque installation.",
-    applications: [
-      "Préparation de pièces",
-      "Fabrication en atelier",
-      "Répétabilité des opérations",
-    ],
+    titleKey: "equipment.cnc.title",
+    tagKey: "equipment.cnc.tag",
+    descKey: "equipment.cnc.desc",
+    appKeys: ["equipment.cnc.app1", "equipment.cnc.app2", "equipment.cnc.app3"],
     images: [cnc1, cnc2, cnc3, cnc4, cnc5, cnc6],
   },
   {
     id: "controle-gaz",
-    title: "Contrôle de gaz",
-    tag: "Maîtrise de l’inertage",
-    description:
-      "Les analyseurs de gaz servent à vérifier l’atmosphère de protection pendant les opérations de soudage. Le suivi de l’oxygène résiduel aide à maîtriser l’inertage et à préserver les surfaces internes des tubes.",
-    applications: [
-      "Vérification de l’inertage",
-      "Mesure de l’oxygène résiduel",
-      "Contrôle pendant le soudage",
-    ],
+    titleKey: "equipment.gas.title",
+    tagKey: "equipment.gas.tag",
+    descKey: "equipment.gas.desc",
+    appKeys: ["equipment.gas.app1", "equipment.gas.app2", "equipment.gas.app3"],
     images: [gas1, gas2, gas3, gas4],
   },
   {
     id: "endoscopie",
-    title: "Endoscopie",
-    tag: "Inspection visuelle",
-    description:
-      "L’inspection endoscopique permet d’observer l’intérieur des zones difficiles d’accès après fabrication. Elle complète le contrôle visuel des soudures et apporte un regard direct sur les surfaces internes des réseaux.",
-    applications: [
-      "Inspection de zones internes",
-      "Contrôle visuel des soudures",
-      "Accès aux géométries difficiles",
+    titleKey: "equipment.endoscope.title",
+    tagKey: "equipment.endoscope.tag",
+    descKey: "equipment.endoscope.desc",
+    appKeys: [
+      "equipment.endoscope.app1",
+      "equipment.endoscope.app2",
+      "equipment.endoscope.app3",
     ],
     images: [endo1, endo2, endo3, endo4, endo5],
   },
   {
     id: "skid-traitement",
-    title: "Skid de traitement",
-    tag: "Nettoyage & passivation",
-    description:
-      "Les skids de circulation accompagnent les opérations de dégraissage, de décapage et de passivation des réseaux inox. Le traitement de surface contribue à la propreté des installations et à la restauration de leur couche passive.",
-    applications: [
-      "Dégraissage des réseaux",
-      "Décapage et passivation",
-      "Circulation des solutions de traitement",
-    ],
+    titleKey: "equipment.skid.title",
+    tagKey: "equipment.skid.tag",
+    descKey: "equipment.skid.desc",
+    appKeys: ["equipment.skid.app1", "equipment.skid.app2", "equipment.skid.app3"],
     images: [skid1, skid2, skid3],
   },
 ];
@@ -188,35 +171,41 @@ export function EquipmentsPage() {
       <PageHero
         id="equipment"
         breadcrumb={t("equipment.hero.eyebrow")}
-        eyebrow="Notre parc machines"
+        eyebrow={t("equipment.hero.eyebrow2")}
         title={
           <>
-            La précision
+            {t("equipment.hero.titleLine1")}
             <br />
-            <span>en action.</span>
+            <span>{t("equipment.hero.titleLine2")}</span>
           </>
         }
         description={t("equipment.hero.text")}
         linkLabel={t("common.discover")}
         linkHref="#catalogue"
         image={workshopImage}
-        imageAlt="Atelier de fabrication U2I"
+        imageAlt={t("equipment.hero.alt")}
       />
 
       <section className="equipment-catalogue" id="catalogue">
         <div className="equipment-wrap">
           <header className="equipment-section-heading">
             <div>
-              <span className="equipment-eyebrow equipment-eyebrow--dark">Parc technique</span>
+              <span className="equipment-eyebrow equipment-eyebrow--dark">
+                {t("equipment.section.eyebrow")}
+              </span>
               <h2>
-                Les équipements,
+                {t("equipment.section.titleLine1")}
                 <br />
-                dans le détail.
+                {t("equipment.section.titleLine2")}
               </h2>
             </div>
           </header>
 
-          <div className="equipment-selector" role="tablist" aria-label="Familles d’équipements">
+          <div
+            className="equipment-selector"
+            role="tablist"
+            aria-label={t("equipment.section.aria")}
+          >
             {EQUIPMENTS.map((equipment) => (
               <button
                 key={equipment.id}
@@ -247,7 +236,7 @@ export function EquipmentsPage() {
                 }}
               >
                 <img src={equipment.images[0]} alt="" loading="lazy" />
-                <span className="equipment-selector__title">{equipment.title}</span>
+                <span className="equipment-selector__title">{t(equipment.titleKey)}</span>
                 <ArrowUpRight className="equipment-selector__arrow" size={18} aria-hidden="true" />
               </button>
             ))}
@@ -267,12 +256,12 @@ export function EquipmentsPage() {
             >
               <div className="equipment-detail__intro">
                 <div>
-                  <span className="equipment-detail__tag">{activeEquipment.tag}</span>
-                  <h3>{activeEquipment.title}</h3>
-                  <p>{activeEquipment.description}</p>
+                  <span className="equipment-detail__tag">{t(activeEquipment.tagKey)}</span>
+                  <h3>{t(activeEquipment.titleKey)}</h3>
+                  <p>{t(activeEquipment.descKey)}</p>
                   <ul className="equipment-applications">
-                    {activeEquipment.applications.map((application) => (
-                      <li key={application}>{application}</li>
+                    {activeEquipment.appKeys.map((key) => (
+                      <li key={key}>{t(key)}</li>
                     ))}
                   </ul>
                   <Link className="equipment-contact-link" to="/contact">
@@ -281,14 +270,17 @@ export function EquipmentsPage() {
                 </div>
               </div>
 
-              <div className="equipment-gallery" aria-label={`Galerie ${activeEquipment.title}`}>
+              <div
+                className="equipment-gallery"
+                aria-label={`Galerie ${t(activeEquipment.titleKey)}`}
+              >
                 {activeEquipment.images.map((image, index) => (
                   <motion.button
                     key={image}
                     type="button"
                     className={`equipment-gallery__item${index === 0 ? " equipment-gallery__item--lead" : ""}`}
                     onClick={() => setLightboxIndex(index)}
-                    aria-label={`Agrandir la photo ${index + 1} sur ${activeEquipment.images.length} : ${activeEquipment.title}`}
+                    aria-label={`Agrandir la photo ${index + 1} sur ${activeEquipment.images.length} : ${t(activeEquipment.titleKey)}`}
                     initial={reduceMotion ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -299,7 +291,7 @@ export function EquipmentsPage() {
                   >
                     <img
                       src={image}
-                      alt={`${activeEquipment.title} — vue ${index + 1}`}
+                      alt={`${t(activeEquipment.titleKey)} — vue ${index + 1}`}
                       loading={index < 4 ? "eager" : "lazy"}
                     />
                     <span className="equipment-gallery__expand" aria-hidden="true">
@@ -334,7 +326,7 @@ export function EquipmentsPage() {
             className="equipment-lightbox"
             role="dialog"
             aria-modal="true"
-            aria-label={`Galerie ${activeEquipment.title}`}
+            aria-label={`Galerie ${t(activeEquipment.titleKey)}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -346,7 +338,7 @@ export function EquipmentsPage() {
             <header className="equipment-lightbox__header">
               <div>
                 <span>U2I / GALERIE</span>
-                <h2>{activeEquipment.title}</h2>
+                <h2>{t(activeEquipment.titleKey)}</h2>
               </div>
               <button
                 type="button"
@@ -364,7 +356,7 @@ export function EquipmentsPage() {
                 <motion.img
                   key={activeEquipment.images[lightboxIndex]}
                   src={activeEquipment.images[lightboxIndex]}
-                  alt={`${activeEquipment.title} — photo ${lightboxIndex + 1}`}
+                  alt={`${t(activeEquipment.titleKey)} — photo ${lightboxIndex + 1}`}
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}

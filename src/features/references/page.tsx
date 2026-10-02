@@ -111,12 +111,14 @@ export function ReferencesPage() {
             <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e0141c]">
-                  Nos partenaires
+                  {t("references.partners.eyebrow")}
                 </p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-950">Des relations durables</h2>
+                <h2 className="mt-2 text-3xl font-bold text-slate-950">
+                  {t("references.partners.title")}
+                </h2>
               </div>
               <p className="max-w-xl text-sm leading-6 text-slate-600">
-                Des acteurs reconnus de l'industrie et de la santé nous confient leurs projets.
+                {t("references.partners.text")}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -142,12 +144,14 @@ export function ReferencesPage() {
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e0141c]">
-                  Qualité & conformité
+                  {t("references.quality.eyebrow")}
                 </p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-950">Certifications</h2>
+                <h2 className="mt-2 text-3xl font-bold text-slate-950">
+                  {t("references.quality.title")}
+                </h2>
               </div>
               <p className="max-w-xl text-sm leading-6 text-slate-600">
-                Formations, attestations et homologations au service de réalisations fiables.
+                {t("references.quality.text")}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

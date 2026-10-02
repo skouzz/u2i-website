@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import workshopImage from "@/assets/about-workshop.jpg";
 import processImage from "@/assets/IMG-20240214-WA0000.jpg";
 import siteImage from "@/assets/IMG-20260408-WA0067.jpg";
@@ -26,78 +26,70 @@ import "./about.css";
 type Capability = {
   number: string;
   icon: LucideIcon;
-  title: string;
-  intro: string;
-  items: string[];
+  titleKey: MessageKey;
+  introKey: MessageKey;
+  itemKeys: MessageKey[];
 };
 
 const capabilities: Capability[] = [
   {
     number: "01",
     icon: DraftingCompass,
-    title: "Études & ingénierie",
-    intro: "Dimensionner juste, anticiper les contraintes et préparer un chantier maîtrisé.",
-    items: [
-      "Études, conseils et analyse P&ID",
-      "Plans 2D AutoCAD et conception 3D SolidWorks",
-      "Dimensionnements et notes de calcul",
+    titleKey: "about.cap.engineering.title",
+    introKey: "about.cap.engineering.intro",
+    itemKeys: [
+      "about.cap.engineering.i1",
+      "about.cap.engineering.i2",
+      "about.cap.engineering.i3",
     ],
   },
   {
     number: "02",
     icon: Wrench,
-    title: "Fabrication & installation",
-    intro: "Un savoir-faire inox mobilisé en atelier et directement sur votre site.",
-    items: [
-      "Tuyauterie process et chaudronnerie inox",
-      "Préfabrication, soudure et montage sur site",
-      "Conformité aux normes et règles de sécurité",
-      "Dégraissage, décapage et passivation",
+    titleKey: "about.cap.fabrication.title",
+    introKey: "about.cap.fabrication.intro",
+    itemKeys: [
+      "about.cap.fabrication.i1",
+      "about.cap.fabrication.i2",
+      "about.cap.fabrication.i3",
+      "about.cap.fabrication.i4",
     ],
   },
   {
     number: "03",
     icon: ScanEye,
-    title: "Contrôle & maintenance",
-    intro: "Des équipements et des équipes pour vérifier, qualifier et faire durer vos réseaux.",
-    items: [
-      "Électrotechnique et automatismes",
-      "Contrôle visuel et vidéo-endoscopique",
-      "Mise en service et qualification",
-      "Maintenance des réseaux inox et assistance technique",
+    titleKey: "about.cap.control.title",
+    introKey: "about.cap.control.intro",
+    itemKeys: [
+      "about.cap.control.i1",
+      "about.cap.control.i2",
+      "about.cap.control.i3",
+      "about.cap.control.i4",
     ],
   },
 ];
 
-const projectSteps = [
-  { title: "Étudier", text: "Vos besoins, vos plans et les contraintes du process." },
-  { title: "Préfabriquer", text: "Les ensembles inox préparés et contrôlés en atelier." },
-  { title: "Installer", text: "Le montage et le raccordement sur votre site industriel." },
-  { title: "Qualifier", text: "Les contrôles, la mise en service et le dossier technique." },
+const projectSteps: { titleKey: MessageKey; textKey: MessageKey }[] = [
+  { titleKey: "about.step.study.title", textKey: "about.step.study.text" },
+  { titleKey: "about.step.prefab.title", textKey: "about.step.prefab.text" },
+  { titleKey: "about.step.install.title", textKey: "about.step.install.text" },
+  { titleKey: "about.step.qualify.title", textKey: "about.step.qualify.text" },
 ];
 
-const resources = [
-  { value: "07", title: "Chargés d’affaires", text: "Un suivi de projet au plus près du terrain." },
-  { value: "02", title: "Postes de conception 3D", text: "Un bureau d’études intégré." },
-  { value: "1 000", title: "m² d’atelier", text: "Un espace dédié à la préfabrication inox." },
-  {
-    value: "01",
-    title: "Laboratoires & essais",
-    text: "Mise au point et vidéo-endoscopie.",
-  },
-  {
-    value: "01",
-    title: "Parc machines intégré",
-    text: "Découpe laser, coupe orbitale et plieuses.",
-  },
+const resources: { value: string; titleKey: MessageKey; textKey: MessageKey }[] = [
+  { value: "07", titleKey: "about.stat.sales.title", textKey: "about.stat.sales.text" },
+  { value: "02", titleKey: "about.stat.design.title", textKey: "about.stat.design.text" },
+  { value: "1 000", titleKey: "about.stat.area.title", textKey: "about.stat.area.text" },
+  { value: "01", titleKey: "about.cert.lab.title", textKey: "about.cert.lab.text" },
+  { value: "01", titleKey: "about.cert.machines.title", textKey: "about.res.machines.text" },
 ];
 
-const qualityChecks = [
-  "Contrôle des fournitures à réception",
-  "Suivi des opérations et de la sous-traitance (FAT / SAT)",
-  "Traçabilité documentaire des matériaux et des soudures",
-  "Contrôles visuels et vidéo-endoscopiques",
-  "Remise du dossier technique de l’installation",
+const qualityChecks: MessageKey[] = [
+  "about.check.1",
+  "about.check.2",
+  "about.check.3",
+  "about.check.4",
+  "about.check.5",
 ];
 
 export function AboutPage() {
@@ -160,13 +152,10 @@ export function AboutPage() {
               chaudronnerie, tuyauterie process et soudure inox.
             </p>
             <p>
-              Nos ingénieurs et techniciens mettent leur expérience des secteurs pharmaceutique,
-              agroalimentaire et chimique au service de projets aux exigences élevées. Nous adaptons
-              chaque intervention aux besoins du client et aux réalités de son site.
+              {t("about.story.p1")}
             </p>
             <p>
-              De l’étude initiale à la maintenance, une même équipe peut suivre les différentes
-              étapes et garder le fil de votre projet.
+              {t("about.story.p2")}
             </p>
             <Link className="about-text-link" to="/secteurs">
               Nos secteurs d’activité <ArrowUpRight size={17} aria-hidden="true" />
@@ -183,8 +172,9 @@ export function AboutPage() {
                 <span>02</span> Notre méthode
               </p>
               <h2 id="about-project-title">
-                Du premier plan
-                <br />à la mise en service.
+                {t("about.method.titleLine1")}
+                <br />
+                {t("about.method.titleLine2")}
               </h2>
             </div>
           </div>
@@ -192,7 +182,7 @@ export function AboutPage() {
             {projectSteps.map((step, index) => (
               <motion.div
                 className="about-step"
-                key={step.title}
+                key={step.titleKey}
                 initial={reveal}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
@@ -202,8 +192,8 @@ export function AboutPage() {
                 <span className="about-step__mark" aria-hidden="true">
                   <ArrowRight size={16} />
                 </span>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
+                <h3>{t(step.titleKey)}</h3>
+                <p>{t(step.textKey)}</p>
               </motion.div>
             ))}
           </div>
@@ -215,9 +205,9 @@ export function AboutPage() {
           <div className="about-services__heading">
             <div>
               <p className="about-section-label">
-                <span>03</span> Ce que nous faisons
+                <span>03</span> {t("about.section.services")}
               </p>
-              <h2>Une expertise, à chaque étape.</h2>
+              <h2>{t("about.section.services.title")}</h2>
             </div>
           </div>
           <div className="about-capabilities">
@@ -236,13 +226,13 @@ export function AboutPage() {
                     <span>{capability.number}</span>
                     <Icon size={25} strokeWidth={1.7} aria-hidden="true" />
                   </div>
-                  <h3>{capability.title}</h3>
-                  <p className="about-capability__intro">{capability.intro}</p>
+                  <h3>{t(capability.titleKey)}</h3>
+                  <p className="about-capability__intro">{t(capability.introKey)}</p>
                   <ul>
-                    {capability.items.map((item) => (
-                      <li key={item}>
+                    {capability.itemKeys.map((key) => (
+                      <li key={key}>
                         <Check size={15} aria-hidden="true" />
-                        {item}
+                        {t(key)}
                       </li>
                     ))}
                   </ul>
@@ -261,14 +251,13 @@ export function AboutPage() {
             </p>
             <h2>À la bonne échelle pour vos projets.</h2>
             <p className="about-resources__intro">
-              Un bureau d’études, un atelier de préfabrication et des moyens de contrôle réunis
-              autour de vos installations.
+              {t("about.workshop.text")}
             </p>
             <div className="about-resource-list">
               {resources.map((resource, index) => (
                 <motion.div
                   className="about-resource"
-                  key={resource.title}
+                  key={resource.titleKey}
                   initial={reveal}
                   whileInView={{ opacity: 1, x: 0, y: 0 }}
                   viewport={{ once: true, amount: 0.25 }}
@@ -276,8 +265,8 @@ export function AboutPage() {
                 >
                   <strong>{resource.value}</strong>
                   <div>
-                    <h3>{resource.title}</h3>
-                    <p>{resource.text}</p>
+                    <h3>{t(resource.titleKey)}</h3>
+                    <p>{t(resource.textKey)}</p>
                   </div>
                 </motion.div>
               ))}
@@ -305,7 +294,7 @@ export function AboutPage() {
               <span>
                 Akouda
                 <br />
-                Sousse, Tunisie
+                {t("about.location")}
               </span>
             </div>
           </div>
@@ -342,8 +331,7 @@ export function AboutPage() {
             </p>
             <h2>La qualité se vérifie à chaque étape.</h2>
             <p>
-              Nos interventions s’appuient sur une démarche documentaire et des contrôles adaptés
-              aux exigences de vos installations, notamment dans le secteur pharmaceutique.
+              {t("about.quality.text")}
             </p>
             <div className="about-quality__standard">
               <ClipboardCheck size={19} aria-hidden="true" />
@@ -353,7 +341,7 @@ export function AboutPage() {
               {qualityChecks.map((item) => (
                 <li key={item}>
                   <Check size={15} aria-hidden="true" />
-                  {item}
+                  {t(item)}
                 </li>
               ))}
             </ul>
@@ -374,8 +362,7 @@ export function AboutPage() {
             <div>
               <p>Distributeur officiel AXXAIR depuis 2015</p>
               <span>
-                Des solutions de coupe et de soudure orbitale, accompagnées par une équipe technique
-                spécialisée.
+                {t("about.partner.text")}
               </span>
             </div>
           </div>
@@ -394,7 +381,7 @@ export function AboutPage() {
               Contacter nos équipes <ArrowUpRight size={18} aria-hidden="true" />
             </Link>
             <Link to="/secteurs" className="about-contact__secondary">
-              Explorer nos secteurs
+              {t("about.cta.sectors")}
             </Link>
           </div>
         </div>

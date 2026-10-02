@@ -41,6 +41,7 @@ function CmsHomePage({ blocks }: { blocks: CmsHomeBlock[] }) {
 }
 
 function HomeBlock({ block }: { block: CmsHomeBlock }) {
+  const { t, link } = useI18n();
   const config = block.config ?? {};
   const items = Array.isArray(config.items) ? (config.items as Record<string, string>[]) : [];
   const buttonLabel = String(config.buttonLabel ?? "");
@@ -304,8 +305,8 @@ function HomeBlock({ block }: { block: CmsHomeBlock }) {
           <div className="wrap text-center">
             <h2 className="text-3xl font-black text-neutral-900">{block.title}</h2>
             {block.body ? <p className="mt-3 text-neutral-600">{block.body}</p> : null}
-            <a href="/contact" className="btn btn-red mt-8 inline-flex">
-              Nous contacter
+            <a href={link("/contact")} className="btn btn-red mt-8 inline-flex">
+              {t("common.contactUs")}
             </a>
           </div>
         </section>

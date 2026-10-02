@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, X } from "lucide-react";
 
+import { useI18n } from "@/lib/i18n";
+
 import pharmaImage from "@/assets/hero-pharma.jpg";
 import agroImage from "@/assets/hero-agro.jpg";
 import chimieImage from "@/assets/sector-chimie.jpg";
@@ -58,49 +60,49 @@ import equip4 from "@/assets/equipments/Machine de soudure orbitale/2-SATF-65ND_
 import equip5 from "@/assets/equipments/Machine à commande numérique/20210222_093607.jpg";
 import equip6 from "@/assets/equipments/Skid de DégraissageDécapagePassivation/20211014_090938.jpg";
 
+// Copy is referenced by catalog key so it renders in the active language.
 const HERO_SLIDES = [
   {
-    label: "Tuyauterie & Soudure",
-    title: "La précision continue de guider l'ambition de Groupe Univers Inox",
+    labelKey: "home.slide1.label",
+    titleKey: "home.slide1.title",
     date: "08.07.2026",
     image: slide1Image,
   },
   {
-    label: "Soudure Orbitale",
-    title:
-      "Partenaire officiel AXXAIR — une solution complète au service des industries à haute exigence.",
-    date: "Depuis 2015",
+    labelKey: "home.slide2.label",
+    titleKey: "home.slide2.title",
+    dateKey: "home.slide2.date",
     image: slide2Image,
   },
   {
-    label: "Agroalimentaire",
-    title: "Tuyauteries inox conçues pour les normes d'hygiène les plus strictes.",
-    date: "Pharma · Agro · Chimie",
+    labelKey: "home.slide3.label",
+    titleKey: "home.slide3.title",
+    dateKey: "home.slide3.date",
     image: slide4Image,
   },
   {
-    label: "Nouvel Atelier",
-    title: "Un nouvel atelier de préfabrication pour accélérer nos projets industriels.",
-    date: "Akouda, Tunisie",
+    labelKey: "home.slide4.label",
+    titleKey: "home.slide4.title",
+    dateKey: "home.slide4.date",
     image: slide4Image,
   },
 ] as const;
 
 const SECTORS = [
-  { tag: "Exigence Pharma", title: "Pharmaceutique", image: pharmaImage },
-  { tag: "Qualité Alimentaire", title: "Agroalimentaire", image: agroImage },
-  { tag: "Procédés Sensibles", title: "Chimique", image: chimieImage },
-  { tag: "Lignes Propres", title: "Cosmétique", image: cosmetiqueImage },
-  { tag: "Sur Mesure", title: "Mobilier inox", image: mobilierImage },
+  { tagKey: "home.sector.pharma.tag", titleKey: "home.sector.pharma.title", image: pharmaImage },
+  { tagKey: "home.sector.food.tag", titleKey: "home.sector.food.title", image: agroImage },
+  { tagKey: "home.sector.chemical.tag", titleKey: "home.sector.chemical.title", image: chimieImage },
+  { tagKey: "home.sector.cosmetics.tag", titleKey: "home.sector.cosmetics.title", image: cosmetiqueImage },
+  { tagKey: "home.sector.furniture.tag", titleKey: "home.sector.furniture.title", image: mobilierImage },
 ] as const;
 
 const EQUIPMENTS = [
-  { id: "endoscopie", title: "Endoscopie", image: equip1 },
-  { id: "controle-gaz", title: "Contrôle de gaz", image: equip2 },
-  { id: "coupe-rectification", title: "Coupe rectification", image: equip3 },
-  { id: "soudure-orbitale", title: "Soudure orbitale", image: equip4 },
-  { id: "commande-numerique", title: "Commande numérique", image: equip5 },
-  { id: "skid-degraissage", title: "Skid Dégraissage", image: equip6 },
+  { id: "endoscopie", titleKey: "equipment.item.endoscopie", image: equip1 },
+  { id: "controle-gaz", titleKey: "equipment.item.controleGaz", image: equip2 },
+  { id: "coupe-rectification", titleKey: "equipment.item.coupe", image: equip3 },
+  { id: "soudure-orbitale", titleKey: "equipment.item.orbital", image: equip4 },
+  { id: "commande-numerique", titleKey: "equipment.item.commande", image: equip5 },
+  { id: "skid-degraissage", titleKey: "equipment.item.skid", image: equip6 },
 ] as const;
 
 const PARTNER_LOGOS = [
@@ -162,6 +164,7 @@ export function DefaultHomePage() {
 /* --------------------------------- Hero --------------------------------- */
 
 function Hero() {
+  const { t } = useI18n();
   const [i, setI] = useState(0);
   const total = HERO_SLIDES.length;
   const SLIDE_DURATION = 5000;
@@ -180,7 +183,7 @@ function Hero() {
 
       {HERO_SLIDES.map((s, idx) => (
         <motion.img
-          key={s.label}
+          key={s.labelKey}
           src={s.image}
           alt=""
           initial={idx === 0 ? { y: 40, scale: 1.05, opacity: 0 } : { opacity: 0 }}
@@ -208,9 +211,11 @@ function Hero() {
           className="max-w-3xl"
         >
           <div className="hero-slide-meta" aria-live="polite">
-            <span>{activeSlide.label}</span>
+            <span>{t(activeSlide.labelKey)}</span>
             <span className="hero-slide-meta__line" aria-hidden="true" />
-            <span className="hero-slide-meta__date">{activeSlide.date}</span>
+            <span className="hero-slide-meta__date">
+              {"dateKey" in activeSlide ? t(activeSlide.dateKey) : activeSlide.date}
+            </span>
           </div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -229,7 +234,7 @@ function Hero() {
             continue de guider l'ambition de
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60">
-              Groupe Univers Inox
+              {t("home.groupName")}
             </span>
           </motion.h1>
 
@@ -341,6 +346,7 @@ function Hero() {
 /* ----------------------------- Video Banner ----------------------------- */
 
 function VideoBanner() {
+  const { t } = useI18n();
   return (
     <section className="relative w-screen h-[70svh] ml-[calc(-50vw+50%)] overflow-hidden bg-black">
       <video
@@ -363,8 +369,7 @@ function VideoBanner() {
                   L'exigence à chaque étape
                 </h2>
                 <p className="text-lg md:text-xl text-white/90 font-medium leading-relaxed mb-8 max-w-2xl">
-                  Découvrez nos processus de bout en bout, garantissant la qualité, la précision et
-                  la sécurité de chaque intervention industrielle.
+                  {t("home.process.text")}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <div className="px-4 py-2 bg-[#e0141c]/10 border border-[#e0141c]/30 backdrop-blur-sm">
@@ -389,6 +394,7 @@ function VideoBanner() {
 /* ------------------------------ Presentation ----------------------------- */
 
 function Presentation() {
+  const { t, link } = useI18n();
   return (
     <section id="presentation" className="section-paper overflow-hidden relative">
       <div className="wrap">
@@ -436,33 +442,19 @@ function Presentation() {
             className="lg:py-10 mt-12 lg:mt-0"
           >
             <h3 className="mb-4 text-xs lg:text-sm font-bold uppercase tracking-widest text-[#e0141c] italic">
-              Qui sommes nous
+              {t("home.who.title")}
             </h3>
 
             <h2 className="text-4xl md:text-5xl font-black text-neutral-900 mb-6 tracking-tight">
-              Présentation
+              {t("home.presentation.title")}
             </h2>
 
             <div className="h-1 w-16 bg-[#e0141c] mb-8" />
 
             <div className="space-y-6 text-sm md:text-base text-neutral-600 leading-relaxed font-medium">
-              <p>
-                Fondée en 2015, la société{" "}
-                <strong className="text-neutral-900 font-bold">Univers inox industriel</strong> est
-                basée à Akouda une ville située à quelques kilomètres au nord-ouest de Sousse en
-                Tunisie. Nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie
-                industrielle spécialement dans les domaines de haute exigence notamment le secteurs
-                pharmaceutique, alimentaires et chimique.
-              </p>
-              <p>
-                Notre personnel constitué d'équipe d'ingénieurs et des techniciens spécialisés et
-                expérimentés issue d'une expérience de plus que 10 ans dans le domaine
-                pharmaceutique, peut contrôler toutes les phases de la réalisation d'un projet : les
-                études, la préfabrication en atelier, les travaux sur site, la mise en service, la
-                qualification de l'installation, la maintenance sur site. Le personnel U2I
-                spécialiste de la tuyauterie process est avant tout à l'écoute des besoins
-                spécifiques de ses clients.
-              </p>
+              <p>{t("home.who.text1")}</p>
+              <p>{t("home.who.text2")}</p>
+              <p>{t("home.who.text3")}</p>
             </div>
 
             <div className="mt-8 mb-8 lg:hidden">
@@ -470,7 +462,7 @@ function Presentation() {
                 <div className="relative overflow-hidden shadow-xl">
                   <img
                     src={presentationImage}
-                    alt="Univers Inox Industriel"
+                    alt={t("home.alt.logo")}
                     className="w-full h-auto object-cover aspect-[4/5]"
                   />
                 </div>
@@ -479,16 +471,19 @@ function Presentation() {
 
             <div className="mt-10 flex flex-wrap gap-4">
               <a
-                href="/about"
+                href={link("/about")}
                 className="btn btn-red px-8 py-3.5 shadow-lg shadow-red-500/25 group"
               >
-                Lire plus{" "}
+                {t("common.learnMore")}{" "}
                 <span className="ml-1 tracking-normal font-normal transition-transform group-hover:translate-x-1">
                   »
                 </span>
               </a>
-              <a href="/contact" className="btn btn-red px-8 py-3.5 shadow-lg shadow-red-500/25">
-                Nous contacter
+              <a
+                href={link("/contact")}
+                className="btn btn-red px-8 py-3.5 shadow-lg shadow-red-500/25"
+              >
+                {t("home.who.cta")}
               </a>
             </div>
           </motion.div>
@@ -501,6 +496,7 @@ function Presentation() {
 /* -------------------------------- Sectors ------------------------------- */
 
 function Sectors() {
+  const { t, link } = useI18n();
   return (
     <section id="secteurs" className="bg-white relative py-24 overflow-hidden">
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-neutral-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -521,11 +517,10 @@ function Sectors() {
             className="text-neutral-950 font-black mb-6"
             style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)" }}
           >
-            Nos Domaines d'Expertise
+            {t("home.expertise.title")}
           </h2>
           <p className="max-w-2xl text-neutral-500 text-lg font-medium">
-            Découvrez nos solutions industrielles adaptées à chaque secteur, alliant haute
-            précision, respect des normes et innovation constante.
+            {t("home.expertise.text")}
           </p>
         </motion.div>
 
@@ -572,10 +567,10 @@ function Sectors() {
               </h3>
               <div className="flex items-center gap-4">
                 <a
-                  href="/secteurs"
+                  href={link("/secteurs")}
                   className="inline-flex items-center gap-2 bg-[#e0141c] text-white px-6 py-3 rounded-full font-bold text-sm transition-all hover:bg-[#c01018] hover:shadow-lg hover:-translate-y-0.5"
                 >
-                  Voir nos réalisations
+                  {t("home.expertise.cta")}
                   <ArrowUpRight className="w-4 h-4" />
                 </a>
               </div>
@@ -588,26 +583,26 @@ function Sectors() {
                 hidden: { opacity: 0, scale: 0.95 },
                 show: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
               }}
-              key={s.title}
-              href="/secteurs"
+              key={s.titleKey}
+              href={link("/secteurs")}
               className="group relative overflow-hidden rounded-[2rem] bg-white border border-neutral-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 flex flex-col p-2 h-[300px] sm:h-[320px]"
             >
               <div className="relative w-full flex-1 rounded-[1.5rem] overflow-hidden shrink-0">
                 <img
                   src={s.image}
-                  alt={s.title}
+                  alt={t(s.titleKey)}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                 <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black text-neutral-900 uppercase tracking-widest shadow-sm">
-                  {s.tag}
+                  {t(s.tagKey)}
                 </div>
               </div>
 
               <div className="p-4 sm:p-5 flex items-center justify-between shrink-0">
                 <h4 className="text-neutral-900 font-bold text-[1.15rem] leading-tight transition-colors group-hover:text-[#e0141c]">
-                  {s.title}
+                  {t(s.titleKey)}
                 </h4>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-400 flex items-center justify-center shrink-0 transition-all duration-500 group-hover:bg-[#e0141c] group-hover:border-[#e0141c] group-hover:text-white group-hover:shadow-md ml-2">
                   <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-500 group-hover:rotate-45" />
@@ -624,6 +619,7 @@ function Sectors() {
 /* ------------------------------ Equipments ------------------------------ */
 
 function Equipments() {
+  const { t, link } = useI18n();
   return (
     <section id="equipements" className="section-dark overflow-hidden relative py-24">
       <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 rounded-full bg-[#e0141c]/10 blur-[120px] pointer-events-none" />
@@ -632,17 +628,16 @@ function Equipments() {
       <div className="wrap mb-16 relative z-10">
         <div className="flex flex-col items-center text-center">
           <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#e0141c] italic">
-            Haute Précision
+            {t("home.precision.title")}
           </h3>
           <h2
             className="text-white font-black mb-6"
             style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)" }}
           >
-            Notre Parc Machines
+            {t("home.machines.title")}
           </h2>
           <p className="max-w-2xl text-white/60 text-sm md:text-base font-medium">
-            Découvrez nos équipements de dernière génération, conçus pour répondre aux exigences les
-            plus strictes de l'industrie avec une précision absolue.
+            {t("home.machines.text")}
           </p>
         </div>
       </div>
@@ -668,7 +663,7 @@ function Equipments() {
             >
               <img
                 src={eq.image}
-                alt={eq.title}
+                alt={t(eq.titleKey)}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:opacity-60"
               />
@@ -682,7 +677,7 @@ function Equipments() {
                     </span>
                   </div>
                   <h3 className="text-2xl font-bold text-white leading-tight mb-2 drop-shadow-md">
-                    {eq.title}
+                    {t(eq.titleKey)}
                   </h3>
                   <div className="h-auto opacity-100 md:h-0 md:opacity-0 md:overflow-hidden md:transition-all md:duration-500 md:group-hover:h-8 md:group-hover:opacity-100">
                     <p className="text-[#e0141c] text-sm mt-2 flex items-center gap-2 font-bold uppercase tracking-wider">
@@ -699,10 +694,10 @@ function Equipments() {
 
         <div className="mt-14 flex justify-center">
           <a
-            href="/equipements"
+            href={link("/equipements")}
             className="group flex items-center gap-2 rounded-full bg-[#e0141c] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#c01118] hover:shadow-[0_0_20px_rgba(224,20,28,0.4)]"
           >
-            Voir tout notre parc machines
+            {t("home.machines.cta")}
             <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-[#e0141c] transition-transform group-hover:translate-x-1">
               <ArrowUpRight className="h-4 w-4" />
             </span>
@@ -716,6 +711,7 @@ function Equipments() {
 /* ------------------------------- References ------------------------------ */
 
 function References() {
+  const { t } = useI18n();
   return (
     <section className="relative overflow-hidden py-16 md:py-20">
       <img
@@ -744,7 +740,7 @@ function References() {
             />
           </div>
           <h2 className="mb-4 text-white" style={{ fontSize: "clamp(2rem, 3vw, 2.6rem)" }}>
-            Partenaire officiel AXXAIR depuis 2015
+            {t("home.axxair")}
           </h2>
         </motion.div>
 
@@ -790,6 +786,7 @@ function CertLightbox({
   onClose: () => void;
   onNav: (i: number) => void;
 }) {
+  const { t } = useI18n();
   const cert = certs[index];
 
   useEffect(() => {
@@ -830,7 +827,7 @@ function CertLightbox({
           onNav((index - 1 + certs.length) % certs.length);
         }}
         className="absolute left-4 md:left-8 z-10 w-11 h-11 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white hover:bg-[#e0141c] hover:border-[#e0141c] transition-all duration-300"
-        aria-label="Précédent"
+        aria-label={t("home.aria.previous")}
       >
         ‹
       </button>
@@ -841,7 +838,7 @@ function CertLightbox({
           onNav((index + 1) % certs.length);
         }}
         className="absolute right-4 md:right-8 z-10 w-11 h-11 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white hover:bg-[#e0141c] hover:border-[#e0141c] transition-all duration-300"
-        aria-label="Suivant"
+        aria-label={t("home.aria.next")}
       >
         ›
       </button>
@@ -863,7 +860,7 @@ function CertLightbox({
         </div>
         <div className="mt-5 text-center">
           <p className="text-[10px] uppercase tracking-[0.3em] text-[#e0141c] font-bold mb-1">
-            Certification
+            {t("home.certs.label")}
           </p>
           <h3 className="text-white font-bold text-base md:text-lg">{cert.title}</h3>
         </div>
@@ -887,6 +884,7 @@ function CertLightbox({
 }
 
 function CertificationsSection() {
+  const { t, link } = useI18n();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const featured = CERTIFICATIONS[0];
   const rest = CERTIFICATIONS.slice(1);
@@ -896,11 +894,10 @@ function CertificationsSection() {
       <div className="wrap">
         <div className="mx-auto max-w-3xl text-center mb-10 md:mb-16">
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-black/40">
-            Certifications
+            {t("home.certs.title")}
           </h3>
           <p className="text-base leading-relaxed text-slate-600">
-            Nos attestations officielles, formations et homologations qui garantissent la conformité
-            et la qualité de nos équipements.
+            {t("home.certs.text")}
           </p>
         </div>
 
@@ -933,7 +930,7 @@ function CertificationsSection() {
 
               <div className="absolute inset-x-0 bottom-0 p-8">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-[#e0141c] font-bold mb-2">
-                  Certification Officielle
+                  {t("home.certs.official")}
                 </p>
                 <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-4">
                   {featured.title}
@@ -941,7 +938,7 @@ function CertificationsSection() {
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-white/20" />
                   <span className="text-white/40 text-xs uppercase tracking-wider">
-                    Cliquer pour agrandir
+                    {t("home.certs.zoom")}
                   </span>
                 </div>
               </div>
@@ -993,7 +990,7 @@ function CertificationsSection() {
 
                   <div className="absolute inset-x-0 bottom-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                     <p className="text-[9px] uppercase tracking-[0.25em] text-[#e0141c] font-bold mb-1">
-                      Certification
+                      {t("home.certs.label")}
                     </p>
                     <h4 className="text-white font-bold text-xs md:text-sm leading-tight line-clamp-2">
                       {cert.title}
@@ -1009,10 +1006,10 @@ function CertificationsSection() {
 
         <div className="mt-14 flex justify-center">
           <a
-            href="/references"
+            href={link("/references")}
             className="group flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition-all hover:bg-neutral-800 hover:shadow-lg"
           >
-            Découvrir toutes nos références
+            {t("home.refs.cta")}
             <span className="grid h-8 w-8 place-items-center rounded-full bg-[#e0141c] text-white transition-transform group-hover:translate-x-1">
               <ArrowUpRight className="h-4 w-4" />
             </span>

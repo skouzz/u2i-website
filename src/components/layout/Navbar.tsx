@@ -145,23 +145,28 @@ export function Navbar() {
               </span>
             ) : null}
           </div>
-          {(header?.showSocial ?? true) && socialLinks.length > 0 ? (
-            <div className="flex items-center gap-4">
-              {socialLinks.map(({ href, label, Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={label}
-                  className="opacity-80 hover:text-[#e0141c] hover:opacity-100 transition-colors"
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                </a>
-              ))}
-            </div>
-          ) : null}
-          <LanguageSwitcher tone="dark" />
+          {/* Social links and the language switcher share one row so the
+              globe sits naturally alongside Facebook / LinkedIn / YouTube. */}
+          <div className="flex items-center gap-4">
+            {(header?.showSocial ?? true) && socialLinks.length > 0 ? (
+              <div className="flex items-center gap-4">
+                {socialLinks.map(({ href, label, Icon }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={label}
+                    className="opacity-80 hover:text-[#e0141c] hover:opacity-100 transition-colors"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
+            <span className="h-3.5 w-px bg-white/15" aria-hidden="true" />
+            <LanguageSwitcher tone="dark" />
+          </div>
         </div>
       </div>
 
