@@ -198,6 +198,15 @@ export type CmsReferenceKind = "partner" | "certification";
 /** A client reference (partner logo or certification) shown on /references. */
 export interface CmsReference {
   id?: number;
+  /**
+   * Stable client-side identity for rows that have not been saved yet.
+   *
+   * Needed because React keys cannot fall back to the array index here: the
+   * editor inserts new rows in the middle of the list, so an index-based key
+   * collides with an existing row and React silently reuses its component
+   * instead of mounting the new one. Mirrors `CmsMenuItem.clientId`.
+   */
+  clientId?: string;
   kind: CmsReferenceKind;
   title: string;
   imageUrl?: string | null;
@@ -209,8 +218,8 @@ export interface CmsReference {
   i18n?: Record<string, Record<string, string>>;
 }
 
-/** Admin payload for saving the references list. */
-export type CmsReferencePayload = Omit<CmsReference, "sortOrder">;
+/** Admin payload for saving the references list. Server-assigned fields omitted. */
+export type CmsReferencePayload = Omit<CmsReference, "sortOrder" | "clientId">;
 
 export interface CmsCategory {
   id: number;
@@ -675,16 +684,10 @@ export const adminApi = {
 
   // ── References ──
   references: (csrf: string) =>
-    getJson<{ ok: true; items: CmsReference[] }>(
-      "/api/admin.php?a=references",
-      withCsrf({}, csrf),
-    ),
+    getJson<{ ok: true; items: CmsReference[] }>("/api/admin.php?a=references", withCsrf({}, csrf)),
 
   saveReferences: (csrf: string, items: CmsReferencePayload[]) =>
-    getJson<{ ok: true }>(
-      "/api/admin.php?a=references",
-      withCsrf(jsonBody({ items }), csrf),
-    ),
+    getJson<{ ok: true }>("/api/admin.php?a=references", withCsrf(jsonBody({ items }), csrf)),
 
   // ── Revisions ──
   revisions: (csrf: string, type: "page" | "article", id: number) =>

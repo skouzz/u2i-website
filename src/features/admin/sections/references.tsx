@@ -17,6 +17,17 @@ import { MediaPicker } from "../components/media-picker";
 
 type Item = CmsReference;
 
+/**
+ * Client-side identity for unsaved rows.
+ *
+ * Every row gets one the moment it is created. React keys must never fall back
+ * to the array index here, because inserting a row shifts every later index —
+ * the new row would collide with an existing key and React would reuse that
+ * row's component, so the freshly added form never appeared.
+ */
+let clientSeq = 0;
+const newClientId = () => `u2i-ref-${Date.now().toString(36)}-${++clientSeq}`;
+
 const GROUPS: { kind: CmsReferenceKind; label: string; hint: string }[] = [
   {
     kind: "partner",
@@ -35,6 +46,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Type used by the "Ajouter" button; each row can override it afterwards.
+  const [newKind, setNewKind] = useState<CmsReferenceKind>("partner");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -66,13 +79,39 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
 
   const add = (kind: CmsReferenceKind) => {
     setItems((prev) => {
-      const blank: Item = { kind, title: "", imageUrl: "", websiteUrl: "", isVisible: true };
-      // Append after the last item of the same kind so grouping stays tidy.
-      const lastOfKind = prev.map((i) => i.kind).lastIndexOf(kind);
-      const at = lastOfKind === -1 ? prev.length : lastOfKind + 1;
-      return [...prev.slice(0, at), blank, ...prev.slice(at)];
+      const blank: Item = {
+        clientId: newClientId(),
+        kind,
+        title: "",
+        imageUrl: "",
+        websiteUrl: "",
+        isVisible: true,
+      };
+      return insertAtEndOfKind(prev, blank);
     });
   };
+
+  /**
+   * Move a row into another group (partenaire ↔ certification).
+   *
+   * The row is re-inserted at the end of its new group so the flat list stays
+   * grouped by kind, which is what the ordering sent to the server assumes.
+   */
+  const changeKind = (index: number, kind: CmsReferenceKind) => {
+    setItems((prev) => {
+      const row = prev[index];
+      if (!row || row.kind === kind) return prev;
+      const rest = prev.filter((_, i) => i !== index);
+      return insertAtEndOfKind(rest, { ...row, kind });
+    });
+  };
+
+  /** Append after the last item sharing `kind`, so groups stay contiguous. */
+  function insertAtEndOfKind(list: Item[], row: Item): Item[] {
+    const lastOfKind = list.map((i) => i.kind).lastIndexOf(row.kind);
+    const at = lastOfKind === -1 ? list.length : lastOfKind + 1;
+    return [...list.slice(0, at), row, ...list.slice(at)];
+  }
 
   /**
    * Append the bundled logos that are not in the editor yet.
@@ -86,6 +125,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
     const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
     const missing: Item[] = [
       ...BUNDLED_PARTNERS.filter((p) => !present.has(p.image)).map((p) => ({
+        clientId: newClientId(),
         kind: "partner" as const,
         title: p.title,
         imageUrl: p.image,
@@ -93,6 +133,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         isVisible: true,
       })),
       ...BUNDLED_CERTIFICATIONS.filter((c) => !present.has(c.image)).map((c) => ({
+        clientId: newClientId(),
         kind: "certification" as const,
         title: c.title,
         imageUrl: c.image,
@@ -200,6 +241,35 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         </div>
       </div>
 
+      <div
+        className="admin-form"
+        style={{ gap: 10, background: "#fff", borderRadius: 10, padding: 14 }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "end", gap: 10 }}>
+          <label style={{ margin: 0, minWidth: 200 }}>
+            Type de référence
+            <select
+              value={newKind}
+              onChange={(e) => setNewKind(e.target.value as CmsReferenceKind)}
+            >
+              <option value="partner">Partenaire (logo client)</option>
+              <option value="certification">Certification</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={() => add(newKind)}
+          >
+            <Plus size={13} /> Ajouter
+          </button>
+        </div>
+        <p className="admin-hint">
+          Une ligne vide est créée dans le groupe choisi. Vous pouvez changer son type à tout moment
+          avec le sélecteur « Type » de la ligne.
+        </p>
+      </div>
+
       {error ? <p className="admin-alert admin-alert--error">{error}</p> : null}
 
       {GROUPS.map((group) => {
@@ -213,31 +283,26 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
               <strong>
                 {group.label} ({groupIndexes.length})
               </strong>
-              <span className="admin-row__spacer" />
-              <button
-                type="button"
-                className="admin-btn"
-                onClick={() => add(group.kind)}
-                title={`Ajouter une référence « ${group.label} »`}
-              >
-                <Plus size={13} /> Ajouter
-              </button>
             </div>
 
             <p className="admin-hint">{group.hint}</p>
 
             {groupIndexes.length === 0 ? (
-              <p className="admin-hint">Aucune référence. Utilisez « Ajouter » pour commencer.</p>
+              <p className="admin-hint">Aucune référence. Utilisez « Ajouter » ci-dessus.</p>
             ) : null}
 
             {groupIndexes.map(({ item, index }, position) => (
               <ReferenceRow
-                key={item.id ?? `new-${index}`}
+                // Never key on the array position: rows are inserted in the
+                // middle, so a positional key collides and React reuses the
+                // wrong row's component instead of mounting the new form.
+                key={item.id ?? item.clientId ?? `${group.kind}-${position}`}
                 ctx={ctx}
                 item={item}
                 isFirst={position === 0}
                 isLast={position === groupIndexes.length - 1}
                 onChange={(patch) => update(index, patch)}
+                onKindChange={(kind) => changeKind(index, kind)}
                 onMove={(delta) => move(index, delta)}
                 onRemove={() => setItems((prev) => prev.filter((_, i) => i !== index))}
               />
@@ -261,6 +326,7 @@ function ReferenceRow({
   isFirst,
   isLast,
   onChange,
+  onKindChange,
   onMove,
   onRemove,
 }: {
@@ -269,6 +335,7 @@ function ReferenceRow({
   isFirst: boolean;
   isLast: boolean;
   onChange: (patch: Partial<Item>) => void;
+  onKindChange: (kind: CmsReferenceKind) => void;
   onMove: (delta: number) => void;
   onRemove: () => void;
 }) {
@@ -359,6 +426,16 @@ function ReferenceRow({
       </div>
 
       <div className="admin-form__row" style={{ alignItems: "end" }}>
+        <label style={{ maxWidth: 190 }}>
+          Type
+          <select
+            value={item.kind}
+            onChange={(e) => onKindChange(e.target.value as CmsReferenceKind)}
+          >
+            <option value="partner">Partenaire</option>
+            <option value="certification">Certification</option>
+          </select>
+        </label>
         <label>
           Titre
           <input value={item.title ?? ""} onChange={(e) => onChange({ title: e.target.value })} />
