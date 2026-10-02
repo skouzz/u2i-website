@@ -90,25 +90,29 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         websiteUrl: "",
         isVisible: true,
       };
-      return insertAtEndOfKind(prev, blank);
+      return insertAtStartOfKind(prev, blank);
     });
     setPendingFocus(clientId);
   };
 
   /**
-   * Reveal and focus a freshly added row.
+   * Focus a freshly added row, scrolling only if it is off-screen.
    *
-   * The Ajouter button sits at the top of the section, but a new row is
-   * appended at the end of its group — with the 28 bundled partners imported
-   * that is some way down the page. The row was rendering, just off-screen,
-   * so the counter moved and it looked like nothing had happened.
+   * New rows are inserted at the TOP of their group, so a partner appears
+   * directly under the Partenaires header — no scrolling needed. A
+   * certification still lands below every partner, so this only scrolls when
+   * the row genuinely is not already within the viewport.
    */
   useEffect(() => {
     if (!pendingFocus) return;
     const scrollTimer = window.setTimeout(() => {
       const row = document.querySelector<HTMLElement>(`[data-ref-id="${pendingFocus}"]`);
       if (row) {
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        const box = row.getBoundingClientRect();
+        const offscreen = box.top < 0 || box.bottom > window.innerHeight;
+        if (offscreen) {
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
         row.querySelector<HTMLInputElement>('input[data-field="title"]')?.focus();
       }
     }, 80);
@@ -130,15 +134,40 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
       const row = prev[index];
       if (!row || row.kind === kind) return prev;
       const rest = prev.filter((_, i) => i !== index);
-      return insertAtEndOfKind(rest, { ...row, kind });
+      return insertAtStartOfKind(rest, { ...row, kind });
     });
   };
 
-  /** Append after the last item sharing `kind`, so groups stay contiguous. */
-  function insertAtEndOfKind(list: Item[], row: Item): Item[] {
-    const lastOfKind = list.map((i) => i.kind).lastIndexOf(row.kind);
-    const at = lastOfKind === -1 ? list.length : lastOfKind + 1;
+  /**
+   * Insert a row at the TOP of its group.
+   *
+   * New entries then appear directly under the group header, next to the
+   * Ajouter button, instead of at the bottom of a long list where they are
+   * easy to miss. Groups stay contiguous, which is what the ordering sent to
+   * the server assumes.
+   */
+  function insertAtStartOfKind(list: Item[], row: Item): Item[] {
+    const firstOfKind = list.findIndex((i) => i.kind === row.kind);
+    const at = firstOfKind === -1 ? list.length : firstOfKind;
     return [...list.slice(0, at), row, ...list.slice(at)];
+  }
+
+  /**
+   * Append rows at the end of their own group, preserving their order.
+   *
+   * Used when importing the bundled logos: they must keep their original
+   * sequence, and pushing them onto the end of the flat list would interleave
+   * partners and certifications into P… C… P… C…, which breaks the grouped
+   * ordering the server stores.
+   */
+  function appendKeepingGroups(list: Item[], rows: Item[]): Item[] {
+    let out = list;
+    for (const row of rows) {
+      const lastOfKind = out.map((i) => i.kind).lastIndexOf(row.kind);
+      const at = lastOfKind === -1 ? out.length : lastOfKind + 1;
+      out = [...out.slice(0, at), row, ...out.slice(at)];
+    }
+    return out;
   }
 
   /**
@@ -174,7 +203,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
       ctx.notify("Tous les logos d'origine sont déjà dans la liste.");
       return;
     }
-    setItems((prev) => [...prev, ...missing]);
+    setItems((prev) => appendKeepingGroups(prev, missing));
     ctx.notify(`${missing.length} logo(s) ajouté(s) — enregistrez pour les appliquer.`);
   };
 
