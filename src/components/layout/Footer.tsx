@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { Facebook, Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-react";
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
-import { cmsApi, type CmsArticle, type CmsNavItem, type CmsSettings } from "@/lib/cms";
+import type { CmsNavItem } from "@/lib/cms";
+import { useCmsArticles, useCmsFooterMenu, useCmsSettings } from "@/lib/cms-queries";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/lib/i18n/LanguageSwitcher";
 import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
@@ -23,38 +23,20 @@ const SOCIALS = [
 
 export function Footer() {
   const { locale, t, link } = useI18n();
-  const [settings, setSettings] = useState<CmsSettings | null>(null);
-  const [footerLinks, setFooterLinks] = useState<{ label: string; url: string }[]>([]);
-  const [latest, setLatest] = useState<CmsArticle[]>([]);
+  // Same shared cache the Navbar and the home page read from, so these three
+  // responses are each fetched once per locale rather than once per mount.
+  const { data: settingsData } = useCmsSettings(locale);
+  const { data: footerMenuData } = useCmsFooterMenu(locale);
+  const { data: articlesData } = useCmsArticles(locale);
 
-  useEffect(() => {
-    let alive = true;
-    cmsApi
-      .settings(locale)
-      .then((res) => alive && setSettings(res.settings))
-      .catch(() => undefined);
-    cmsApi
-      .footerMenu(locale)
-      .then((res) => {
-        if (!alive) return;
-        setFooterLinks(
-          (res.items ?? [])
-            .filter((item) => item.label)
-            .map((item) => ({
-              label: item.label,
-              url: item.url ?? (item.slug ? `/p/${item.slug}` : "#"),
-            })),
-        );
-      })
-      .catch(() => undefined);
-    cmsApi
-      .articles(locale)
-      .then((res) => alive && setLatest((res.items ?? []).slice(0, 2)))
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [locale]);
+  const settings = settingsData?.settings ?? null;
+  const footerLinks = (footerMenuData?.items ?? [])
+    .filter((item) => item.label)
+    .map((item) => ({
+      label: item.label,
+      url: item.url ?? (item.slug ? `/p/${item.slug}` : "#"),
+    }));
+  const latest = (articlesData?.items ?? []).slice(0, 2);
 
   const footer = settings?.footer_json;
   const social = settings?.social_json;

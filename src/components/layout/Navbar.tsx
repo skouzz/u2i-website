@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
 import emailIcon from "@/assets/partners/email.png";
-import { cmsApi, type CmsNavItem, type CmsSettings } from "@/lib/cms";
+import type { CmsNavItem } from "@/lib/cms";
+import { useCmsNav, useCmsSettings } from "@/lib/cms-queries";
 import { useI18n, translateNavLabel, type Locale, type MessageKey } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/lib/i18n/LanguageSwitcher";
 import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
@@ -69,8 +70,10 @@ function normalizeItems(items: CmsNavItem[], locale: Locale): NavLink[] {
 export function Navbar() {
   const { locale, t, link } = useI18n();
   const [open, setOpen] = useState(false);
-  const [links, setLinks] = useState<NavLink[]>([]);
-  const [settings, setSettings] = useState<CmsSettings | null>(null);
+  // Shared query cache: the Footer needs these same two responses, so they
+  // are issued once per locale instead of once per component.
+  const { data: navData } = useCmsNav(locale);
+  const { data: settingsData } = useCmsSettings(locale);
 
   // Drawer behaviour: lock the page behind it so touch scrolling doesn't move
   // the page underneath, close on Escape, and close when the viewport grows
@@ -104,34 +107,19 @@ export function Navbar() {
     };
   }, [open]);
 
-  useEffect(() => {
-    let alive = true;
-    const fallback = FALLBACK_LINKS.map((l) => ({
-      label: t(FALLBACK_LABEL_KEYS[l.url] ?? "nav.home"),
-      url: l.url,
-      newTab: false,
-      children: [],
-    }));
-    cmsApi
-      .nav(locale)
-      .then((res) => {
-        if (!alive) return;
-        setLinks(res.items?.length ? normalizeItems(res.items, locale) : fallback);
-      })
-      .catch(() => {
-        if (alive) setLinks(fallback);
-      });
-    cmsApi
-      .settings(locale)
-      .then((res) => alive && setSettings(res.settings))
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-    // Re-fetch when the visitor switches language: the API serves the
-    // translated menu labels and site strings for the active locale.
-  }, [locale, t]);
+  // Render the hard-coded menu until the CMS one arrives (or if it fails), so
+  // the navbar is never empty on first paint or when the API is unreachable.
+  const fallbackLinks: NavLink[] = FALLBACK_LINKS.map((l) => ({
+    label: t(FALLBACK_LABEL_KEYS[l.url] ?? "nav.home"),
+    url: l.url,
+    newTab: false,
+    children: [],
+  }));
+  const links = navData?.items?.length
+    ? normalizeItems(navData.items, locale)
+    : fallbackLinks;
 
+  const settings = settingsData?.settings ?? null;
   const header = settings?.header_json;
   const social = settings?.social_json;
   const logo = header?.logoUrl || logoImage;

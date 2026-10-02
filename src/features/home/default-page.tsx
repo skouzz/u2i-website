@@ -60,6 +60,10 @@ import equip4 from "@/assets/equipments/Machine de soudure orbitale/2-SATF-65ND_
 import equip5 from "@/assets/equipments/Machine à commande numérique/20210222_093607.jpg";
 import equip6 from "@/assets/equipments/Skid de DégraissageDécapagePassivation/20211014_090938.jpg";
 
+// Poster frame reused for both background videos: the hero paints instantly
+// instead of showing a black box while ~19 MB of video buffers.
+const posterImage = pharmaImage;
+
 // Copy is referenced by catalog key so it renders in the active language.
 const HERO_SLIDES = [
   {
@@ -355,6 +359,12 @@ function VideoBanner() {
         muted
         loop
         playsInline
+        // This file is ~12 MB. Without `preload` the browser starts pulling it
+        // during initial load, competing with the fonts and hero images for
+        // bandwidth. `metadata` still lets autoplay begin, but nothing is
+        // downloaded until the element is actually near the viewport.
+        preload="metadata"
+        poster={posterImage}
         className="absolute inset-0 h-full w-full object-cover opacity-60"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/40" />
@@ -463,6 +473,8 @@ function Presentation() {
                   <img
                     src={presentationImage}
                     alt={t("home.alt.logo")}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-auto object-cover aspect-[4/5]"
                   />
                 </div>
@@ -544,6 +556,10 @@ function Sectors() {
               muted
               loop
               playsInline
+              // ~6.7 MB and sits far down the page: never fetch it until it
+              // is close to being seen.
+              preload="none"
+              poster={posterImage}
               className="absolute inset-0 w-full h-full object-cover opacity-90 transition-transform duration-1000 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
@@ -855,6 +871,8 @@ function CertLightbox({
           <img
             src={cert.image}
             alt={cert.title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-auto object-contain max-h-[75vh]"
           />
         </div>

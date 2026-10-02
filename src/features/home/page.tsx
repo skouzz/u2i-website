@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { cmsApi, type CmsHomeBlock } from "@/lib/cms";
+import { useCmsArticles } from "@/lib/cms-queries";
 import { useI18n } from "@/lib/i18n";
 import { DefaultHomePage } from "./default-page";
 
@@ -323,11 +324,9 @@ function HomeBlock({ block }: { block: CmsHomeBlock }) {
 
 function HomeArticlesBlock({ title }: { title?: string | null }) {
   const { locale, t } = useI18n();
-  const { data } = useQuery({
-    queryKey: ["cms", "articles", locale],
-    queryFn: () => cmsApi.articles(locale),
-    staleTime: 60_000,
-  });
+  // Shares its key with the Footer, so landing on the home page no longer
+  // triggers the same article list twice.
+  const { data } = useCmsArticles(locale);
 
   const articles = (data?.items ?? []).slice(0, 3);
 

@@ -4,7 +4,18 @@ import { routeTree } from "./routeTree.gen";
 import { PageSkeleton } from "./components/PageSkeleton";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Site content changes only when an admin saves it. Without this the
+        // cache is stale immediately, so every navigation re-requested the
+        // same pages and menus over PHP+MySQL.
+        staleTime: 60_000,
+        // Switching tabs should not trigger a burst of API traffic.
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
 
   const router = createRouter({
     routeTree,
