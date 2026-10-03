@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "check:references": "vite build --ssr scripts/verify-references-merge.mjs --outDir node_modules/.tmp-refmerge --logLevel error && node node_modules/.tmp-refmerge/client/assets/verify-references-merge-*.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",

@@ -503,6 +503,18 @@
   transform: scale(1.04);
 }
 
+/* Name-only tile: a reference entered before its logo was uploaded, or one
+   whose image URL no longer resolves. Sized like an <img> so the grid keeps
+   its rhythm instead of collapsing into a row of short text. */
+.site-refs__logo-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  color: rgb(71 85 105);
+  overflow-wrap: anywhere;
+}
+
 /* ── Not found ───────────────────────────────────────────────────────────── */
 
 .site-missing {

@@ -19,7 +19,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, BadgeCheck, Building2, Handshake } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { PageHero } from "@/components/PageHero";
 import { useI18n } from "@/lib/i18n";
@@ -33,6 +33,7 @@ import {
   type BundledReference,
 } from "@/lib/references-bundled";
 import { findSection, pick, type SiteEntry, type SiteSection } from "@/lib/site/ia";
+import { mergeReferences, visibleRows } from "@/lib/references-merge";
 import { ContactCta, SectionSwitcher } from "./shared";
 import { splitLines } from "./split-lines";
 import "./site.css";
@@ -68,23 +69,21 @@ function useMergedReferences(locale: string, kind: CmsReferenceKind, bundled: Bu
     staleTime: 60_000,
   });
 
-  const managed = (data?.items ?? []).filter((row) => row.kind === kind);
-  const shadowed = new Set(
-    managed.map((row) => row.imageUrl).filter((value): value is string => Boolean(value)),
-  );
-
-  const fromManaged: BundledReference[] = managed
-    .filter((row) => row.isVisible !== false && row.imageUrl)
-    .map((row) => ({ title: row.title, image: row.imageUrl as string }));
-
-  const fromBundle = bundled.filter((entry) => !shadowed.has(entry.image));
-
-  return [...fromManaged, ...fromBundle];
+  return mergeReferences(visibleRows(data?.items ?? [], kind), bundled);
 }
 
-/** Grid of logos. Index-keyed because merged rows have no shared id. */
+/**
+ * Grid of logos. Index-keyed because merged rows have no shared id.
+ *
+ * A tile falls back to the reference's name when its picture is missing or
+ * fails to load. The overview counts rows, not images, so a client saved
+ * before its logo was uploaded was counted there and then dropped here — the
+ * page looked like it was missing references the database actually held.
+ */
 function LogoGrid({ items }: { items: BundledReference[] }) {
   const { t } = useI18n();
+  // Tile keys whose image failed, so the <img> is not retried on every render.
+  const [broken, setBroken] = useState<Set<string>>(() => new Set());
 
   if (items.length === 0) {
     return <p className="site-refs__group-text">{t("references.empty")}</p>;
@@ -92,11 +91,31 @@ function LogoGrid({ items }: { items: BundledReference[] }) {
 
   return (
     <div className="site-refs__logos">
-      {items.map((item, index) => (
-        <div key={`${item.title}-${index}`} className="site-refs__logo">
-          <img src={item.image} alt={item.title} loading="lazy" decoding="async" />
-        </div>
-      ))}
+      {items.map((item, index) => {
+        const key = `${item.title}-${index}`;
+        const showImage = Boolean(item.image) && !broken.has(key);
+        return (
+          <div key={key} className="site-refs__logo">
+            {showImage ? (
+              <img
+                src={item.image}
+                alt={item.title}
+                loading="lazy"
+                decoding="async"
+                onError={() =>
+                  setBroken((current) => {
+                    const next = new Set(current);
+                    next.add(key);
+                    return next;
+                  })
+                }
+              />
+            ) : (
+              <span className="site-refs__logo-name">{item.title}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -261,9 +280,13 @@ function ClientsPage({ entry }: { entry: SiteEntry | undefined }) {
    *    bundled logo in the dashboard actually hide it;
    *  - title catches the case where an admin re-uploads the same logo under a
    *    new filename, which would otherwise show the client twice.
+   *
+   * Only rows that will actually draw a logo may shadow: a name-only row that
+   * shadowed "Sanofi" would hide the real logo and put a word in its place.
    */
-  const managedTitles = new Set(managed.map((row) => row.title));
-  const managedImages = new Set(managed.map((row) => row.image));
+  const drawn = managed.filter((row) => Boolean(row.image));
+  const managedTitles = new Set(drawn.map((row) => row.title));
+  const managedImages = new Set(drawn.map((row) => row.image));
 
   return (
     <ReferencesShell entry={entry}>
