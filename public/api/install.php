@@ -195,6 +195,7 @@ $statements = [
         sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
         is_enabled TINYINT(1) NOT NULL DEFAULT 1,
         opens_new_tab TINYINT(1) NOT NULL DEFAULT 0,
+        i18n_json JSON NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_menu_items_menu FOREIGN KEY (menu_id) REFERENCES menus(id) ON DELETE CASCADE,
         CONSTRAINT fk_menu_items_parent FOREIGN KEY (parent_id) REFERENCES menu_items(id) ON DELETE CASCADE,
@@ -324,6 +325,11 @@ ensure_column($pdo, 'site_references', 'i18n_json', 'JSON NULL');
 // a no-op on an existing table, so the migration is explicit here.
 ensure_reference_kind($pdo);
 ensure_column($pdo, 'site_references', 'website_url', 'VARCHAR(500) NULL');
+
+// Menu items: per-item English label. cms.php already overlays I18N_MENU_FIELDS
+// onto menu rows and admin.php already reports coverage for them, but both read
+// an i18n_json column this table never had, so menu labels stayed French-only.
+ensure_column($pdo, 'menu_items', 'i18n_json', 'JSON NULL');
 
 // v2.1 — page builder: per-section visibility + richer block types.
 // ENUM widen must be guarded (an ALTER on an up-to-date column is harmless but

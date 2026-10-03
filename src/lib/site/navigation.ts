@@ -17,24 +17,36 @@
  * "Secteurs". The CMS branch in the Navbar still uses it; nothing else does.
  */
 
-import { pick, SITE_SECTIONS, type SiteEntry, type SiteSection } from "./ia";
+import { pick, SITE_SECTIONS, type SiteSection } from "./ia";
 import type { Locale } from "@/lib/i18n";
 
-/** A child entry in the menu, with its label already in the active language. */
+/**
+ * A child entry in the menu.
+ *
+ * Deliberately not tied to an IA `SiteEntry`: the CMS menu is editable, so an
+ * admin can add a sub-section that has no registry record (an external
+ * document, a not-yet-written page). The IA supplies `summary` when it knows
+ * the destination; otherwise the panel falls back to the label alone.
+ */
 export interface NavChild {
   label: string;
   path: string;
-  /** The IA record behind the link — lets the mega-panel show a real summary. */
-  entry: SiteEntry;
+  /** One line shown under the label in the mega-panel. */
+  summary: string;
+  /** True for http(s)/mailto targets and in-page anchors: rendered as <a>. */
+  external: boolean;
+  /** Opens in a new tab. */
+  newTab: boolean;
 }
 
 /** A section with children: the label opens a panel as well as linking. */
 export interface NavSectionItem {
   kind: "section";
   label: string;
-  /** The section's own overview page. */
+  /** The section's own overview page, when it has one. */
   path: string;
   description: string;
+  /** May be empty: a CMS-authored section has no IA image. */
   image: string;
   children: NavChild[];
 }
@@ -44,6 +56,9 @@ export interface NavLinkItem {
   kind: "link";
   label: string;
   path: string;
+  /** Absolute URLs and anchors are rendered as plain anchors. */
+  external: boolean;
+  newTab: boolean;
 }
 
 export type NavItem = NavSectionItem | NavLinkItem;
@@ -62,7 +77,13 @@ function standaloneItem(
   item: { path: string; fr: string; en: string },
   locale: Locale,
 ): NavLinkItem {
-  return { kind: "link", label: locale === "en" ? item.en : item.fr, path: item.path };
+  return {
+    kind: "link",
+    label: locale === "en" ? item.en : item.fr,
+    path: item.path,
+    external: false,
+    newTab: false,
+  };
 }
 
 function requireSection(id: string): SiteSection {
@@ -87,12 +108,20 @@ export function buildNavigation(locale: Locale): NavItem[] {
     children: section.entries.map((entry) => ({
       label: pick(entry.label, locale),
       path: `${section.path}/${entry.slug}`,
-      entry,
+      summary: pick(entry.summary, locale),
+      external: false,
+      newTab: false,
     })),
   });
 
   return [
-    { kind: "link", label: locale === "en" ? "Home" : "Accueil", path: HOME_PATH },
+    {
+      kind: "link",
+      label: locale === "en" ? "Home" : "Accueil",
+      path: HOME_PATH,
+      external: false,
+      newTab: false,
+    },
     sectionItem(requireSection("industries")),
     sectionItem(requireSection("expertises")),
     standaloneItem(EQUIPMENT_ITEM, locale),

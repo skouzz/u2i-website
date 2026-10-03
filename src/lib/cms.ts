@@ -179,6 +179,8 @@ export interface CmsMenuItem {
   isEnabled?: number | boolean;
   opens_new_tab?: number | boolean;
   opensNewTab?: boolean;
+  /** Per-item translations (currently `en.label`), edited in the dashboard. */
+  i18n?: Record<string, Record<string, string>>;
   /** Client-side normalized shape used by the Navbar. */
   children?: CmsMenuItem[];
 }
@@ -190,6 +192,14 @@ export interface CmsNavItem {
   nav_order?: number;
   url?: string;
   opensNewTab?: boolean;
+  /**
+   * Whether `label` is already the requested language, or still the French
+   * source. The API overlays the per-item i18n overlay before returning, so the
+   * frontend must not run its own label map over an already-translated value.
+   */
+  isTranslated?: boolean;
+  /** Per-item translations, as edited in the dashboard (admin payload). */
+  i18n?: Record<string, Record<string, string>>;
   children?: CmsNavItem[];
 }
 

@@ -197,10 +197,22 @@ function public_menu_tree(int $menuId): array
     $items = [];
     $children = [];
     foreach ($rows as $row) {
-        $merged = apply_i18n($row, I18N_MENU_FIELDS, $GLOBALS['lang'] ?? 'fr');
+        $lang = $GLOBALS['lang'] ?? 'fr';
+        $merged = apply_i18n($row, I18N_MENU_FIELDS, $lang);
+        // Tell the client whether `label` is already the requested language or
+        // still the French source. The frontend only reaches for its legacy
+        // label map when this is false; running that map over an already
+        // translated label would rename "Industries" back to "Secteurs".
+        $translated = $lang === U2I_SRC_LANG
+            ? true
+            : i18n_is_translated(
+                decode_i18n(isset($row['i18n_json']) ? (string) $row['i18n_json'] : null),
+                $lang
+            );
         $mapped = [
             'id' => (int) $merged['id'],
             'label' => (string) $merged['label'],
+            'isTranslated' => $translated,
             'url' => (string) $merged['url'],
             'opensNewTab' => (bool) $merged['opens_new_tab'],
         ];

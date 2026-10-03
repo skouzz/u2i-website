@@ -18,10 +18,18 @@ type EditorItem = {
   clientId: string;
   parentId: string | null;
   label: string;
+  /** English label; falls back to the French one on /en when left empty. */
+  labelEn: string;
   url: string;
   isEnabled: boolean;
   opensNewTab: boolean;
 };
+
+/** Build the i18n overlay the API expects for one menu row. */
+function toI18n(item: EditorItem): Record<string, Record<string, string>> {
+  const labelEn = item.labelEn.trim();
+  return labelEn ? { en: { label: labelEn } } : {};
+}
 
 let clientIdSeq = 0;
 const nextClientId = () => `c${Date.now()}-${clientIdSeq++}`;
@@ -67,6 +75,7 @@ export function MenusSection({ ctx }: { ctx: AdminCtx }) {
         clientId: String(item.id ?? nextClientId()),
         parentId: item.parentId ? String(item.parentId) : null,
         label: item.label ?? "",
+        labelEn: item.i18n?.en?.label ?? "",
         url: item.url ?? "/",
         isEnabled: item.isEnabled !== undefined ? Boolean(item.isEnabled) : true,
         opensNewTab: Boolean(item.opensNewTab ?? false),
@@ -97,6 +106,7 @@ export function MenusSection({ ctx }: { ctx: AdminCtx }) {
         clientId: nextClientId(),
         parentId,
         label: "",
+        labelEn: "",
         url: "/",
         isEnabled: true,
         opensNewTab: false,
@@ -112,6 +122,7 @@ export function MenusSection({ ctx }: { ctx: AdminCtx }) {
         clientId: nextClientId(),
         parentId: null,
         label,
+        labelEn: "",
         url: `/p/${slug}`,
         isEnabled: true,
         opensNewTab: false,
@@ -133,6 +144,7 @@ export function MenusSection({ ctx }: { ctx: AdminCtx }) {
           clientId: item.clientId,
           parentId: item.parentId,
           label: item.label,
+          i18n: toI18n(item),
           url: item.url,
           isEnabled: item.isEnabled,
           opensNewTab: item.opensNewTab,
@@ -223,8 +235,11 @@ export function MenusSection({ ctx }: { ctx: AdminCtx }) {
         <>
           <p className="admin-hint">
             Le <strong>menu principal</strong> alimente la barre de navigation du site ; les
-            éléments indentés (avec parent) deviennent des sous-menus déroulants. Glissez un élément
-            sous un autre en définissant son parent.
+            éléments indentés (avec parent) deviennent des sous-menus déroulants. Vous pouvez
+            ajouter, renommer, réordonner ou supprimer n’importe quelle section et sous-section : le
+            menu est enregistré tel quel et remplace la structure par défaut. Renseignez le libellé{" "}
+            <strong>EN</strong> pour chaque élément afin que la version anglaise affiche autre chose
+            que le libellé français ; laissé vide, il est réutilisé tel quel.
           </p>
 
           <div className="admin-list">
@@ -346,7 +361,14 @@ function MenuRow({
       <input
         value={item.label}
         onChange={(e) => onUpdate(item.clientId, { label: e.target.value })}
-        placeholder="Libellé"
+        placeholder="Libellé (FR)"
+        style={{ width: 150 }}
+      />
+      <input
+        value={item.labelEn}
+        onChange={(e) => onUpdate(item.clientId, { labelEn: e.target.value })}
+        placeholder="Libellé (EN)"
+        title="Label affiché sur /en. Vide = le libellé français est réutilisé."
         style={{ width: 150 }}
       />
       <input

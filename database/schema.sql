@@ -139,6 +139,11 @@ CREATE TABLE IF NOT EXISTS menu_items (
     sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     is_enabled TINYINT(1) NOT NULL DEFAULT 1,
     opens_new_tab TINYINT(1) NOT NULL DEFAULT 0,
+    -- English label per item. Without this column menu labels could only ever
+    -- be French: cms.php already applies I18N_MENU_FIELDS and admin.php already
+    -- reports translation coverage for menu_items, but both read a column that
+    -- was never created, so every /en menu fell back to the FR label.
+    i18n_json JSON NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_menu_items_menu FOREIGN KEY (menu_id) REFERENCES menus(id) ON DELETE CASCADE,
     CONSTRAINT fk_menu_items_parent FOREIGN KEY (parent_id) REFERENCES menu_items(id) ON DELETE CASCADE,

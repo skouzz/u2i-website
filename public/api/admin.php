@@ -996,11 +996,25 @@ try {
                 $out = [];
                 foreach ($menus as $menu) {
                     $itemsStmt->execute([(int) $menu['id']]);
+                    // Raw rows carry snake_case columns and an i18n_json blob;
+                    // the dashboard wants the same camelCase shape the public
+                    // nav uses, with the overlay decoded so it can round-trip.
+                    $items = [];
+                    foreach ($itemsStmt->fetchAll() as $row) {
+                        $row['i18n'] = decode_i18n(
+                            isset($row['i18n_json']) ? (string) $row['i18n_json'] : null
+                        );
+                        $row['isEnabled'] = (bool) $row['is_enabled'];
+                        $row['opensNewTab'] = (bool) $row['opens_new_tab'];
+                        $row['parentId'] = $row['parent_id'] === null ? null : (int) $row['parent_id'];
+                        $row['sortOrder'] = (int) $row['sort_order'];
+                        $items[] = $row;
+                    }
                     $out[] = [
                         'id' => (int) $menu['id'],
                         'location' => $menu['location'],
                         'label' => $menu['label'],
-                        'items' => $itemsStmt->fetchAll(),
+                        'items' => $items,
                     ];
                 }
                 json_response(['ok' => true, 'items' => $out]);
@@ -1033,7 +1047,7 @@ try {
                 $data = read_json_body();
                 // Full replace of the item tree (simple + safe for small menus).
                 db()->prepare('DELETE FROM menu_items WHERE menu_id = ?')->execute([$id]);
-                $stmt = db()->prepare('INSERT INTO menu_items (menu_id, parent_id, label, url, sort_order, is_enabled, opens_new_tab) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                $stmt = db()->prepare('INSERT INTO menu_items (menu_id, parent_id, label, url, sort_order, is_enabled, opens_new_tab, i18n_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
                 $items = is_array($data['items'] ?? null) ? $data['items'] : [];
                 $idMap = [];
                 $order = 0;
@@ -1062,6 +1076,11 @@ try {
                                 continue;
                             }
                         }
+                        // Per-item English label. Only the 'label' key is
+                        // meaningful for a menu row (I18N_MENU_FIELDS maps
+                        // exactly that), but the payload is stored as a full
+                        // overlay so it matches every other translated entity.
+                        $i18n = $item['i18n'] ?? null;
                         $stmt->execute([
                             $id,
                             $parentDbId,
@@ -1070,6 +1089,7 @@ try {
                             $order++,
                             !empty($item['isEnabled']) || !array_key_exists('isEnabled', $item) ? 1 : 0,
                             !empty($item['opensNewTab']) ? 1 : 0,
+                            is_array($i18n) ? encode_i18n($i18n) : '{}',
                         ]);
                         $clientKey = (string) ($item['clientId'] ?? ('' . $order));
                         $idMap[$clientKey] = (int) db()->lastInsertId();

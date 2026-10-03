@@ -76,3 +76,9 @@ ALTER TABLE site_references
 -- live database.
 ALTER TABLE site_references
     MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner';
+
+-- Menu items: per-item English label, so a sub-section added in the dashboard
+-- can be translated. Both API files already read this column; it was simply
+-- never created, which is why every /en menu label fell back to French.
+ALTER TABLE menu_items
+    ADD COLUMN i18n_json JSON NULL;
