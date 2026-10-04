@@ -7,6 +7,7 @@ export type SectionKey =
   | "media"
   | "menus"
   | "homepage"
+  | "references"
   | "header"
   | "footer"
   | "settings"

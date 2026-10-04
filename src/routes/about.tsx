@@ -1,5 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { AboutPage } from "@/features/about/page";
-
-export const Route = createFileRoute("/about")({ component: AboutPage });
+/**
+ * /about → /u2i/a-propos.
+ *
+ * "Qui sommes-nous" is now the first child of the U2I section rather than a
+ * standalone page. Redirecting preserves the old URL instead of 404-ing it.
+ */
+export const Route = createFileRoute("/about")({
+  beforeLoad: () => {
+    throw redirect({ to: "/u2i/$slug", params: { slug: "a-propos" } });
+  },
+});

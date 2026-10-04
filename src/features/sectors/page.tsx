@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, X } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n, type MessageKey } from "@/lib/i18n";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
 import "./sectors.css";
 
 type Photo = { src: string; path: string };
 type Sector = {
   id: string;
-  title: string;
-  tag: string;
-  description: string;
-  focus: string;
+  titleKey: MessageKey;
+  tagKey: MessageKey;
+  descKey: MessageKey;
+  focusKey: MessageKey;
   match: string[];
   photos: Photo[];
 };
@@ -20,56 +21,50 @@ type Sector = {
 const SECTORS: Omit<Sector, "photos">[] = [
   {
     id: "pharmaceutique",
-    title: "Pharmaceutique",
-    tag: "01 / Procédés stériles",
-    description:
-      "Des réseaux de fluides conçus pour les environnements où chaque détail compte. U2I réalise des lignes process en inox, soudées avec précision et pensées pour faciliter le nettoyage, la qualification et la traçabilité.",
-    focus: "Soudure orbitale · Réseaux process · Traçabilité",
+    titleKey: "sectors.item.pharma.title",
+    tagKey: "sectors.pharma.tag",
+    descKey: "sectors.pharma.desc",
+    focusKey: "sectors.pharma.focus",
     match: ["pharma"],
   },
   {
     id: "agroalimentaire",
-    title: "Agroalimentaire",
-    tag: "02 / Hygiène maîtrisée",
-    description:
-      "Des installations fiables pour transporter et transformer les produits alimentaires. Les matériaux, les soudures et les finitions sont sélectionnés pour répondre aux exigences d’hygiène et aux cycles de nettoyage en place.",
-    focus: "Réseaux inox · NEP / CIP · Finitions sanitaires",
+    titleKey: "sectors.item.food.title",
+    tagKey: "sectors.food.tag",
+    descKey: "sectors.food.desc",
+    focusKey: "sectors.food.focus",
     match: ["agro", "aliment"],
   },
   {
     id: "chimique",
-    title: "Chimie",
-    tag: "03 / Fluides exigeants",
-    description:
-      "Pour les procédés chimiques, la maîtrise des fluides et la robustesse des installations sont essentielles. Nous adaptons les réseaux, les assemblages et les matériaux aux contraintes spécifiques de chaque process.",
-    focus: "Transfert de fluides · Inox · Sécurité process",
+    titleKey: "sectors.item.chemical.title",
+    tagKey: "sectors.chemical.tag",
+    descKey: "sectors.chemical.desc",
+    focusKey: "sectors.chemical.focus",
     match: ["chimie", "chimique", "degraissage", "passivation"],
   },
   {
     id: "cosmetique",
-    title: "Cosmétique",
-    tag: "04 / Pureté du produit",
-    description:
-      "Des lignes de fabrication soignées pour les produits sensibles. La qualité des états de surface, la régularité des soudures et la facilité d’entretien accompagnent la pureté du produit à chaque étape.",
-    focus: "Surfaces maîtrisées · Lignes propres · Inox",
+    titleKey: "sectors.item.cosmetics.title",
+    tagKey: "sectors.cosmetics.tag",
+    descKey: "sectors.cosmetics.desc",
+    focusKey: "sectors.cosmetics.focus",
     match: ["cosmetique"],
   },
   {
     id: "mobilier-inox",
-    title: "Mobilier inox",
-    tag: "05 / Fabrication sur mesure",
-    description:
-      "Du mobilier pensé pour le quotidien des laboratoires et des zones de production : tables, chariots, supports et structures inox conçus selon vos espaces, vos usages et vos contraintes de nettoyage.",
-    focus: "Tables · Chariots · Structures sur mesure",
+    titleKey: "sectors.item.furniture.title",
+    tagKey: "sectors.furniture.tag",
+    descKey: "sectors.furniture.desc",
+    focusKey: "sectors.furniture.focus",
     match: ["mobilier"],
   },
   {
     id: "interventions",
-    title: "Interventions industrielles",
-    tag: "06 / Du terrain à l’atelier",
-    description:
-      "De la préparation en atelier à l’intervention sur site, nos équipes mobilisent leur savoir-faire en tuyauterie, soudure et équipements spécialisés pour accompagner vos projets industriels de bout en bout.",
-    focus: "Tuyauterie · Soudage · Contrôle · Mise en service",
+    titleKey: "sectors.item.service.title",
+    tagKey: "sectors.service.tag",
+    descKey: "sectors.service.desc",
+    focusKey: "sectors.service.focus",
     match: ["intervention", "atelier", "welding"],
   },
 ];
@@ -124,6 +119,7 @@ const HERO_PHOTO =
   allPhotos.find((photo) => cleanPath(photo.path).includes("hero-welding")) ?? allPhotos[0];
 
 export function SectorsPage() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [activePhoto, setActivePhoto] = useState<{
     sector: Sector;
@@ -179,25 +175,25 @@ export function SectorsPage() {
     <main className="sectors-page">
       <PageHero
         id="sectors"
-        breadcrumb="Secteurs"
-        eyebrow="L'expertise U2I, sur le terrain"
+        breadcrumb={t("sectors.hero.eyebrow")}
+        eyebrow={t("sectors.hero.eyebrow")}
         title={
           <>
-            Des savoir-faire
+            {t("sectors.hero.line1")}
             <br />
-            <span>qui font avancer</span> l'industrie.
+            <span>{t("sectors.hero.line2a")}</span> {t("sectors.hero.line2b")}
           </>
         }
-        description="Des environnements exigeants, des solutions conçues pour durer. Explorez nos métiers et nos réalisations en images."
-        linkLabel="Explorer nos secteurs"
+        description={t("sectors.hero.text")}
+        linkLabel={t("common.discover")}
         linkHref="#catalogue-secteurs"
         image={HERO_PHOTO?.src ?? ""}
         imagePosition="center 48%"
       />
 
-      <nav className="sectors-nav" id="catalogue-secteurs" aria-label="Explorer un secteur">
+      <nav className="sectors-nav" id="catalogue-secteurs" aria-label={t("sectors.nav.aria")}>
         <div className="wrap sectors-nav__inner">
-          <span className="sectors-nav__label">Explorer</span>
+          <span className="sectors-nav__label">{t("sectors.nav.label")}</span>
           <div className="sectors-nav__links">
             {sectorPhotoSets.map((sector) => (
               <a
@@ -206,20 +202,20 @@ export function SectorsPage() {
                 className={activeSector === sector.id ? "is-active" : ""}
                 aria-current={activeSector === sector.id ? "location" : undefined}
               >
-                {sector.title}
+                {t(sector.titleKey)}
               </a>
             ))}
           </div>
         </div>
       </nav>
 
-      <section className="sectors-intro wrap" aria-label="Notre expertise">
-        <p className="sectors-intro__label">Nos domaines d’activité</p>
+      <section className="sectors-intro wrap" aria-label={t("sectors.intro.aria")}>
+        <p className="sectors-intro__label">{t("sectors.intro.label")}</p>
         <div className="sectors-intro__body">
           <h2>
-            La bonne expertise.
+            {t("sectors.intro.line1")}
             <br />
-            Au bon endroit.
+            {t("sectors.intro.line2")}
           </h2>
         </div>
       </section>
@@ -239,31 +235,30 @@ export function SectorsPage() {
             <div className="wrap sector-block__layout">
               <div className="sector-copy">
                 <div className="sector-copy__topline">
-                  <span>{sector.tag.split("/ ")[1]}</span>
-                </div>
-                <h2>{sector.title}</h2>
-                <p className="sector-copy__description">{sector.description}</p>
+                  <span>{t(sector.tagKey).split("/ ")[1]}</span>
+                </div>                  <h2>{t(sector.titleKey)}</h2>
+                  <p className="sector-copy__description">{t(sector.descKey)}</p>
                 <div className="sector-copy__focus">
                   <Check size={16} aria-hidden="true" />
-                  <span>{sector.focus}</span>
+                  <span>{t(sector.focusKey)}</span>
                 </div>
-                <Link to="/contact" className="sector-copy__cta">
-                  Parler de votre projet <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
+                <LocalizedLink to="/contact" className="sector-copy__cta">
+                  {t("sectors.item.cta")} <ArrowUpRight size={17} aria-hidden="true" />
+                </LocalizedLink>
               </div>
 
-              <div className="sector-gallery" aria-label={`Galerie ${sector.title}`}>
+              <div className="sector-gallery" aria-label={`${t("sectors.gallery.aria")} ${t(sector.titleKey)}`}>
                 {sector.photos.length > 0 ? (
                   <div className="sector-gallery__grid">
                     {sector.photos.map((photo, photoIndex) => {
-                      const photoLabel = `${sector.title} · réalisation ${String(photoIndex + 1).padStart(2, "0")}`;
+                      const photoLabel = `${t(sector.titleKey)} · ${t("sectors.gallery.shot")} ${String(photoIndex + 1).padStart(2, "0")}`;
                       return (
                         <motion.button
                           key={photo.path}
                           type="button"
                           className={`sector-photo ${photoIndex === 0 ? "sector-photo--feature" : ""}`}
                           onClick={() => setActivePhoto({ sector, index: photoIndex })}
-                          aria-label={`Agrandir ${photoLabel}, ${photoIndex + 1} sur ${sector.photos.length}`}
+                          aria-label={`${t("sectors.gallery.zoom")} ${photoLabel}, ${photoIndex + 1} ${t("sectors.gallery.of")} ${sector.photos.length}`}
                           initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
                           whileInView={{ opacity: 1, scale: 1 }}
                           viewport={{ once: true, amount: 0.1 }}
@@ -282,7 +277,7 @@ export function SectorsPage() {
                   </div>
                 ) : (
                   <p className="sector-gallery__empty">
-                    De nouvelles réalisations arrivent bientôt.
+                    {t("sectors.gallery.empty")}
                   </p>
                 )}
               </div>
@@ -294,12 +289,12 @@ export function SectorsPage() {
       <section className="sectors-contact">
         <div className="wrap sectors-contact__inner">
           <div>
-            <p className="sectors-eyebrow">Un projet industriel en vue ?</p>
-            <h2>Parlons de votre prochain défi.</h2>
+            <p className="sectors-eyebrow">{t("sectors.cta.eyebrow")}</p>
+            <h2>{t("sectors.cta.heading")}</h2>
           </div>
-          <Link to="/contact" className="sectors-contact__button">
-            Contacter nos équipes <ArrowUpRight size={18} aria-hidden="true" />
-          </Link>
+          <LocalizedLink to="/contact" className="sectors-contact__button">
+            {t("about.cta.contact")} <ArrowUpRight size={18} aria-hidden="true" />
+          </LocalizedLink>
         </div>
       </section>
 
@@ -309,7 +304,7 @@ export function SectorsPage() {
             className="sector-lightbox"
             role="dialog"
             aria-modal="true"
-            aria-label={`Galerie ${activePhoto.sector.title}`}
+            aria-label={`${t("sectors.gallery.aria")} ${t(activePhoto.sector.titleKey)}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -320,16 +315,16 @@ export function SectorsPage() {
           >
             <div className="sector-lightbox__topbar">
               <p>
-                <span>{activePhoto.sector.title}</span> /{" "}
+                <span>{t(activePhoto.sector.titleKey)}</span> /{" "}
                 {String(activePhoto.index + 1).padStart(2, "0")}{" "}
                 <span className="sector-lightbox__muted">
-                  sur {String(activePhoto.sector.photos.length).padStart(2, "0")}
+                  {t("sectors.gallery.of")} {String(activePhoto.sector.photos.length).padStart(2, "0")}
                 </span>
               </p>
               <button
                 type="button"
                 onClick={() => setActivePhoto(null)}
-                aria-label="Fermer la galerie"
+                aria-label={t("sectors.gallery.close")}
               >
                 <X size={22} />
               </button>
@@ -337,7 +332,7 @@ export function SectorsPage() {
             <button
               type="button"
               className="sector-lightbox__arrow sector-lightbox__arrow--prev"
-              aria-label="Photo précédente"
+              aria-label={t("sectors.gallery.prev")}
               onClick={() =>
                 setActivePhoto((current) => {
                   if (!current) return current;
@@ -362,10 +357,10 @@ export function SectorsPage() {
               >
                 <img
                   src={activePhoto.sector.photos[activePhoto.index]?.src}
-                  alt={`${activePhoto.sector.title} · réalisation ${String(activePhoto.index + 1).padStart(2, "0")}`}
+                  alt={`${t(activePhoto.sector.titleKey)} · ${t("sectors.gallery.shot")} ${String(activePhoto.index + 1).padStart(2, "0")}`}
                 />
                 <figcaption>
-                  {activePhoto.sector.title} · réalisation{" "}
+                  {t(activePhoto.sector.titleKey)} · {t("sectors.gallery.shot")}
                   {String(activePhoto.index + 1).padStart(2, "0")}
                 </figcaption>
               </motion.figure>
@@ -373,7 +368,7 @@ export function SectorsPage() {
             <button
               type="button"
               className="sector-lightbox__arrow sector-lightbox__arrow--next"
-              aria-label="Photo suivante"
+              aria-label={t("sectors.gallery.next")}
               onClick={() =>
                 setActivePhoto((current) => {
                   if (!current) return current;

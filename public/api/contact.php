@@ -117,7 +117,7 @@ function store_message(array $data, string $firstName, string $lastName, string 
         $stmt->execute([$firstName, $lastName, $email, $company !== '' ? $company : null, $subject, $message]);
 
         return true;
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         // Email sending must not depend on the database being reachable.
         return false;
     }
@@ -235,7 +235,7 @@ try {
             $recipient = (string) $row['contact_email'];
         }
     }
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 $stored = store_message($data, $firstName, $lastName, $email, $company, $subject, $message);

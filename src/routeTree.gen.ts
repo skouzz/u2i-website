@@ -10,24 +10,46 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SecteursRouteImport } from './routes/secteurs'
-import { Route as ReferencesRouteImport } from './routes/references'
 import { Route as EquipementsRouteImport } from './routes/equipements'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as U2iIndexRouteImport } from './routes/u2i/index'
+import { Route as ReferencesIndexRouteImport } from './routes/references/index'
+import { Route as ProjetsIndexRouteImport } from './routes/projets/index'
+import { Route as IndustriesIndexRouteImport } from './routes/industries/index'
+import { Route as ExpertisesIndexRouteImport } from './routes/expertises/index'
+import { Route as EnIndexRouteImport } from './routes/en/index'
 import { Route as ActualitesIndexRouteImport } from './routes/actualites/index'
+import { Route as U2iSlugRouteImport } from './routes/u2i/$slug'
+import { Route as ReferencesSlugRouteImport } from './routes/references/$slug'
+import { Route as ProjetsSlugRouteImport } from './routes/projets/$slug'
 import { Route as PSplatRouteImport } from './routes/p.$'
+import { Route as IndustriesSlugRouteImport } from './routes/industries/$slug'
+import { Route as ExpertisesSlugRouteImport } from './routes/expertises/$slug'
+import { Route as EnSecteursRouteImport } from './routes/en/secteurs'
+import { Route as EnEquipementsRouteImport } from './routes/en/equipements'
+import { Route as EnContactRouteImport } from './routes/en/contact'
+import { Route as EnAboutRouteImport } from './routes/en/about'
 import { Route as ActualitesSlugRouteImport } from './routes/actualites/$slug'
+import { Route as EnU2iIndexRouteImport } from './routes/en/u2i/index'
+import { Route as EnReferencesIndexRouteImport } from './routes/en/references/index'
+import { Route as EnProjetsIndexRouteImport } from './routes/en/projets/index'
+import { Route as EnIndustriesIndexRouteImport } from './routes/en/industries/index'
+import { Route as EnExpertisesIndexRouteImport } from './routes/en/expertises/index'
+import { Route as EnActualitesIndexRouteImport } from './routes/en/actualites/index'
+import { Route as EnU2iSlugRouteImport } from './routes/en/u2i/$slug'
+import { Route as EnReferencesSlugRouteImport } from './routes/en/references/$slug'
+import { Route as EnProjetsSlugRouteImport } from './routes/en/projets/$slug'
+import { Route as EnPSplatRouteImport } from './routes/en/p.$'
+import { Route as EnIndustriesSlugRouteImport } from './routes/en/industries/$slug'
+import { Route as EnExpertisesSlugRouteImport } from './routes/en/expertises/$slug'
+import { Route as EnActualitesSlugRouteImport } from './routes/en/actualites/$slug'
 
 const SecteursRoute = SecteursRouteImport.update({
   id: '/secteurs',
   path: '/secteurs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReferencesRoute = ReferencesRouteImport.update({
-  id: '/references',
-  path: '/references',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipementsRoute = EquipementsRouteImport.update({
@@ -55,9 +77,54 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const U2iIndexRoute = U2iIndexRouteImport.update({
+  id: '/u2i/',
+  path: '/u2i/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferencesIndexRoute = ReferencesIndexRouteImport.update({
+  id: '/references/',
+  path: '/references/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjetsIndexRoute = ProjetsIndexRouteImport.update({
+  id: '/projets/',
+  path: '/projets/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndustriesIndexRoute = IndustriesIndexRouteImport.update({
+  id: '/industries/',
+  path: '/industries/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpertisesIndexRoute = ExpertisesIndexRouteImport.update({
+  id: '/expertises/',
+  path: '/expertises/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnIndexRoute = EnIndexRouteImport.update({
+  id: '/en/',
+  path: '/en/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActualitesIndexRoute = ActualitesIndexRouteImport.update({
   id: '/actualites/',
   path: '/actualites/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const U2iSlugRoute = U2iSlugRouteImport.update({
+  id: '/u2i/$slug',
+  path: '/u2i/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferencesSlugRoute = ReferencesSlugRouteImport.update({
+  id: '/references/$slug',
+  path: '/references/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjetsSlugRoute = ProjetsSlugRouteImport.update({
+  id: '/projets/$slug',
+  path: '/projets/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PSplatRoute = PSplatRouteImport.update({
@@ -65,9 +132,104 @@ const PSplatRoute = PSplatRouteImport.update({
   path: '/p/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndustriesSlugRoute = IndustriesSlugRouteImport.update({
+  id: '/industries/$slug',
+  path: '/industries/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpertisesSlugRoute = ExpertisesSlugRouteImport.update({
+  id: '/expertises/$slug',
+  path: '/expertises/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnSecteursRoute = EnSecteursRouteImport.update({
+  id: '/en/secteurs',
+  path: '/en/secteurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnEquipementsRoute = EnEquipementsRouteImport.update({
+  id: '/en/equipements',
+  path: '/en/equipements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnContactRoute = EnContactRouteImport.update({
+  id: '/en/contact',
+  path: '/en/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnAboutRoute = EnAboutRouteImport.update({
+  id: '/en/about',
+  path: '/en/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActualitesSlugRoute = ActualitesSlugRouteImport.update({
   id: '/actualites/$slug',
   path: '/actualites/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnU2iIndexRoute = EnU2iIndexRouteImport.update({
+  id: '/en/u2i/',
+  path: '/en/u2i/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnReferencesIndexRoute = EnReferencesIndexRouteImport.update({
+  id: '/en/references/',
+  path: '/en/references/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnProjetsIndexRoute = EnProjetsIndexRouteImport.update({
+  id: '/en/projets/',
+  path: '/en/projets/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnIndustriesIndexRoute = EnIndustriesIndexRouteImport.update({
+  id: '/en/industries/',
+  path: '/en/industries/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnExpertisesIndexRoute = EnExpertisesIndexRouteImport.update({
+  id: '/en/expertises/',
+  path: '/en/expertises/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnActualitesIndexRoute = EnActualitesIndexRouteImport.update({
+  id: '/en/actualites/',
+  path: '/en/actualites/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnU2iSlugRoute = EnU2iSlugRouteImport.update({
+  id: '/en/u2i/$slug',
+  path: '/en/u2i/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnReferencesSlugRoute = EnReferencesSlugRouteImport.update({
+  id: '/en/references/$slug',
+  path: '/en/references/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnProjetsSlugRoute = EnProjetsSlugRouteImport.update({
+  id: '/en/projets/$slug',
+  path: '/en/projets/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnPSplatRoute = EnPSplatRouteImport.update({
+  id: '/en/p/$',
+  path: '/en/p/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnIndustriesSlugRoute = EnIndustriesSlugRouteImport.update({
+  id: '/en/industries/$slug',
+  path: '/en/industries/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnExpertisesSlugRoute = EnExpertisesSlugRouteImport.update({
+  id: '/en/expertises/$slug',
+  path: '/en/expertises/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnActualitesSlugRoute = EnActualitesSlugRouteImport.update({
+  id: '/en/actualites/$slug',
+  path: '/en/actualites/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -77,11 +239,38 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
-  '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
   '/actualites/$slug': typeof ActualitesSlugRoute
+  '/en/about': typeof EnAboutRoute
+  '/en/contact': typeof EnContactRoute
+  '/en/equipements': typeof EnEquipementsRoute
+  '/en/secteurs': typeof EnSecteursRoute
+  '/expertises/$slug': typeof ExpertisesSlugRoute
+  '/industries/$slug': typeof IndustriesSlugRoute
   '/p/$': typeof PSplatRoute
+  '/projets/$slug': typeof ProjetsSlugRoute
+  '/references/$slug': typeof ReferencesSlugRoute
+  '/u2i/$slug': typeof U2iSlugRoute
   '/actualites/': typeof ActualitesIndexRoute
+  '/en/': typeof EnIndexRoute
+  '/expertises/': typeof ExpertisesIndexRoute
+  '/industries/': typeof IndustriesIndexRoute
+  '/projets/': typeof ProjetsIndexRoute
+  '/references/': typeof ReferencesIndexRoute
+  '/u2i/': typeof U2iIndexRoute
+  '/en/actualites/$slug': typeof EnActualitesSlugRoute
+  '/en/expertises/$slug': typeof EnExpertisesSlugRoute
+  '/en/industries/$slug': typeof EnIndustriesSlugRoute
+  '/en/p/$': typeof EnPSplatRoute
+  '/en/projets/$slug': typeof EnProjetsSlugRoute
+  '/en/references/$slug': typeof EnReferencesSlugRoute
+  '/en/u2i/$slug': typeof EnU2iSlugRoute
+  '/en/actualites/': typeof EnActualitesIndexRoute
+  '/en/expertises/': typeof EnExpertisesIndexRoute
+  '/en/industries/': typeof EnIndustriesIndexRoute
+  '/en/projets/': typeof EnProjetsIndexRoute
+  '/en/references/': typeof EnReferencesIndexRoute
+  '/en/u2i/': typeof EnU2iIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,11 +278,38 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
-  '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
   '/actualites/$slug': typeof ActualitesSlugRoute
+  '/en/about': typeof EnAboutRoute
+  '/en/contact': typeof EnContactRoute
+  '/en/equipements': typeof EnEquipementsRoute
+  '/en/secteurs': typeof EnSecteursRoute
+  '/expertises/$slug': typeof ExpertisesSlugRoute
+  '/industries/$slug': typeof IndustriesSlugRoute
   '/p/$': typeof PSplatRoute
+  '/projets/$slug': typeof ProjetsSlugRoute
+  '/references/$slug': typeof ReferencesSlugRoute
+  '/u2i/$slug': typeof U2iSlugRoute
   '/actualites': typeof ActualitesIndexRoute
+  '/en': typeof EnIndexRoute
+  '/expertises': typeof ExpertisesIndexRoute
+  '/industries': typeof IndustriesIndexRoute
+  '/projets': typeof ProjetsIndexRoute
+  '/references': typeof ReferencesIndexRoute
+  '/u2i': typeof U2iIndexRoute
+  '/en/actualites/$slug': typeof EnActualitesSlugRoute
+  '/en/expertises/$slug': typeof EnExpertisesSlugRoute
+  '/en/industries/$slug': typeof EnIndustriesSlugRoute
+  '/en/p/$': typeof EnPSplatRoute
+  '/en/projets/$slug': typeof EnProjetsSlugRoute
+  '/en/references/$slug': typeof EnReferencesSlugRoute
+  '/en/u2i/$slug': typeof EnU2iSlugRoute
+  '/en/actualites': typeof EnActualitesIndexRoute
+  '/en/expertises': typeof EnExpertisesIndexRoute
+  '/en/industries': typeof EnIndustriesIndexRoute
+  '/en/projets': typeof EnProjetsIndexRoute
+  '/en/references': typeof EnReferencesIndexRoute
+  '/en/u2i': typeof EnU2iIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,11 +318,38 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
-  '/references': typeof ReferencesRoute
   '/secteurs': typeof SecteursRoute
   '/actualites/$slug': typeof ActualitesSlugRoute
+  '/en/about': typeof EnAboutRoute
+  '/en/contact': typeof EnContactRoute
+  '/en/equipements': typeof EnEquipementsRoute
+  '/en/secteurs': typeof EnSecteursRoute
+  '/expertises/$slug': typeof ExpertisesSlugRoute
+  '/industries/$slug': typeof IndustriesSlugRoute
   '/p/$': typeof PSplatRoute
+  '/projets/$slug': typeof ProjetsSlugRoute
+  '/references/$slug': typeof ReferencesSlugRoute
+  '/u2i/$slug': typeof U2iSlugRoute
   '/actualites/': typeof ActualitesIndexRoute
+  '/en/': typeof EnIndexRoute
+  '/expertises/': typeof ExpertisesIndexRoute
+  '/industries/': typeof IndustriesIndexRoute
+  '/projets/': typeof ProjetsIndexRoute
+  '/references/': typeof ReferencesIndexRoute
+  '/u2i/': typeof U2iIndexRoute
+  '/en/actualites/$slug': typeof EnActualitesSlugRoute
+  '/en/expertises/$slug': typeof EnExpertisesSlugRoute
+  '/en/industries/$slug': typeof EnIndustriesSlugRoute
+  '/en/p/$': typeof EnPSplatRoute
+  '/en/projets/$slug': typeof EnProjetsSlugRoute
+  '/en/references/$slug': typeof EnReferencesSlugRoute
+  '/en/u2i/$slug': typeof EnU2iSlugRoute
+  '/en/actualites/': typeof EnActualitesIndexRoute
+  '/en/expertises/': typeof EnExpertisesIndexRoute
+  '/en/industries/': typeof EnIndustriesIndexRoute
+  '/en/projets/': typeof EnProjetsIndexRoute
+  '/en/references/': typeof EnReferencesIndexRoute
+  '/en/u2i/': typeof EnU2iIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,11 +359,38 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/equipements'
-    | '/references'
     | '/secteurs'
     | '/actualites/$slug'
+    | '/en/about'
+    | '/en/contact'
+    | '/en/equipements'
+    | '/en/secteurs'
+    | '/expertises/$slug'
+    | '/industries/$slug'
     | '/p/$'
+    | '/projets/$slug'
+    | '/references/$slug'
+    | '/u2i/$slug'
     | '/actualites/'
+    | '/en/'
+    | '/expertises/'
+    | '/industries/'
+    | '/projets/'
+    | '/references/'
+    | '/u2i/'
+    | '/en/actualites/$slug'
+    | '/en/expertises/$slug'
+    | '/en/industries/$slug'
+    | '/en/p/$'
+    | '/en/projets/$slug'
+    | '/en/references/$slug'
+    | '/en/u2i/$slug'
+    | '/en/actualites/'
+    | '/en/expertises/'
+    | '/en/industries/'
+    | '/en/projets/'
+    | '/en/references/'
+    | '/en/u2i/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,11 +398,38 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/equipements'
-    | '/references'
     | '/secteurs'
     | '/actualites/$slug'
+    | '/en/about'
+    | '/en/contact'
+    | '/en/equipements'
+    | '/en/secteurs'
+    | '/expertises/$slug'
+    | '/industries/$slug'
     | '/p/$'
+    | '/projets/$slug'
+    | '/references/$slug'
+    | '/u2i/$slug'
     | '/actualites'
+    | '/en'
+    | '/expertises'
+    | '/industries'
+    | '/projets'
+    | '/references'
+    | '/u2i'
+    | '/en/actualites/$slug'
+    | '/en/expertises/$slug'
+    | '/en/industries/$slug'
+    | '/en/p/$'
+    | '/en/projets/$slug'
+    | '/en/references/$slug'
+    | '/en/u2i/$slug'
+    | '/en/actualites'
+    | '/en/expertises'
+    | '/en/industries'
+    | '/en/projets'
+    | '/en/references'
+    | '/en/u2i'
   id:
     | '__root__'
     | '/'
@@ -140,11 +437,38 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/equipements'
-    | '/references'
     | '/secteurs'
     | '/actualites/$slug'
+    | '/en/about'
+    | '/en/contact'
+    | '/en/equipements'
+    | '/en/secteurs'
+    | '/expertises/$slug'
+    | '/industries/$slug'
     | '/p/$'
+    | '/projets/$slug'
+    | '/references/$slug'
+    | '/u2i/$slug'
     | '/actualites/'
+    | '/en/'
+    | '/expertises/'
+    | '/industries/'
+    | '/projets/'
+    | '/references/'
+    | '/u2i/'
+    | '/en/actualites/$slug'
+    | '/en/expertises/$slug'
+    | '/en/industries/$slug'
+    | '/en/p/$'
+    | '/en/projets/$slug'
+    | '/en/references/$slug'
+    | '/en/u2i/$slug'
+    | '/en/actualites/'
+    | '/en/expertises/'
+    | '/en/industries/'
+    | '/en/projets/'
+    | '/en/references/'
+    | '/en/u2i/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,11 +477,38 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
   EquipementsRoute: typeof EquipementsRoute
-  ReferencesRoute: typeof ReferencesRoute
   SecteursRoute: typeof SecteursRoute
   ActualitesSlugRoute: typeof ActualitesSlugRoute
+  EnAboutRoute: typeof EnAboutRoute
+  EnContactRoute: typeof EnContactRoute
+  EnEquipementsRoute: typeof EnEquipementsRoute
+  EnSecteursRoute: typeof EnSecteursRoute
+  ExpertisesSlugRoute: typeof ExpertisesSlugRoute
+  IndustriesSlugRoute: typeof IndustriesSlugRoute
   PSplatRoute: typeof PSplatRoute
+  ProjetsSlugRoute: typeof ProjetsSlugRoute
+  ReferencesSlugRoute: typeof ReferencesSlugRoute
+  U2iSlugRoute: typeof U2iSlugRoute
   ActualitesIndexRoute: typeof ActualitesIndexRoute
+  EnIndexRoute: typeof EnIndexRoute
+  ExpertisesIndexRoute: typeof ExpertisesIndexRoute
+  IndustriesIndexRoute: typeof IndustriesIndexRoute
+  ProjetsIndexRoute: typeof ProjetsIndexRoute
+  ReferencesIndexRoute: typeof ReferencesIndexRoute
+  U2iIndexRoute: typeof U2iIndexRoute
+  EnActualitesSlugRoute: typeof EnActualitesSlugRoute
+  EnExpertisesSlugRoute: typeof EnExpertisesSlugRoute
+  EnIndustriesSlugRoute: typeof EnIndustriesSlugRoute
+  EnPSplatRoute: typeof EnPSplatRoute
+  EnProjetsSlugRoute: typeof EnProjetsSlugRoute
+  EnReferencesSlugRoute: typeof EnReferencesSlugRoute
+  EnU2iSlugRoute: typeof EnU2iSlugRoute
+  EnActualitesIndexRoute: typeof EnActualitesIndexRoute
+  EnExpertisesIndexRoute: typeof EnExpertisesIndexRoute
+  EnIndustriesIndexRoute: typeof EnIndustriesIndexRoute
+  EnProjetsIndexRoute: typeof EnProjetsIndexRoute
+  EnReferencesIndexRoute: typeof EnReferencesIndexRoute
+  EnU2iIndexRoute: typeof EnU2iIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -167,13 +518,6 @@ declare module '@tanstack/react-router' {
       path: '/secteurs'
       fullPath: '/secteurs'
       preLoaderRoute: typeof SecteursRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/references': {
-      id: '/references'
-      path: '/references'
-      fullPath: '/references'
-      preLoaderRoute: typeof ReferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipements': {
@@ -211,11 +555,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/u2i/': {
+      id: '/u2i/'
+      path: '/u2i'
+      fullPath: '/u2i/'
+      preLoaderRoute: typeof U2iIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/references/': {
+      id: '/references/'
+      path: '/references'
+      fullPath: '/references/'
+      preLoaderRoute: typeof ReferencesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projets/': {
+      id: '/projets/'
+      path: '/projets'
+      fullPath: '/projets/'
+      preLoaderRoute: typeof ProjetsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/industries/': {
+      id: '/industries/'
+      path: '/industries'
+      fullPath: '/industries/'
+      preLoaderRoute: typeof IndustriesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expertises/': {
+      id: '/expertises/'
+      path: '/expertises'
+      fullPath: '/expertises/'
+      preLoaderRoute: typeof ExpertisesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/': {
+      id: '/en/'
+      path: '/en'
+      fullPath: '/en/'
+      preLoaderRoute: typeof EnIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/actualites/': {
       id: '/actualites/'
       path: '/actualites'
       fullPath: '/actualites/'
       preLoaderRoute: typeof ActualitesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u2i/$slug': {
+      id: '/u2i/$slug'
+      path: '/u2i/$slug'
+      fullPath: '/u2i/$slug'
+      preLoaderRoute: typeof U2iSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/references/$slug': {
+      id: '/references/$slug'
+      path: '/references/$slug'
+      fullPath: '/references/$slug'
+      preLoaderRoute: typeof ReferencesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projets/$slug': {
+      id: '/projets/$slug'
+      path: '/projets/$slug'
+      fullPath: '/projets/$slug'
+      preLoaderRoute: typeof ProjetsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$': {
@@ -225,11 +632,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/industries/$slug': {
+      id: '/industries/$slug'
+      path: '/industries/$slug'
+      fullPath: '/industries/$slug'
+      preLoaderRoute: typeof IndustriesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expertises/$slug': {
+      id: '/expertises/$slug'
+      path: '/expertises/$slug'
+      fullPath: '/expertises/$slug'
+      preLoaderRoute: typeof ExpertisesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/secteurs': {
+      id: '/en/secteurs'
+      path: '/en/secteurs'
+      fullPath: '/en/secteurs'
+      preLoaderRoute: typeof EnSecteursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/equipements': {
+      id: '/en/equipements'
+      path: '/en/equipements'
+      fullPath: '/en/equipements'
+      preLoaderRoute: typeof EnEquipementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/contact': {
+      id: '/en/contact'
+      path: '/en/contact'
+      fullPath: '/en/contact'
+      preLoaderRoute: typeof EnContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/about': {
+      id: '/en/about'
+      path: '/en/about'
+      fullPath: '/en/about'
+      preLoaderRoute: typeof EnAboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/actualites/$slug': {
       id: '/actualites/$slug'
       path: '/actualites/$slug'
       fullPath: '/actualites/$slug'
       preLoaderRoute: typeof ActualitesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/u2i/': {
+      id: '/en/u2i/'
+      path: '/en/u2i'
+      fullPath: '/en/u2i/'
+      preLoaderRoute: typeof EnU2iIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/references/': {
+      id: '/en/references/'
+      path: '/en/references'
+      fullPath: '/en/references/'
+      preLoaderRoute: typeof EnReferencesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/projets/': {
+      id: '/en/projets/'
+      path: '/en/projets'
+      fullPath: '/en/projets/'
+      preLoaderRoute: typeof EnProjetsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/industries/': {
+      id: '/en/industries/'
+      path: '/en/industries'
+      fullPath: '/en/industries/'
+      preLoaderRoute: typeof EnIndustriesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/expertises/': {
+      id: '/en/expertises/'
+      path: '/en/expertises'
+      fullPath: '/en/expertises/'
+      preLoaderRoute: typeof EnExpertisesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/actualites/': {
+      id: '/en/actualites/'
+      path: '/en/actualites'
+      fullPath: '/en/actualites/'
+      preLoaderRoute: typeof EnActualitesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/u2i/$slug': {
+      id: '/en/u2i/$slug'
+      path: '/en/u2i/$slug'
+      fullPath: '/en/u2i/$slug'
+      preLoaderRoute: typeof EnU2iSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/references/$slug': {
+      id: '/en/references/$slug'
+      path: '/en/references/$slug'
+      fullPath: '/en/references/$slug'
+      preLoaderRoute: typeof EnReferencesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/projets/$slug': {
+      id: '/en/projets/$slug'
+      path: '/en/projets/$slug'
+      fullPath: '/en/projets/$slug'
+      preLoaderRoute: typeof EnProjetsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/p/$': {
+      id: '/en/p/$'
+      path: '/en/p/$'
+      fullPath: '/en/p/$'
+      preLoaderRoute: typeof EnPSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/industries/$slug': {
+      id: '/en/industries/$slug'
+      path: '/en/industries/$slug'
+      fullPath: '/en/industries/$slug'
+      preLoaderRoute: typeof EnIndustriesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/expertises/$slug': {
+      id: '/en/expertises/$slug'
+      path: '/en/expertises/$slug'
+      fullPath: '/en/expertises/$slug'
+      preLoaderRoute: typeof EnExpertisesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/actualites/$slug': {
+      id: '/en/actualites/$slug'
+      path: '/en/actualites/$slug'
+      fullPath: '/en/actualites/$slug'
+      preLoaderRoute: typeof EnActualitesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -241,11 +781,38 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
   EquipementsRoute: EquipementsRoute,
-  ReferencesRoute: ReferencesRoute,
   SecteursRoute: SecteursRoute,
   ActualitesSlugRoute: ActualitesSlugRoute,
+  EnAboutRoute: EnAboutRoute,
+  EnContactRoute: EnContactRoute,
+  EnEquipementsRoute: EnEquipementsRoute,
+  EnSecteursRoute: EnSecteursRoute,
+  ExpertisesSlugRoute: ExpertisesSlugRoute,
+  IndustriesSlugRoute: IndustriesSlugRoute,
   PSplatRoute: PSplatRoute,
+  ProjetsSlugRoute: ProjetsSlugRoute,
+  ReferencesSlugRoute: ReferencesSlugRoute,
+  U2iSlugRoute: U2iSlugRoute,
   ActualitesIndexRoute: ActualitesIndexRoute,
+  EnIndexRoute: EnIndexRoute,
+  ExpertisesIndexRoute: ExpertisesIndexRoute,
+  IndustriesIndexRoute: IndustriesIndexRoute,
+  ProjetsIndexRoute: ProjetsIndexRoute,
+  ReferencesIndexRoute: ReferencesIndexRoute,
+  U2iIndexRoute: U2iIndexRoute,
+  EnActualitesSlugRoute: EnActualitesSlugRoute,
+  EnExpertisesSlugRoute: EnExpertisesSlugRoute,
+  EnIndustriesSlugRoute: EnIndustriesSlugRoute,
+  EnPSplatRoute: EnPSplatRoute,
+  EnProjetsSlugRoute: EnProjetsSlugRoute,
+  EnReferencesSlugRoute: EnReferencesSlugRoute,
+  EnU2iSlugRoute: EnU2iSlugRoute,
+  EnActualitesIndexRoute: EnActualitesIndexRoute,
+  EnExpertisesIndexRoute: EnExpertisesIndexRoute,
+  EnIndustriesIndexRoute: EnIndustriesIndexRoute,
+  EnProjetsIndexRoute: EnProjetsIndexRoute,
+  EnReferencesIndexRoute: EnReferencesIndexRoute,
+  EnU2iIndexRoute: EnU2iIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react
 import {
   ChevronDown,
   FileStack,
+  Handshake,
   FolderTree,
   Image as ImageIcon,
   KeyRound,
@@ -60,6 +61,10 @@ const WebsiteSection = lazy(() =>
   import("./sections/website").then((m) => ({ default: m.WebsiteSection })),
 );
 
+const ReferencesSection = lazy(() =>
+  import("./sections/references").then((m) => ({ default: m.ReferencesSection })),
+);
+
 type NavGroup = {
   label: string;
   items: { key: SectionKey; label: string; icon: typeof LayoutDashboard }[];
@@ -90,6 +95,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Site web",
     items: [
       { key: "homepage", label: "Page d'accueil", icon: LayoutTemplate },
+      { key: "references", label: "Références", icon: Handshake },
       { key: "header", label: "En-tête", icon: PanelTop },
       { key: "footer", label: "Pied de page", icon: PanelBottom },
       { key: "settings", label: "Réglages", icon: Settings },
@@ -114,6 +120,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   media: "Médiathèque",
   menus: "Menus",
   homepage: "Page d'accueil",
+  references: "Références clients",
   header: "En-tête du site",
   footer: "Pied de page",
   settings: "Réglages",
@@ -416,6 +423,7 @@ export function AdminDashboard() {
           {section === "media" && <MediaSection ctx={context} />}
           {section === "menus" && <MenusSection ctx={context} />}
           {section === "homepage" && <HomepageSection ctx={context} />}
+          {section === "references" && <ReferencesSection ctx={context} />}
           {section === "header" && <WebsiteSection ctx={context} variant="header" />}
           {section === "footer" && <WebsiteSection ctx={context} variant="footer" />}
           {section === "settings" && <SettingsSection ctx={context} />}

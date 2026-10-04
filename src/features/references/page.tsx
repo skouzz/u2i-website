@@ -1,105 +1,75 @@
-import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { cmsApi, type CmsReference } from "@/lib/cms";
+import { useI18n } from "@/lib/i18n";
+import {
+  BUNDLED_CERTIFICATIONS,
+  BUNDLED_PARTNERS,
+  type BundledReference,
+} from "@/lib/references-bundled";
 import referencesHeroImage from "@/assets/axxair-1.jpg";
-import sanofiLogoImage from "@/assets/partners/Sanofi.png";
-import hikmaLogoImage from "@/assets/partners/LOGO HIKMA.jpg";
-import saiphLogoImage from "@/assets/partners/LOGO SAIPH.png";
-import teriakLogoImage from "@/assets/partners/LOGO TERIAK.png";
-import unimedLogoImage from "@/assets/partners/UNIMED LOGO .png";
-import cevaLogoImage from "@/assets/partners/LOGO_CEVA_SANTE_ANIMALE.jpg";
-import deliceLogoImage from "@/assets/partners/LOGO DELICE.jpg";
-import logoBerg from "@/assets/partners/Berg-Life-Sciences-295x300.jpg";
-import logoEnex from "@/assets/partners/Enex-we-know-how-logo-retina-300x262.png";
-import logoDarEssaydali from "@/assets/partners/LOGO-DAR_ESSAYDALI_94d6073d8c-1-300x280.png";
-import logoMedika from "@/assets/partners/LOGO-MEDIKA-300x269.png";
-import logoMedis from "@/assets/partners/LOGO-MediS-300x264.png";
-import logoSteripharm from "@/assets/partners/LOGO-STERIPHARM-300x268.png";
-import logoPierreFabre from "@/assets/partners/Pierre-fabre-logo-1-300x288.png";
-import logoCogia from "@/assets/partners/cogia-logo.png";
-import logoLmp from "@/assets/partners/logo-LMP-291x300.jpg";
-import logoMeva from "@/assets/partners/logo-MEVA-150x150.jpg";
-import logoPharmaDearm from "@/assets/partners/logo-PHARMA-DEARM-296x300.png";
-import logoAdwya from "@/assets/partners/logo-adwya--300x291.png";
-import logoThera from "@/assets/partners/logo-thera-400-150x150.png";
-import logoOpella from "@/assets/partners/opella-1-300x278.png";
-import logoSartorius from "@/assets/partners/sartorius-logo-vector-2-300x288.png";
-import logoTetrapak from "@/assets/partners/tetrapak-logo-screen-400-150x150.png";
-import logoWinthrop from "@/assets/partners/winthrop-1-300x296.jpg";
-import logoBwt from "@/assets/partners/BWT.png";
-import logoAdvancs from "@/assets/partners/LOGO-ADVANCS-150x150.jpeg";
-import logoDorcas from "@/assets/partners/dorcas-logo-300x225.png";
-
-import cert1 from "@/assets/certif/Certificat-de-formation-Axxair-BOUKER-AMEN-ALLAH_page-0001_001-scaled.jpg";
-import cert2 from "@/assets/certif/Certificat-de-formation-Axxair-IMED-MANFOUKH_page-0001_001-scaled.jpg";
-import cert3 from "@/assets/certif/Certificat-de-formation-Axxair-NABIL-SLAMA_page-0001_001-scaled.jpg";
-import cert4 from "@/assets/certif/CERTIFICATE-9K-UNIVERS-U2I_001.jpg";
-import cert5 from "@/assets/certif/CERTIFICATE-Official-distributor_page-0001_001-scaled.jpg";
-import cert6 from "@/assets/certif/IMG_8071.jpg";
-import cert7 from "@/assets/certif/iso-1.png";
-import cert8 from "@/assets/certif/UIT-officiel-distributeur-_page-0001_001-1.jpg";
-
-const PARTNER_LOGOS = [
-  { title: "Sanofi", image: sanofiLogoImage },
-  { title: "Hikma", image: hikmaLogoImage },
-  { title: "Saiph", image: saiphLogoImage },
-  { title: "Teriak", image: teriakLogoImage },
-  { title: "UNIMED", image: unimedLogoImage },
-  { title: "CEVA Santé Animale", image: cevaLogoImage },
-  { title: "Délice", image: deliceLogoImage },
-  { title: "Berg Life Sciences", image: logoBerg },
-  { title: "Enex", image: logoEnex },
-  { title: "Dar Essaydali", image: logoDarEssaydali },
-  { title: "Medika", image: logoMedika },
-  { title: "MediS", image: logoMedis },
-  { title: "Cogia", image: logoCogia },
-  { title: "LMP", image: logoLmp },
-  { title: "MEVA", image: logoMeva },
-  { title: "Pharma Dearm", image: logoPharmaDearm },
-  { title: "Adwya", image: logoAdwya },
-  { title: "Thera", image: logoThera },
-  { title: "Opella", image: logoOpella },
-  { title: "Sartorius", image: logoSartorius },
-  { title: "Tetrapak", image: logoTetrapak },
-  { title: "Winthrop", image: logoWinthrop },
-  { title: "BWT", image: logoBwt },
-  { title: "Advancs", image: logoAdvancs },
-  { title: "Dorcas", image: logoDorcas },
-  { title: "Steripharm", image: logoSteripharm },
-  { title: "Pierre Fabre", image: logoPierreFabre },
-] as const;
-
-const CERTIFICATIONS = [
-  { title: "Certificat Axxair - Bouker Amen Allah", image: cert1 },
-  { title: "Certificat Axxair - Imed Manfoukh", image: cert2 },
-  { title: "Certificat Axxair - Nabil Slama", image: cert3 },
-  { title: "Certificat 9K Univers U2I", image: cert4 },
-  { title: "Official Distributor Certificate", image: cert5 },
-  { title: "Certification IMG_8071", image: cert6 },
-  { title: "ISO 9001", image: cert7 },
-  { title: "Official Distributor UIT", image: cert8 },
-] as const;
 
 export function ReferencesPage() {
+  const { locale, t } = useI18n();
+
+  // Admin-managed references take over as soon as any are saved; until then the
+  // bundled logo list renders, so the page is never empty.
+  const { data } = useQuery({
+    queryKey: ["cms", "references", locale],
+    queryFn: () => cmsApi.references(locale),
+    staleTime: 60_000,
+  });
+
+  const managed = data?.items ?? [];
+
+  /**
+   * Managed rows and the logos bundled in the JS are MERGED, not alternatives.
+   *
+   * An earlier version returned the managed list whenever it was non-empty and
+   * fell back to the bundled logos only when it was empty — so adding a single
+   * new reference made every pre-existing logo disappear.
+   *
+   * A managed row shadows the bundled logo carrying the same image, whether it
+   * is visible or hidden: that is what lets an admin hide or retitle a logo
+   * that came from the bundle instead of having it silently reappear.
+   */
+  const toGrid = (kind: CmsReference["kind"], fallback: BundledReference[]): BundledReference[] => {
+    const ofKind = managed.filter((r) => r.kind === kind);
+    const shadowed = new Set(ofKind.map((r) => r.imageUrl).filter(Boolean) as string[]);
+
+    const rows: BundledReference[] = ofKind
+      .filter((r) => r.isVisible !== false && r.imageUrl)
+      .map((r) => ({ title: r.title, image: r.imageUrl as string }));
+
+    for (const bundled of fallback) {
+      if (!shadowed.has(bundled.image)) rows.push(bundled);
+    }
+    return rows;
+  };
+
+  const partners = toGrid("partner", BUNDLED_PARTNERS);
+  const certifications = toGrid("certification", BUNDLED_CERTIFICATIONS);
+
   return (
     <div className="min-h-screen bg-[#f5f7f8] text-slate-900">
       <PageHero
         id="references"
-        breadcrumb="Références"
-        eyebrow="Ils nous font confiance"
+        breadcrumb={t("references.hero.eyebrow")}
+        eyebrow={t("references.hero.eyebrow2")}
         title={
           <>
-            Nos
+            {t("references.hero.titleLine1")}
             <br />
-            <span>références.</span>
+            <span>{t("references.hero.titleLine2")}</span>
           </>
         }
-        description="Des partenaires de confiance et des certifications qui témoignent de notre engagement qualité."
-        linkLabel="Découvrir nos partenaires"
+        description={t("references.hero.text")}
+        linkLabel={t("common.discover")}
         linkHref="#partenaires"
         image={referencesHeroImage}
-        imageAlt="Installation inox réalisée par U2I"
+        imageAlt={t("references.alt.hero")}
         imagePosition="center 52%"
       />
 
@@ -109,18 +79,23 @@ export function ReferencesPage() {
             <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e0141c]">
-                  Nos partenaires
+                  {t("references.partners.eyebrow")}
                 </p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-950">Des relations durables</h2>
+                <h2 className="mt-2 text-3xl font-bold text-slate-950">
+                  {t("references.partners.title")}
+                </h2>
               </div>
               <p className="max-w-xl text-sm leading-6 text-slate-600">
-                Des acteurs reconnus de l'industrie et de la santé nous confient leurs projets.
+                {t("references.partners.text")}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {PARTNER_LOGOS.map((partner) => (
+              {partners.map((partner, index) => (
                 <div
-                  key={partner.title}
+                  // Managed rows share no id here, so index the key to survive
+                  // duplicates without React key collisions between the two
+                  // data sources.
+                  key={`${partner.title}-${index}`}
                   className="group flex h-28 items-center justify-center border border-slate-200 bg-white p-4 transition duration-200 hover:border-[#e0141c]/50 hover:shadow-md sm:h-32"
                 >
                   <img
@@ -140,18 +115,20 @@ export function ReferencesPage() {
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e0141c]">
-                  Qualité & conformité
+                  {t("references.quality.eyebrow")}
                 </p>
-                <h2 className="mt-2 text-3xl font-bold text-slate-950">Certifications</h2>
+                <h2 className="mt-2 text-3xl font-bold text-slate-950">
+                  {t("references.quality.title")}
+                </h2>
               </div>
               <p className="max-w-xl text-sm leading-6 text-slate-600">
-                Formations, attestations et homologations au service de réalisations fiables.
+                {t("references.quality.text")}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {CERTIFICATIONS.map((cert, index) => (
+              {certifications.map((cert, index) => (
                 <article
-                  key={cert.title}
+                  key={`${cert.title}-${index}`}
                   className="group overflow-hidden border border-slate-200 bg-[#f8fafb] transition-shadow hover:shadow-lg"
                 >
                   <div className="relative flex h-56 items-center justify-center overflow-hidden bg-white p-4 sm:h-64">

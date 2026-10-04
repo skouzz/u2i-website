@@ -12,26 +12,81 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' :
 $host = $_SERVER['HTTP_HOST'] ?? 'u2iprocess.com';
 $base = $scheme . '://' . $host;
 
-$staticRoutes = ['', '/about', '/secteurs', '/equipements', '/references', '/actualites', '/contact'];
+/*
+ * Static routes.
+ *
+ * This list mirrors the IA in src/lib/site/ia.ts: the five sections with their
+ * children, plus the three standalone pages. It is duplicated rather than
+ * generated because the sitemap is a PHP endpoint that runs without the
+ * frontend build; when a section is added, add its entries here too or the page
+ * will be reachable but unlisted.
+ */
+$staticRoutes = [
+    '',
+    '/industries',
+    '/industries/pharmaceutique',
+    '/industries/biotechnologie',
+    '/industries/agroalimentaire',
+    '/industries/chimie',
+    '/expertises',
+    '/expertises/tuyauterie-process',
+    '/expertises/soudage-orbital',
+    '/expertises/fabrication-inox',
+    '/expertises/ingenierie-conception',
+    '/expertises/eau-purifiee-wfi',
+    '/expertises/vapeur-pure',
+    '/expertises/cip-sip',
+    '/expertises/solutions-sur-mesure',
+    '/equipements',
+    '/projets',
+    '/projets/etudes-ingenierie',
+    '/projets/fabrication',
+    '/projets/installation',
+    '/projets/mise-en-service',
+    '/projets/etudes-de-cas',
+    '/references',
+    '/references/references-clients',
+    '/references/partenaires',
+    '/references/certifications',
+    '/u2i',
+    '/u2i/a-propos',
+    '/u2i/points-forts',
+    '/u2i/savoir-faire',
+    '/actualites',
+    '/contact',
+];
 
 $urls = [];
 foreach ($staticRoutes as $route) {
     $urls[] = ['loc' => $base . '/' . $route, 'lastmod' => date('Y-m-d')];
+    // English mirror: static pages are fully translated in the front-end, so
+    // both locales are always real URLs.
+    $urls[] = ['loc' => $base . '/en' . $route, 'lastmod' => date('Y-m-d')];
 }
 
 try {
     if (is_db_installed()) {
-        $pages = db()->query("SELECT slug, updated_at FROM pages WHERE status = 'published'")->fetchAll();
+        $pages = db()->query("SELECT slug, slug_en, updated_at FROM pages WHERE status = 'published'")->fetchAll();
         foreach ($pages as $p) {
-            $urls[] = ['loc' => $base . '/p/' . rawurlencode($p['slug']), 'lastmod' => substr((string) $p['updated_at'], 0, 10)];
+            $lastmod = substr((string) $p['updated_at'], 0, 10);
+            $urls[] = ['loc' => $base . '/p/' . rawurlencode($p['slug']), 'lastmod' => $lastmod];
+            // Only advertise the English URL when an English slug exists; the
+            // French slug still resolves under /en via server-side fallback,
+            // but a canonical /en URL with no English slug would be a redirect.
+            if (!empty($p['slug_en'])) {
+                $urls[] = ['loc' => $base . '/en/p/' . rawurlencode($p['slug_en']), 'lastmod' => $lastmod];
+            }
         }
-        $articles = db()->query("SELECT slug, updated_at, published_at FROM articles WHERE status = 'published'")->fetchAll();
+        $articles = db()->query("SELECT slug, slug_en, updated_at, published_at FROM articles WHERE status = 'published'")->fetchAll();
         foreach ($articles as $a) {
-            $lastmod = substr((string) ($a['updated_at'] ?: $a['published_at']), 0, 10);
-            $urls[] = ['loc' => $base . '/actualites/' . rawurlencode($a['slug']), 'lastmod' => $lastmod ?: date('Y-m-d')];
+            $lastmod = substr((string) ($a['updated_at'] ?: $a['published_at']), 0, 10) ?: date('Y-m-d');
+            $urls[] = ['loc' => $base . '/actualites/' . rawurlencode($a['slug']), 'lastmod' => $lastmod];
+            if (!empty($a['slug_en'])) {
+                $urls[] = ['loc' => $base . '/en/actualites/' . rawurlencode($a['slug_en']), 'lastmod' => $lastmod];
+            }
         }
     }
-} catch (Throwable) {
+} catch (Throwable $e) {
     // Sitemap stays with static routes when the DB is unavailable.
 }
 

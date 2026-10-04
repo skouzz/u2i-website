@@ -1,12 +1,28 @@
 -- U2I Process — CMS database schema (v2)
 -- phpMyAdmin: select your database → Import → choose this file → Go.
--- (Equivalent to visiting /api/install.php once; safe to re-run thanks to
---  CREATE TABLE IF NOT EXISTS + guarded ALTERs.)
+--
+-- ── Safe to import against an EXISTING database ──────────────────────────
+-- Every statement here is idempotent: CREATE TABLE IF NOT EXISTS, and
+-- INSERT … SELECT … WHERE NOT EXISTS for the seed rows. Importing this file
+-- twice changes nothing and, importantly, creates any table that is missing
+-- while leaving existing data untouched.
+--
+-- This file intentionally contains NO ALTER TABLE statements. MySQL has no
+-- `ADD COLUMN IF NOT EXISTS`, so an unconditional ALTER aborts a phpMyAdmin
+-- import the moment the column already exists (error #1060). The v2 column
+-- migrations therefore live in database/migrations.sql — reference only —
+-- and the supported way to apply them is the installer:
+--
+--     /api/install.php?key=u2i-install-2024
+--
+-- which checks INFORMATION_SCHEMA and skips anything already applied.
+--
+-- Prefer the installer whenever you can: it is the only path that upgrades
+-- an existing database correctly.
 --
 -- v2 additions: menus + menu_items, categories, tags, article_tags,
--- content_blocks (homepage builder), content_revisions, activity_log,
--- users table (roles ready), SEO fields on pages/articles, scheduled
--- publication, media metadata. Existing data is preserved.
+-- content_blocks (homepage builder), site_references, content_revisions,
+-- activity_log, SEO fields, scheduled publication, media metadata.
 
 CREATE TABLE IF NOT EXISTS settings (
     id TINYINT UNSIGNED PRIMARY KEY,
@@ -123,6 +139,11 @@ CREATE TABLE IF NOT EXISTS menu_items (
     sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     is_enabled TINYINT(1) NOT NULL DEFAULT 1,
     opens_new_tab TINYINT(1) NOT NULL DEFAULT 0,
+    -- English label per item. Without this column menu labels could only ever
+    -- be French: cms.php already applies I18N_MENU_FIELDS and admin.php already
+    -- reports translation coverage for menu_items, but both read a column that
+    -- was never created, so every /en menu fell back to the FR label.
+    i18n_json JSON NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_menu_items_menu FOREIGN KEY (menu_id) REFERENCES menus(id) ON DELETE CASCADE,
     CONSTRAINT fk_menu_items_parent FOREIGN KEY (parent_id) REFERENCES menu_items(id) ON DELETE CASCADE,
@@ -171,6 +192,23 @@ CREATE TABLE IF NOT EXISTS content_blocks (
     INDEX idx_content_blocks (is_visible, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Client references shown on /references: partner logos + certifications.
+-- Named site_references because REFERENCES is a reserved word in MySQL and
+-- would need backticks in every query.
+CREATE TABLE IF NOT EXISTS site_references (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
+    title VARCHAR(255) NOT NULL,
+    image_url VARCHAR(500) NULL,
+    website_url VARCHAR(500) NULL,
+    sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    is_visible TINYINT(1) NOT NULL DEFAULT 1,
+    i18n_json JSON NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_site_references (kind, is_visible, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Content revisions (restore point for pages & articles).
 CREATE TABLE IF NOT EXISTS content_revisions (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
@@ -194,50 +232,8 @@ CREATE TABLE IF NOT EXISTS activity_log (
     INDEX idx_activity_recent (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ───────────────────── column migrations (upgrades) ─────────────────────────
--- NOTE for phpMyAdmin imports on an EXISTING database: plain ALTERs abort the
--- import when a column already exists. For upgrades, prefer the PHP installer
--- /api/install.php which skips already-applied changes. On a FRESH database
--- this file works as-is. is_published stays a real column, kept in sync with
--- status by the PHP layer (status='published' ⇔ is_published=1).
-
--- Pages: SEO + scheduling + hierarchy + parent + template blocks.
-ALTER TABLE pages
-    ADD COLUMN parent_id INT UNSIGNED NULL,
-    ADD COLUMN seo_json JSON NULL,
-    ADD COLUMN published_at DATETIME NULL,
-    ADD COLUMN scheduled_at DATETIME NULL,
-    ADD COLUMN status ENUM('draft','pending','scheduled','published','archived') NOT NULL DEFAULT 'draft',
-    ADD COLUMN updated_by VARCHAR(120) NULL,
-    ADD CONSTRAINT fk_pages_parent FOREIGN KEY (parent_id) REFERENCES pages(id) ON DELETE SET NULL,
-    ADD INDEX idx_pages_pub (is_published, published_at),
-    ADD INDEX idx_pages_sched (scheduled_at);
-
--- Articles: category + SEO + scheduling + revisions metadata.
-ALTER TABLE articles
-    ADD COLUMN category_id INT UNSIGNED NULL,
-    ADD COLUMN seo_json JSON NULL,
-    ADD COLUMN scheduled_at DATETIME NULL,
-    ADD COLUMN status ENUM('draft','pending','scheduled','published','archived') NOT NULL DEFAULT 'draft',
-    ADD COLUMN updated_by VARCHAR(120) NULL,
-    ADD CONSTRAINT fk_articles_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
-    ADD INDEX idx_articles_sched (scheduled_at);
-
--- Media: metadata.
-ALTER TABLE media
-    ADD COLUMN title VARCHAR(255) NULL,
-    ADD COLUMN alt_text VARCHAR(500) NULL,
-    ADD COLUMN caption VARCHAR(500) NULL,
-    ADD COLUMN description TEXT NULL,
-    ADD INDEX idx_media_created (created_at);
-
--- Settings: header/footer/seo/social JSON mirrors of site_config.
-ALTER TABLE settings
-    ADD COLUMN header_json JSON NULL,
-    ADD COLUMN footer_json JSON NULL,
-    ADD COLUMN seo_json JSON NULL,
-    ADD COLUMN social_json JSON NULL,
-    ADD COLUMN home_json JSON NULL;
+-- ───────────────────────────── seed rows ──────────────────────────────────
+-- Each guarded with WHERE NOT EXISTS so re-importing is a no-op.
 
 -- Site config row (single-row table).
 INSERT INTO site_config (id) SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM site_config WHERE id = 1);

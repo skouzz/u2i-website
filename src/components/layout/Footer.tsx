@@ -1,16 +1,11 @@
-import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-react";
 import logoImage from "@/assets/logo-u2i-removebg-preview.png";
-import { cmsApi, type CmsArticle, type CmsNavItem, type CmsSettings } from "@/lib/cms";
-
-const FALLBACK_FOOTER_LINKS: { label: string; url: string }[] = [
-  { label: "Qui sommes nous", url: "/about" },
-  { label: "Secteurs", url: "/secteurs" },
-  { label: "Equipements", url: "/equipements" },
-  { label: "References", url: "/references" },
-  { label: "Contact", url: "/contact" },
-];
+import type { CmsNavItem } from "@/lib/cms";
+import { useCmsArticles, useCmsFooterMenu, useCmsSettings } from "@/lib/cms-queries";
+import { useI18n } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/lib/i18n/LanguageSwitcher";
+import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
+import { buildNavigation } from "@/lib/site/navigation";
 
 const SOCIALS = [
   { key: "facebook", label: "Facebook", Icon: Facebook },
@@ -20,38 +15,32 @@ const SOCIALS = [
 ] as const;
 
 export function Footer() {
-  const [settings, setSettings] = useState<CmsSettings | null>(null);
-  const [footerLinks, setFooterLinks] = useState<{ label: string; url: string }[]>([]);
-  const [latest, setLatest] = useState<CmsArticle[]>([]);
+  const { locale, t, link } = useI18n();
+  // Same shared cache the Navbar and the home page read from, so these three
+  // responses are each fetched once per locale rather than once per mount.
+  const { data: settingsData } = useCmsSettings(locale);
+  const { data: footerMenuData } = useCmsFooterMenu(locale);
+  const { data: articlesData } = useCmsArticles(locale);
 
-  useEffect(() => {
-    let alive = true;
-    cmsApi
-      .settings()
-      .then((res) => alive && setSettings(res.settings))
-      .catch(() => undefined);
-    cmsApi
-      .footerMenu()
-      .then((res) => {
-        if (!alive) return;
-        setFooterLinks(
-          (res.items ?? [])
-            .filter((item) => item.label)
-            .map((item) => ({
-              label: item.label,
-              url: item.url ?? (item.slug ? `/p/${item.slug}` : "#"),
-            })),
-        );
-      })
-      .catch(() => undefined);
-    cmsApi
-      .articles()
-      .then((res) => alive && setLatest((res.items ?? []).slice(0, 2)))
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const settings = settingsData?.settings ?? null;
+  const footerLinks = (footerMenuData?.items ?? [])
+    .filter((item) => item.label)
+    .map((item) => ({
+      label: item.label,
+      url: item.url ?? (item.slug ? `/p/${item.slug}` : "#"),
+    }));
+  const latest = (articlesData?.items ?? []).slice(0, 2);
+
+  /**
+   * Footer columns come from the IA unless the dashboard supplies its own menu.
+   *
+   * The IA drives both, so a section added there shows up in the footer for
+   * free — the previous hard-coded list had to be edited by hand and silently
+   * kept advertising /secteurs after the page had moved to /industries.
+   */
+  const iaLinks = buildNavigation(locale)
+    .filter((item) => item.kind === "link" && item.path !== "/")
+    .map((item) => ({ label: item.label, url: item.path }));
 
   const footer = settings?.footer_json;
   const social = settings?.social_json;
@@ -61,7 +50,7 @@ export function Footer() {
   const address = settings?.address || "Akouda, Sousse — Tunisie";
   const copyright =
     footer?.copyright || `© ${new Date().getFullYear()} ${siteName} — Univers Inox Industriel`;
-  const links = footerLinks.length ? footerLinks : FALLBACK_FOOTER_LINKS;
+  const links = footerLinks.length ? footerLinks : iaLinks;
 
   return (
     <footer className="border-t border-white/10 bg-black pt-20 text-white">
@@ -81,9 +70,9 @@ export function Footer() {
               `${siteName} Group`
             )}
           </div>
-          <div className="flex flex-wrap gap-6 text-sm font-bold">
+          <div className="flex flex-wrap items-center gap-6 text-sm font-bold">
             {links.map((l) => (
-              <a key={l.label} href={l.url} className="hover:text-primary">
+              <a key={l.label} href={link(l.url)} className="hover:text-primary">
                 {l.label}
               </a>
             ))}
@@ -93,17 +82,16 @@ export function Footer() {
         <div className="grid gap-14 py-14 md:grid-cols-2">
           <div>
             <h4 className="mb-6 text-xs font-bold uppercase tracking-[0.14em] text-white/50">
-              Dernières actualités
+              {locale === "en" ? "Latest news" : "Dernières actualités"}
             </h4>
             <ul className="space-y-4">
               {latest.length === 0 ? (
-                <li className="py-3 text-sm text-white/50">Aucune actualité pour le moment.</li>
+                <li className="py-3 text-sm text-white/50">{t("news.list.empty")}</li>
               ) : (
                 latest.map((article) => (
                   <li key={article.id}>
-                    <Link
-                      to="/actualites/$slug"
-                      params={{ slug: article.slug }}
+                    <LocalizedLink
+                      to={`/actualites/${locale === "en" ? (article.slugEn ?? article.slug) : article.slug}`}
                       className="flex items-center justify-between border-b border-white/10 py-3 text-sm hover:text-primary"
                     >
                       <span className="font-semibold">{article.title}</span>
@@ -112,7 +100,7 @@ export function Footer() {
                           ? article.publishedAt.slice(0, 10).split("-").reverse().join(".")
                           : ""}
                       </span>
-                    </Link>
+                    </LocalizedLink>
                   </li>
                 ))
               )}
@@ -121,7 +109,7 @@ export function Footer() {
 
           <div>
             <h4 className="mb-6 text-xs font-bold uppercase tracking-[0.14em] text-white/50">
-              Contact
+              {t("footer.contact")}
             </h4>
             {footer?.description ? (
               <p className="mb-4 max-w-md text-sm text-white/70">{footer.description}</p>
@@ -146,7 +134,7 @@ export function Footer() {
 
         <div className="flex flex-col items-start justify-between gap-6 border-t border-white/10 py-8 md:flex-row md:items-center">
           <div className="flex items-center gap-3">
-            <span className="mr-2 text-xs text-white/50">{phone}</span>
+            <LanguageSwitcher tone="dark" />
             {SOCIALS.map(({ key, label, Icon }) => {
               const href = social?.[key];
               if (!href) return null;
@@ -163,6 +151,7 @@ export function Footer() {
                 </a>
               );
             })}
+            <span className="ml-2 text-xs text-white/50">{phone}</span>
           </div>
         </div>
 

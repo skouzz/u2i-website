@@ -50,3 +50,5 @@ public/api/config.local.php
 public/api/uploads/
 public/api/cache/
 
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

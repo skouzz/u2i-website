@@ -13,6 +13,13 @@ Built with **React 19, TanStack Start/Router, Tailwind CSS 4** (front-end) and *
 >
 > **Upgrading an existing install:** re-run `/api/install.php?key=u2i-install-2024` once —
 > it applies all v2 tables/columns idempotently without touching existing data.
+>
+> `database/schema.sql` contains only `CREATE TABLE IF NOT EXISTS` and guarded
+> seed inserts, so it is safe to import into an existing database (it creates any
+> missing table and changes nothing else). The v2 `ALTER` statements live in
+> `database/migrations.sql` for reference — never import that file, because
+> MySQL has no `ADD COLUMN IF NOT EXISTS` and the import will abort with error
+> #1060 the moment a column already exists.
 
 This README explains **exactly** how to run the project, step by step.
 
@@ -87,7 +94,7 @@ The rest of this guide assumes that folder name.
 1. Open `http://localhost/phpmyadmin`
 2. Click **New** in the left sidebar → database name: **`u2i_cms`** → collation `utf8mb4_unicode_ci` → **Create**
 3. Select the `u2i_cms` database → **Import** tab → choose the file **`database/schema.sql`** from the project → **Go**
-4. You should see 7 tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `admins`
+4. You should see the tables appear: `settings`, `pages`, `page_blocks`, `articles`, `media`, `contact_messages`, `admins`, plus the v2 tables (`menus`, `menu_items`, `categories`, `tags`, `article_tags`, `content_blocks`, `site_references`, `content_revisions`, `activity_log`, `site_config`). Re-running this import is safe.
 
 #### B4. Create the local PHP config
 
@@ -190,20 +197,34 @@ At this point everything works except CMS/DB features (steps 5–7 enable them).
 
 ## 6. Configure the back-end
 
-Edit `public/api/config.php` (top of the file) — the production values:
+**No credential belongs in `public/api/config.php`** — that file is committed to
+git. Create `public/api/config.local.php` (git-ignored, blocked from HTTP by
+`.htaccess`) by copying the template:
 
-```php
-const DB_HOST = 'u2iprocesscom.mysql.db';   // from step 5.4
-const DB_NAME = 'u2iprocesscomdb';
-const DB_USER = 'u2iprocesscomdb';
-const DB_PASS = 'YOUR_REAL_PASSWORD';       // ← never commit the real one
+```bash
+cp public/api/config.local.example.php public/api/config.local.php
 ```
 
-> Local development never touches `config.php` — values from `public/api/config.local.php` (XAMPP) override it at runtime.
+Then fill in the four values from step 5:
+
+```php
+define('DB_HOST', 'your-account.mysql.db');  // from step 5.4
+define('DB_NAME', 'yourprefix_yourdbname');
+define('DB_USER', 'yourprefix_yourdbname');
+define('DB_PASS', 'your-real-password');
+```
+
+> Credentials are resolved in this order: `config.local.php` first, then the
+> `DB_HOST` / `DB_NAME` / `DB_USER` / `DB_PASS` environment variables. If
+> neither provides a value the API answers with a clear "Configuration MySQL
+> manquante" error instead of failing obscurely.
+
+> Local development uses the same `public/api/config.local.php` file as production
+> — keep a local copy with the XAMPP values, and never commit it (it is git-ignored).
 
 **Admin account:** no default password exists. On the **first login** at `/admin`, the dashboard shows a one-time **account creation** form (like WordPress): choose your identifiant and a password (min. 8 chars) — it is stored bcrypt-hashed in the `admins` table. You can change it later under _Mon compte_.
 
-Then **re-upload `public/api/config.php`** to `www/api/` on the server.
+Then **upload `public/api/config.local.php`** (your own, git-ignored copy) to `www/api/` on the server. `config.php` itself holds no credentials.
 
 Optional — better e-mail deliverability: set `PLUNK_API_KEY` at the top of `public/api/contact.php` ([Plunk](https://useplunk.com)). Without it, OVH `mail()` is used.
 
@@ -375,7 +396,7 @@ Change your own password: current password + new one (min. 8 characters) → **E
 | Page refresh on `/contact` gives a 404        | `.htaccess` is missing on the server (hidden file — enable "show hidden files" in FileZilla).                                                                                                                                   |
 | News page says the CMS is not installed       | You skipped step 7.1 (run `/api/install.php?key=…` once).                                                                                                                                                                       |
 | Admin login fails with correct credentials    | The account was created before a schema change — re-run `/api/install.php?key=…` (it does not overwrite data) or reset the account in phpMyAdmin: `DELETE FROM admins;` then reload `/admin` to recreate it via the setup form. |
-| `{"ok":false,…}` from `/api/cms.php` or a 503 | DB constants in `config.php` are wrong, or the database isn't created yet (step 5).                                                                                                                                             |
+| `{"ok":false,…}` from `/api/cms.php` or a 503 | `config.local.php` is missing on the server or holds wrong DB values, or the database isn't created yet (step 5). The message "Configuration MySQL manquante" means the file is absent. |
 | Contact form says "Impossible d'envoyer…"     | OVH `mail()` is limited on some offers — set up a [Plunk](https://useplunk.com) API key (step 6) or check with OVH support.                                                                                                     |
 | Uploaded images don't appear                  | Check `www/api/uploads/` exists and is writable (OVH default is fine; re-upload creates it).                                                                                                                                    |
 | White page after deploy                       | You uploaded the `client` folder itself instead of its **contents** (step 4.4).                                                                                                                                                 |
@@ -388,7 +409,8 @@ Change your own password: current password + new one (min. 8 characters) → **E
 public/
 ├── .htaccess                  Apache rules (SPA fallback, gzip, cache, security)
 └── api/
-    ├── config.php             DB constants, PDO, sessions, CSRF, uploads
+    ├── config.php             PDO, sessions, CSRF, uploads (NO credentials)
+    ├── config.local.php       Your DB credentials (git-ignored, copy of the example)
     ├── install.php            One-time table installer (delete after use)
     ├── cms.php                Public read-only content API
     ├── admin.php              Authenticated admin API (session + CSRF)

@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Clock3, Loader2, Mail, MapPin, Phone } from "lucide-react";
 
 import { PageHero } from "@/components/PageHero";
+import { useI18n } from "@/lib/i18n";
 import workshopImage from "@/assets/about-workshop.jpg";
 
 import "./contact.css";
@@ -16,6 +17,7 @@ type SubmitState =
 const CONTACT_ENDPOINT = "/api/contact.php";
 
 export function ContactPage() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
 
@@ -50,21 +52,19 @@ export function ContactPage() {
       if (response.ok && payload?.ok) {
         setSubmitState({
           status: "success",
-          message: payload.message ?? "Merci ! Votre message a bien été envoyé.",
+          message: payload.message ?? t("contact.form.success"),
         });
         form.reset();
       } else {
         setSubmitState({
           status: "error",
-          message:
-            payload?.message ??
-            "Une erreur est survenue. Merci de réessayer ou d’écrire directement à u2i@u2iprocess.com.",
+          message: payload?.message ?? t("contact.form.error"),
         });
       }
     } catch {
       setSubmitState({
         status: "error",
-        message: "Connexion impossible. Vérifiez votre accès réseau puis réessayez.",
+        message: t("contact.form.offline"),
       });
     }
   };
@@ -73,30 +73,32 @@ export function ContactPage() {
     <main className="contact-page">
       <PageHero
         id="contact"
-        breadcrumb="Contact"
-        eyebrow="Une équipe à votre écoute"
+        breadcrumb={t("contact.hero.eyebrow")}
+        eyebrow={t("contact.hero.eyebrow2")}
         title={
           <>
-            Parlons
+            {t("contact.hero.titleLine1")}
             <br />
-            <span>de votre projet.</span>
+            <span>{t("contact.hero.titleLine2")}</span>
           </>
         }
-        description="Une question, un besoin en tuyauterie ou un projet à construire ? Nous sommes là pour en parler."
-        linkLabel="Nos coordonnées"
+        description={t("contact.hero.text")}
+        linkLabel={t("contact.info.title")}
         linkHref="#coordonnees"
         image={workshopImage}
-        imageAlt="L’atelier de fabrication U2I à Akouda"
+        imageAlt={t("contact.alt.workshop")}
       />
 
       <section className="contact-main" id="coordonnees">
         <div className="contact-wrap">
           <div className="contact-main__heading">
-            <span className="contact-eyebrow contact-eyebrow--dark">Contact direct</span>
+            <span className="contact-eyebrow contact-eyebrow--dark">
+              {t("contact.info.heading")}
+            </span>
             <h2>
-              Le bon contact,
+              {t("contact.info.titleLine1")}
               <br />
-              au bon moment.
+              {t("contact.info.titleLine2")}
             </h2>
           </div>
 
@@ -109,16 +111,16 @@ export function ContactPage() {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5 }}
             >
-              <h3 id="contact-details-title">Coordonnées</h3>
+              <h3 id="contact-details-title">{t("contact.info.title")}</h3>
               <a className="contact-detail" href="tel:+21650191004">
                 <span className="contact-detail__icon">
                   <Phone size={19} aria-hidden="true" />
                 </span>
                 <span>
-                  <small>Téléphone</small>
+                  <small>{t("contact.info.phone")}</small>
                   <strong>+216 50 191 004</strong>
                   <em>
-                    Appeler notre équipe <ArrowUpRight size={13} aria-hidden="true" />
+                    {t("contact.info.callTeam")} <ArrowUpRight size={13} aria-hidden="true" />
                   </em>
                 </span>
               </a>
@@ -127,10 +129,10 @@ export function ContactPage() {
                   <Mail size={19} aria-hidden="true" />
                 </span>
                 <span>
-                  <small>E-mail</small>
+                  <small>{t("contact.info.emailLabel")}</small>
                   <strong>u2i@u2iprocess.com</strong>
                   <em>
-                    Écrire à U2I <ArrowUpRight size={13} aria-hidden="true" />
+                    {t("contact.info.writeUs")} <ArrowUpRight size={13} aria-hidden="true" />
                   </em>
                 </span>
               </a>
@@ -139,14 +141,14 @@ export function ContactPage() {
                   <MapPin size={19} aria-hidden="true" />
                 </span>
                 <span>
-                  <small>Siège social</small>
-                  <strong>Akouda, Sousse</strong>
-                  <em>Tunisie</em>
+                  <small>{t("contact.info.hq")}</small>
+                  <strong>{t("contact.info.hqValue")}</strong>
+                  <em>{t("contact.info.country")}</em>
                 </span>
               </div>
               <div className="contact-hours">
                 <Clock3 size={16} aria-hidden="true" />
-                <span>Du lundi au vendredi</span>
+                <span>{t("contact.hours.days")}</span>
                 <strong>08:00 — 17:00</strong>
               </div>
             </motion.section>
@@ -161,8 +163,8 @@ export function ContactPage() {
             >
               <div className="contact-form-section__heading">
                 <div>
-                  <span>01 / NOUVELLE DEMANDE</span>
-                  <h3 id="contact-form-title">Dites-nous tout.</h3>
+                  <span>{t("contact.form.eyebrow")}</span>
+                  <h3 id="contact-form-title">{t("contact.form.heading")}</h3>
                 </div>
               </div>
               <form className="contact-form" onSubmit={handleSubmit}>
@@ -177,54 +179,58 @@ export function ContactPage() {
                 />
                 <div className="contact-form__row">
                   <label>
-                    Prénom
+                    {t("contact.form.firstName")}
                     <input
                       name="firstName"
                       autoComplete="given-name"
-                      placeholder="Votre prénom"
+                      placeholder={t("contact.form.phFirst")}
                       required
                     />
                   </label>
                   <label>
-                    Nom
+                    {t("contact.form.lastName")}
                     <input
                       name="lastName"
                       autoComplete="family-name"
-                      placeholder="Votre nom"
+                      placeholder={t("contact.form.phLast")}
                       required
                     />
                   </label>
                 </div>
                 <div className="contact-form__row">
                   <label>
-                    E-mail professionnel
+                    {t("contact.form.emailLabel")}
                     <input
                       name="email"
                       type="email"
                       autoComplete="email"
-                      placeholder="nom@entreprise.com"
+                      placeholder={t("contact.form.phEmail")}
                       required
                     />
                   </label>
                   <label>
-                    Société <span>(facultatif)</span>
+                    {t("contact.form.company")} <span>{t("contact.form.optional")}</span>
                     <input
                       name="company"
                       autoComplete="organization"
-                      placeholder="Nom de la société"
+                      placeholder={t("contact.form.phCompany")}
                     />
                   </label>
                 </div>
                 <label>
-                  Sujet
-                  <input name="subject" placeholder="En quelques mots" required />
+                  {t("contact.form.subject")}
+                  <input
+                    name="subject"
+                    placeholder={t("contact.form.phSubject")}
+                    required
+                  />
                 </label>
                 <label>
-                  Votre message
+                  {t("contact.form.messageLabel")}
                   <textarea
                     name="message"
                     rows={4}
-                    placeholder="Parlez-nous de votre besoin…"
+                    placeholder={t("contact.form.phMessage")}
                     required
                   />
                 </label>
@@ -233,11 +239,11 @@ export function ContactPage() {
                     {submitState.status === "submitting" ? (
                       <>
                         <Loader2 size={16} className="contact-form__spinner" aria-hidden="true" />
-                        Envoi en cours…
+                        {t("contact.form.sending")}
                       </>
                     ) : (
                       <>
-                        Envoyer le message <ArrowRight size={17} aria-hidden="true" />
+                        {t("contact.form.submit")} <ArrowRight size={17} aria-hidden="true" />
                       </>
                     )}
                   </button>
@@ -262,12 +268,14 @@ export function ContactPage() {
         <div className="contact-wrap">
           <div className="contact-location__heading">
             <div>
-              <span className="contact-eyebrow contact-eyebrow--dark">Nous trouver</span>
+              <span className="contact-eyebrow contact-eyebrow--dark">
+                {t("contact.location.eyebrow")}
+              </span>
             </div>
           </div>
           <div className="contact-map">
             <iframe
-              title="Localisation d’Univers Inox Industriel à Akouda, Sousse"
+              title={t("contact.location.title")}
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25864.77929716165!2d10.5775104!3d35.8711296!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd8a3269a9e77b%3A0xe2adfdb4979a6bdc!2sUnivers%20Inox%20Industriel%20U2I!5e0!3m2!1sfr!2stn!4v1784619191195!5m2!1sfr!2stn"
               loading="lazy"
               referrerPolicy="strict-origin-when-cross-origin"
@@ -275,7 +283,7 @@ export function ContactPage() {
             />
             <div className="contact-map__label">
               <MapPin size={17} aria-hidden="true" />
-              <span>U2I · Akouda, Sousse</span>
+              <span>{t("contact.location.caption")}</span>
             </div>
           </div>
         </div>

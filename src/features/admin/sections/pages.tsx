@@ -24,6 +24,7 @@ import type { AdminCtx } from "../types";
 import { BlockFields } from "../components/block-fields";
 import { MediaPicker } from "../components/media-picker";
 import { RevisionsDialog, SeoFields, StatusFields } from "../components/editor-fields";
+import { TranslationBadge, TranslationFields } from "../components/translation-fields";
 
 export function PagesSection({ ctx }: { ctx: AdminCtx }) {
   const [pages, setPages] = useState<CmsPage[]>([]);
@@ -197,6 +198,10 @@ export function PagesSection({ ctx }: { ctx: AdminCtx }) {
                         ? "Archivée"
                         : "Brouillon"}
               </span>
+              <TranslationBadge
+                isTranslated={page.isTranslated}
+                missing={page.missingTranslation}
+              />
               {page.navLabel ? (
                 <span className="admin-row__meta">· menu : {page.navLabel}</span>
               ) : null}
@@ -283,6 +288,11 @@ function PageForm({
   const [status, setStatus] = useState<CmsStatus>(page?.status ?? "draft");
   const [scheduledAt, setScheduledAt] = useState((page?.scheduledAt ?? "").slice(0, 16));
   const [seo, setSeo] = useState<CmsSeo>(page?.seo ?? {});
+  const [slugEn, setSlugEn] = useState(page?.slugEn ?? "");
+  const [i18n, setI18n] = useState<Record<string, Record<string, string>>>(
+    page?.i18n ?? {},
+  );
+  const [missing, setMissing] = useState<string[]>(page?.missingTranslation ?? []);
   const [blocks, setBlocks] = useState<NonNullable<AdminPagePayload["blocks"]>>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -306,9 +316,13 @@ function PageForm({
             imageUrl: b.imageUrl ?? "",
             images: b.images ?? [],
             isVisible: b.isVisible !== false,
+            i18n: b.i18n ?? {},
           })),
         );
         setSlug(res.page.slug);
+        setSlugEn(res.page.slugEn ?? "");
+        setI18n(res.page.i18n ?? {});
+        setMissing(res.page.missingTranslation ?? []);
         setEyebrow(res.page.eyebrow ?? "");
         setHeroTitle(res.page.heroTitle ?? "");
         setHeroText(res.page.heroText ?? "");
@@ -331,6 +345,7 @@ function PageForm({
     const payload: AdminPagePayload = {
       title,
       slug: slug || undefined,
+      slugEn: slugEn || undefined,
       eyebrow,
       heroTitle,
       heroText,
@@ -341,6 +356,7 @@ function PageForm({
       status,
       scheduledAt: status === "scheduled" ? scheduledAt : undefined,
       seo,
+      i18n,
       blocks: blocks ?? [],
     };
 
@@ -429,6 +445,35 @@ function PageForm({
           if (patch.status !== undefined) setStatus(patch.status);
           if (patch.scheduledAt !== undefined) setScheduledAt(patch.scheduledAt);
         }}
+      />
+
+      <TranslationFields
+        slugEn={{ value: slugEn, onChange: setSlugEn, frenchSlug: slug }}
+        fields={[
+          { key: "title", label: "Titre", source: title, value: i18n.en?.title ?? "" },
+          { key: "eyebrow", label: "Surtitre", source: eyebrow, value: i18n.en?.eyebrow ?? "" },
+          {
+            key: "heroTitle",
+            label: "Titre du bandeau",
+            source: heroTitle,
+            value: i18n.en?.heroTitle ?? "",
+          },
+          {
+            key: "heroText",
+            label: "Texte du bandeau",
+            source: heroText,
+            value: i18n.en?.heroText ?? "",
+            multiline: true,
+          },
+          {
+            key: "navLabel",
+            label: "Libellé dans le menu",
+            source: navLabel,
+            value: i18n.en?.navLabel ?? "",
+          },
+        ]}
+        onChange={setI18n}
+        missing={missing}
       />
 
       <SeoFields seo={seo} onChange={setSeo} />

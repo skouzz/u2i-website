@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { cmsApi, type CmsHomeBlock } from "@/lib/cms";
+import { useCmsArticles } from "@/lib/cms-queries";
+import { useI18n } from "@/lib/i18n";
 import { DefaultHomePage } from "./default-page";
 
 /**
@@ -8,9 +10,10 @@ import { DefaultHomePage } from "./default-page";
  * (Homepage builder), otherwise falls back to the original designed homepage.
  */
 export function HomePage() {
+  const { locale } = useI18n();
   const { data, isLoading } = useQuery({
-    queryKey: ["cms", "home"],
-    queryFn: cmsApi.home,
+    queryKey: ["cms", "home", locale],
+    queryFn: () => cmsApi.home(locale),
     staleTime: 60_000,
     retry: 1,
   });
@@ -39,6 +42,7 @@ function CmsHomePage({ blocks }: { blocks: CmsHomeBlock[] }) {
 }
 
 function HomeBlock({ block }: { block: CmsHomeBlock }) {
+  const { t, link } = useI18n();
   const config = block.config ?? {};
   const items = Array.isArray(config.items) ? (config.items as Record<string, string>[]) : [];
   const buttonLabel = String(config.buttonLabel ?? "");
@@ -302,8 +306,8 @@ function HomeBlock({ block }: { block: CmsHomeBlock }) {
           <div className="wrap text-center">
             <h2 className="text-3xl font-black text-neutral-900">{block.title}</h2>
             {block.body ? <p className="mt-3 text-neutral-600">{block.body}</p> : null}
-            <a href="/contact" className="btn btn-red mt-8 inline-flex">
-              Nous contacter
+            <a href={link("/contact")} className="btn btn-red mt-8 inline-flex">
+              {t("common.contactUs")}
             </a>
           </div>
         </section>
@@ -319,11 +323,10 @@ function HomeBlock({ block }: { block: CmsHomeBlock }) {
 }
 
 function HomeArticlesBlock({ title }: { title?: string | null }) {
-  const { data } = useQuery({
-    queryKey: ["cms", "articles"],
-    queryFn: cmsApi.articles,
-    staleTime: 60_000,
-  });
+  const { locale, t, link } = useI18n();
+  // Shares its key with the Footer, so landing on the home page no longer
+  // triggers the same article list twice.
+  const { data } = useCmsArticles(locale);
 
   const articles = (data?.items ?? []).slice(0, 3);
 
@@ -333,13 +336,13 @@ function HomeArticlesBlock({ title }: { title?: string | null }) {
     <section className="section-paper">
       <div className="wrap">
         <h2 className="mb-10 text-center text-3xl font-black text-neutral-900">
-          {title ?? "Dernières actualités"}
+          {title ?? t("news.hero.title")}
         </h2>
         <div className="grid gap-6 md:grid-cols-3">
           {articles.map((article) => (
             <a
               key={article.id}
-              href={`/actualites/${article.slug}`}
+              href={link(`/actualites/${locale === "en" ? (article.slugEn ?? article.slug) : article.slug}`)}
               className="group block overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition hover:shadow-lg"
             >
               {article.coverImageUrl ? (

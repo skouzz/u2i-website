@@ -7,6 +7,7 @@ import {
   EyeOff,
   GripVertical,
   ImagePlus,
+  Languages,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -375,6 +376,76 @@ export function BlockFields({
                 />
               </label>
             </div>
+          ) : null}
+
+          {/* Per-block English override. Only text blocks carry translatable
+              strings; images, galleries and spacers are language-neutral. */}
+          {block.type !== "gallery" &&
+          block.type !== "contact_info" &&
+          block.type !== "spacer" &&
+          block.type !== "button" ? (
+            <details
+              style={{
+                border: "1px dashed #d1d5db",
+                borderRadius: 8,
+                padding: "8px 10px",
+                background: "#fafafa",
+              }}
+            >
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#414849",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Languages size={12} /> English text
+                {block.i18n?.en && Object.keys(block.i18n.en).length > 0 ? (
+                  <span className="admin-badge admin-badge--ok">EN</span>
+                ) : (
+                  <span className="admin-badge admin-badge--muted">FR only</span>
+                )}
+              </summary>
+              <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+                {block.type !== "image" ? (
+                  <label>
+                    English title
+                    <input
+                      value={block.i18n?.en?.title ?? ""}
+                      onChange={(e) =>
+                        update(index, {
+                          i18n: {
+                            ...block.i18n,
+                            en: { ...block.i18n?.en, title: e.target.value },
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ) : null}
+                {block.type === "text" || block.type === "quote" || block.type === "html" ? (
+                  <label>
+                    English body
+                    <textarea
+                      rows={4}
+                      value={block.i18n?.en?.body ?? ""}
+                      onChange={(e) =>
+                        update(index, {
+                          i18n: {
+                            ...block.i18n,
+                            en: { ...block.i18n?.en, body: e.target.value },
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ) : null}
+              </div>
+            </details>
           ) : null}
         </fieldset>
       ))}

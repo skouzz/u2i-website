@@ -25,7 +25,7 @@ function column_exists(PDO $pdo, string $table, string $column): bool
         $stmt->execute([$table, $column]);
 
         return (int) $stmt->fetch()['c'] > 0;
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         return false;
     }
 }
@@ -42,6 +42,42 @@ function ensure_column(PDO $pdo, string $table, string $column, string $definiti
         $results['migrated'][] = "{$table}.{$column}";
     } catch (Throwable $e) {
         $results['failed'][] = ['sql' => "{$table}.{$column}", 'error' => $e->getMessage()];
+    }
+}
+
+/**
+ * Widen site_references.kind so it accepts 'client' alongside 'partner' and
+ * 'certification'.
+ *
+ * Widening an ENUM keeps every existing row valid, so this is safe to run on a
+ * live database. Guarded on the current definition so re-running the installer
+ * is a no-op rather than a second pointless ALTER.
+ */
+function ensure_reference_kind(PDO $pdo): void
+{
+    global $results;
+    try {
+        $row = $pdo->query(
+            "SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'site_references' AND COLUMN_NAME = 'kind'"
+        )->fetchColumn();
+    } catch (Throwable $e) {
+        $results['failed'][] = ['sql' => 'site_references.kind', 'error' => $e->getMessage()];
+        return;
+    }
+
+    if ($row === false || $row === null || strpos((string) $row, "'client'") !== false) {
+        return;
+    }
+
+    try {
+        $pdo->exec(
+            "ALTER TABLE site_references
+             MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner'"
+        );
+        $results['migrated'][] = 'site_references.kind';
+    } catch (Throwable $e) {
+        $results['failed'][] = ['sql' => 'site_references.kind', 'error' => $e->getMessage()];
     }
 }
 
@@ -159,6 +195,7 @@ $statements = [
         sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
         is_enabled TINYINT(1) NOT NULL DEFAULT 1,
         opens_new_tab TINYINT(1) NOT NULL DEFAULT 0,
+        i18n_json JSON NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_menu_items_menu FOREIGN KEY (menu_id) REFERENCES menus(id) ON DELETE CASCADE,
         CONSTRAINT fk_menu_items_parent FOREIGN KEY (parent_id) REFERENCES menu_items(id) ON DELETE CASCADE,
@@ -202,6 +239,20 @@ $statements = [
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_content_blocks (is_visible, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'site_references' => "CREATE TABLE IF NOT EXISTS site_references (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500) NULL,
+        website_url VARCHAR(500) NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        is_visible TINYINT(1) NOT NULL DEFAULT 1,
+        i18n_json JSON NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_site_references (kind, is_visible, sort_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
     'content_revisions' => "CREATE TABLE IF NOT EXISTS content_revisions (
@@ -265,6 +316,21 @@ ensure_column($pdo, 'settings', 'seo_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'social_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'home_json', 'JSON NULL');
 
+// Client references — the i18n column is added here so an existing database
+// created before this feature picks it up on the next installer run.
+ensure_column($pdo, 'site_references', 'i18n_json', 'JSON NULL');
+// The references section gained a third kind ("client") when /references was
+// split into clients / partners / certifications. Widening the ENUM is not
+// something ensure_column() can do, and a re-run of the CREATE above would be
+// a no-op on an existing table, so the migration is explicit here.
+ensure_reference_kind($pdo);
+ensure_column($pdo, 'site_references', 'website_url', 'VARCHAR(500) NULL');
+
+// Menu items: per-item English label. cms.php already overlays I18N_MENU_FIELDS
+// onto menu rows and admin.php already reports coverage for them, but both read
+// an i18n_json column this table never had, so menu labels stayed French-only.
+ensure_column($pdo, 'menu_items', 'i18n_json', 'JSON NULL');
+
 // v2.1 — page builder: per-section visibility + richer block types.
 // ENUM widen must be guarded (an ALTER on an up-to-date column is harmless but
 // noisy; skip when the type already carries every value).
@@ -288,30 +354,61 @@ try {
 
 ensure_column($pdo, 'page_blocks', 'is_visible', 'TINYINT(1) NOT NULL DEFAULT 1');
 
+ensure_column($pdo, 'settings', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'site_config', 'i18n_json', 'JSON NULL');
+
+// ── v3 i18n (English) ──────────────────────────────────────────────────────
+// French remains the source language in the existing columns; English lives in
+// dedicated columns (slug_en) / JSON blobs (i18n_json). Every i18n_json blob has
+// the shape {"en": {<field>: <value>}}, so other languages can be added later
+// without another migration. NULL / empty means "not translated yet" and the
+// public API falls back to French, flagging the item in the admin.
+ensure_column($pdo, 'pages', 'slug_en', 'VARCHAR(191) NULL');
+ensure_column($pdo, 'pages', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'articles', 'slug_en', 'VARCHAR(191) NULL');
+ensure_column($pdo, 'articles', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'page_blocks', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'content_blocks', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'menu_items', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'categories', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'tags', 'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'media', 'i18n_json', 'JSON NULL');
+
+// English slugs must stay unique, but only among rows that HAVE one — MySQL
+// allows many NULLs in a UNIQUE index, which is exactly the semantics wanted.
+try {
+    $pdo->exec('CREATE UNIQUE INDEX idx_pages_slug_en ON pages (slug_en)');
+} catch (Throwable $e) {
+}
+try {
+    $pdo->exec('CREATE UNIQUE INDEX idx_articles_slug_en ON articles (slug_en)');
+} catch (Throwable $e) {
+}
+
 try {
     $pdo->exec("CREATE INDEX idx_pages_pub ON pages (is_published, published_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("CREATE INDEX idx_pages_sched ON pages (scheduled_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("CREATE INDEX idx_articles_sched ON articles (scheduled_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("CREATE INDEX idx_media_created ON media (created_at)");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 try {
     $pdo->exec("ALTER TABLE pages ADD CONSTRAINT fk_pages_parent FOREIGN KEY (parent_id) REFERENCES pages(id) ON DELETE SET NULL");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 try {
     $pdo->exec("ALTER TABLE articles ADD CONSTRAINT fk_articles_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL");
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 // ── Legacy data backfill (idempotent) ───────────────────────────────────
