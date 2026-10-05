@@ -185,55 +185,107 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   }
 
   /**
-   * Append the bundled logos that are not in the editor yet.
+   * Re-group a list that re-filing just scrambled.
+   *
+   * Changing a row's kind in place leaves it sitting where it was — a client
+   * logo re-filed out of the partners block would stay interleaved inside it,
+   * and this file relies on the groups staying contiguous for the ↑ ↓ buttons
+   * and for the order the server stores. Stable, so rows keep their relative
+   * order inside each group.
+   */
+  function regroupByKind(list: Item[]): Item[] {
+    return list
+      .map((item, index) => ({ item, index }))
+      .sort(
+        (a, b) =>
+          GROUPS.findIndex((g) => g.kind === a.item.kind) -
+            GROUPS.findIndex((g) => g.kind === b.item.kind) || a.index - b.index,
+      )
+      .map((entry) => entry.item);
+  }
+
+  /**
+   * Append the bundled logos that are not in the editor yet, and re-file the
+   * ones that were saved under the wrong kind.
    *
    * Without this the section starts empty on a fresh database and every one of
    * the 30+ existing logos would have to be typed in by hand before it could be
    * edited or reordered. It appends rather than replaces so importing can never
    * discard logos that were just added by hand.
+   *
+   * Presence is judged per KIND, not just per image. A database populated
+   * before the editor could create a client row stored every client logo as a
+   * `partner`: matching on the image alone called them "already present", so
+   * the import added nothing and the Clients group stayed empty forever — the
+   * symptom of partners showing up where clients were expected. Re-filing keeps
+   * the row (and its edits) instead of inserting a second copy of the same logo.
    */
   const importBundled = () => {
-    const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
-    const missing: Item[] = [
-      ...BUNDLED_CLIENTS_FLAT.filter((p) => !present.has(p.image)).map((p) => ({
-        clientId: newClientId(),
-        kind: "client" as const,
-        title: p.title,
-        imageUrl: p.image,
-        websiteUrl: "",
-        isVisible: true,
-      })),
-      ...BUNDLED_PARTNERS.filter((p) => !present.has(p.image)).map((p) => ({
-        clientId: newClientId(),
-        kind: "partner" as const,
-        title: p.title,
-        imageUrl: p.image,
-        websiteUrl: "",
-        isVisible: true,
-      })),
-      ...BUNDLED_CERTIFICATIONS.filter((c) => !present.has(c.image)).map((c) => ({
-        clientId: newClientId(),
-        kind: "certification" as const,
-        title: c.title,
-        imageUrl: c.image,
-        websiteUrl: "",
-        isVisible: true,
-      })),
-    ];
+    const missing: Item[] = [];
+    const rekind = new Map<string, CmsReferenceKind>();
 
-    if (missing.length === 0) {
-      ctx.notify("Tous les logos d'origine sont déjà dans la liste.");
+    const collect = (list: { image: string; title: string }[], kind: CmsReferenceKind) => {
+      for (const entry of list) {
+        const existing = items.find((item) => (item.imageUrl ?? "").trim() === entry.image);
+        if (!existing) {
+          missing.push({
+            clientId: newClientId(),
+            kind,
+            title: entry.title,
+            imageUrl: entry.image,
+            websiteUrl: "",
+            isVisible: true,
+          });
+        } else if (existing.kind !== kind) {
+          rekind.set(entry.image, kind);
+        }
+      }
+    };
+
+    collect(BUNDLED_CLIENTS_FLAT, "client");
+    collect(BUNDLED_PARTNERS, "partner");
+    collect(BUNDLED_CERTIFICATIONS, "certification");
+
+    if (missing.length === 0 && rekind.size === 0) {
+      ctx.notify("Tous les logos d'origine sont déjà dans la liste, au bon groupe.");
       return;
     }
-    setItems((prev) => appendKeepingGroups(prev, missing));
-    ctx.notify(`${missing.length} logo(s) ajouté(s) — enregistrez pour les appliquer.`);
+    setItems((prev) => {
+      const retyped = prev.map((item) => {
+        const image = (item.imageUrl ?? "").trim();
+        const kind = rekind.get(image);
+        return kind ? { ...item, kind } : item;
+      });
+      return appendKeepingGroups(regroupByKind(retyped), missing);
+    });
+    const parts: string[] = [];
+    if (missing.length > 0) parts.push(`${missing.length} logo(s) ajouté(s)`);
+    if (rekind.size > 0) parts.push(`${rekind.size} logo(s) remis dans le bon groupe`);
+    ctx.notify(`${parts.join(" — ")} — enregistrez pour les appliquer.`);
   };
 
+  /**
+   * How many bundled logos the import would still add or re-file.
+   *
+   * Counts both cases, so the button stays enabled (with an honest count) when
+   * every logo is in the list but the client ones are filed as partners.
+   */
   const missingBundled = useMemo(() => {
-    const present = new Set(items.map((i) => (i.imageUrl ?? "").trim()).filter(Boolean));
-    const count = (list: { image: string }[]) =>
-      list.filter((entry) => !present.has(entry.image)).length;
-    return count(BUNDLED_CLIENTS_FLAT) + count(BUNDLED_PARTNERS) + count(BUNDLED_CERTIFICATIONS);
+    const byImage = new Map<string, CmsReferenceKind>();
+    for (const item of items) {
+      const image = (item.imageUrl ?? "").trim();
+      if (image && !byImage.has(image)) byImage.set(image, item.kind);
+    }
+    const count = (list: { image: string }[], kind: CmsReferenceKind) =>
+      list.filter((entry) => {
+        const found = byImage.get(entry.image);
+        return found === undefined || found !== kind;
+      }).length;
+    return (
+      count(BUNDLED_CLIENTS_FLAT, "client") +
+      count(BUNDLED_PARTNERS, "partner") +
+      count(BUNDLED_CERTIFICATIONS, "certification")
+    );
   }, [items]);
 
   const save = async () => {
@@ -304,7 +356,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         <p className="admin-hint">
           {items.length === 0
             ? "La liste est vide. Importez les logos d'origine pour les rendre modifiables, ou ajoutez-les à la main."
-            : "Ajoutez en lot les logos d'origine qui ne sont pas encore dans la liste."}
+            : "Ajoutez en lot les logos d'origine absents, et remettez dans le bon groupe ceux qui sont enregistrés sous le mauvais type."}
         </p>
         <div>
           <button

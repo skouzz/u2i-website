@@ -359,15 +359,56 @@ try {
             // top of the logos bundled in the JS, and it needs to know that a
             // row exists but is hidden — otherwise hiding a bundled logo in the
             // dashboard would simply let the bundled copy reappear.
-            $rows = db()->query(
-                'SELECT * FROM site_references ORDER BY kind ASC, sort_order ASC, id ASC'
-            )->fetchAll();
+            //
+            // FIELD() pins the order to client → partner → certification, the
+            // order the pages and the editor both use. Plain `ORDER BY kind`
+            // sorted the ENUM alphabetically, which put certifications first and
+            // sent the partners before the clients.
+            //
+            // A database without the table (or without ALTER rights) must not
+            // take the page down: the bundled logos are a complete fallback, so
+            // an empty list is the correct answer here and the page keeps
+            // rendering every client and partner logo it shipped with.
+            $rows = [];
+            try {
+                $stmt = db()->prepare(
+                    'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?, ?), sort_order ASC, id ASC'
+                );
+                $stmt->execute(U2I_REFERENCE_KINDS);
+                $rows = $stmt->fetchAll();
+            } catch (Throwable $first) {
+                // prepare(), not query(): PDO::query() takes no parameters, so
+                // the U2I_REFERENCE_KINDS placeholders would be read as a fetch
+                // mode instead.
+                //
+                // The read is retried once after reconciling the table: a
+                // database that predates the references section (or the third
+                // kind) fails here, and repairing it on the spot is better than
+                // leaving the page permanently without the admin's logos. Only
+                // the failure path touches the schema, so a healthy database
+                // pays nothing for this.
+                error_log(sprintf('[u2i] references read failed (%s), reconciling schema', $first->getMessage()));
+                try {
+                    if (ensure_reference_schema()) {
+                        $retry = db()->prepare(
+                            'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?, ?), sort_order ASC, id ASC'
+                        );
+                        $retry->execute(U2I_REFERENCE_KINDS);
+                        $rows = $retry->fetchAll();
+                    }
+                } catch (Throwable $second) {
+                    error_log(sprintf('[u2i] references reconcile failed: %s', $second->getMessage()));
+                    $rows = [];
+                }
+            }
             $items = [];
             foreach ($rows as $row) {
                 $merged = apply_i18n($row, I18N_REFERENCE_FIELDS, $lang);
                 $items[] = [
                     'id' => (int) $merged['id'],
-                    'kind' => (string) $merged['kind'],
+                    'kind' => in_array((string) $merged['kind'], U2I_REFERENCE_KINDS, true)
+                        ? (string) $merged['kind']
+                        : 'partner',
                     'title' => (string) $merged['title'],
                     'imageUrl' => $merged['image_url'] ?? null,
                     'websiteUrl' => $merged['website_url'] ?? null,

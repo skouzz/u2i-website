@@ -476,7 +476,11 @@ function map_reference(array $row): array
 
     return [
         'id' => (int) $row['id'],
-        'kind' => (string) $row['kind'],
+        // A kind the enum did not know about (or a row saved before the table
+        // was migrated) must not reach the editor: the <select> has no matching
+        // option, so React renders an empty value and the row is then dropped
+        // on the next save. Falling back to 'partner' keeps it editable.
+        'kind' => in_array((string) $row['kind'], U2I_REFERENCE_KINDS, true) ? (string) $row['kind'] : 'partner',
         'title' => (string) $row['title'],
         'imageUrl' => $row['image_url'] ?? null,
         'websiteUrl' => $row['website_url'] ?? null,
@@ -492,37 +496,77 @@ function map_reference(array $row): array
  * Same delete-then-insert shape as the homepage blocks: the editor always
  * submits the complete ordered list, so there is nothing to merge and no way
  * for a stale row to survive a delete performed in the UI.
+ *
+ * Wrapped in a transaction. Without it, one rejected row (a title longer than
+ * the column, a kind the ENUM still rejects, a duplicate key) threw AFTER the
+ * DELETE had already been committed, so the save reported a failure and left
+ * the table empty — every client, partner and certification logo gone from the
+ * site with no way back. Now the whole replacement either lands or does not.
+ *
+ * The kinds are grouped client → partner → certification before writing so the
+ * stored sort_order matches the order the public pages and the editor both use;
+ * the dashboard used to receive them in plain alphabetical order, which put
+ * certifications first.
  */
 function save_references(array $items): void
 {
-    db()->exec('DELETE FROM site_references');
-    $stmt = db()->prepare(
-        'INSERT INTO site_references (kind, title, image_url, website_url, sort_order, is_visible, i18n_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
-    );
-    $order = 0;
+    if (!ensure_reference_schema()) {
+        throw new RuntimeException(
+            'Table site_references inaccessible. Re-run /api/install.php on the server, '
+            . 'or check the MySQL user has CREATE/ALTER rights on the database.'
+        );
+    }
+
+    $prepared = [];
     foreach ($items as $item) {
         if (!is_array($item)) {
             continue;
         }
+        // An unknown kind is coerced rather than skipped: the row is real
+        // content the admin added, and dropping it here is how logos
+        // disappeared from the list without any error being shown.
         $kind = field($item, 'kind');
-        if (!in_array($kind, ['client', 'partner', 'certification'], true)) {
-            continue;
+        if (!in_array($kind, U2I_REFERENCE_KINDS, true)) {
+            $kind = 'partner';
         }
         $title = field($item, 'title');
         if ($title === '') {
             continue;
         }
         $i18n = $item['i18n'] ?? null;
-        $stmt->execute([
+        $prepared[] = [
             $kind,
             $title,
             field($item, 'imageUrl') ?: null,
             field($item, 'websiteUrl') ?: null,
-            $order++,
             !empty($item['isVisible']) ? 1 : 0,
             is_array($i18n) ? encode_i18n($i18n) : '{}',
-        ]);
+        ];
+    }
+
+    usort(
+        $prepared,
+        static fn (array $a, array $b): int => array_search($a[0], U2I_REFERENCE_KINDS, true)
+            <=> array_search($b[0], U2I_REFERENCE_KINDS, true)
+    );
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec('DELETE FROM site_references');
+        $stmt = $pdo->prepare(
+            'INSERT INTO site_references (kind, title, image_url, website_url, sort_order, is_visible, i18n_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+        foreach ($prepared as $order => $row) {
+            $stmt->execute([$row[0], $row[1], $row[2], $row[3], $order, $row[4], $row[5]]);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
     }
 }
 
@@ -1209,18 +1253,36 @@ try {
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
-        // ── Client references (partners & certifications) ────────────────
+        // ── Client, partner & certification references ──────────────────
         case 'references':
             csrf_or_fail();
             if ($method === 'GET') {
-                $rows = db()->query(
-                    'SELECT * FROM site_references ORDER BY kind ASC, sort_order ASC, id ASC'
-                )->fetchAll();
+                // Reconcile the table before reading it: a database created
+                // before the references section existed would otherwise answer
+                // "La liste est vide" instead of telling the admin to install.
+                ensure_reference_schema();
+                // prepare(), not query(): PDO::query() takes no parameters, so
+                // the U2I_REFERENCE_KINDS placeholders below would be passed as
+                // a fetch mode and the call would fail.
+                $stmt = db()->prepare(
+                    'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?, ?), sort_order ASC, id ASC'
+                );
+                $stmt->execute(U2I_REFERENCE_KINDS);
+                $rows = $stmt->fetchAll();
                 json_response(['ok' => true, 'items' => array_map('map_reference', $rows)]);
             }
             if ($method === 'PUT' || $method === 'POST') {
                 $data = read_json_body();
-                save_references(is_array($data['items'] ?? null) ? $data['items'] : []);
+                try {
+                    save_references(is_array($data['items'] ?? null) ? $data['items'] : []);
+                } catch (Throwable $e) {
+                    error_log(sprintf('[u2i-admin] references save failed: %s', $e->getMessage()));
+                    json_response([
+                        'ok' => false,
+                        'message' => 'Enregistrement impossible : ' . $e->getMessage()
+                            . ' — la liste précédente a été conservée.',
+                    ], 500);
+                }
                 log_activity('references.update', 'references', 1);
                 json_response(['ok' => true]);
             }

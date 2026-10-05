@@ -183,13 +183,110 @@ function field(array $data, string $key): string
 function flag(array $data, string $key): bool
 {
     return !empty($data[$key]);
-}
-
-/** Fetch a positive int from a decoded JSON body (0 when absent/invalid). */
+}/** Fetch a positive int from a decoded JSON body (0 when absent/invalid). */
 function int_field(array $data, string $key): int
 {
     return isset($data[$key]) && is_numeric($data[$key]) ? (int) $data[$key] : 0;
-}/** URL-safe slug (accents folded, lowercase, dashes). */
+}
+
+/** Reference kinds the site understands, in the order they are displayed. */
+const U2I_REFERENCE_KINDS = ['client', 'partner', 'certification'];
+
+/**
+ * Make sure site_references matches what the code reads and writes.
+ *
+ * The table is created by install.php / database/schema.sql, but an existing
+ * production database can predate any of its current columns or the third
+ * `kind` value. That used to fail silently in the worst possible way: the
+ * dashboard replaces the whole list on save, so a single row whose `kind` the
+ * ENUM rejected aborted the INSERT halfway and left the table EMPTY — hence
+ * "La liste est vide" with clients and partners gone from the site.
+ *
+ * So the references endpoints reconcile the table themselves instead of
+ * assuming install.php was re-run after every schema change. Every step is
+ * guarded on the current column definition, runs at most once per request, and
+ * never throws: a hosting plan without ALTER privileges logs the reason and
+ * lets the caller report it, rather than turning the whole page into a 500.
+ *
+ * Returns true when the table is usable as the code expects it.
+ */
+function ensure_reference_schema(): bool
+{
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
+
+    $log = static function (string $step, Throwable $e): void {
+        error_log(sprintf('[u2i] site_references: %s failed: %s', $step, $e->getMessage()));
+    };
+
+    try {
+        $pdo = db();
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS site_references (
+                id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
+                title VARCHAR(255) NOT NULL,
+                image_url VARCHAR(500) NULL,
+                website_url VARCHAR(500) NULL,
+                sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+                is_visible TINYINT(1) NOT NULL DEFAULT 1,
+                i18n_json JSON NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_site_references (kind, is_visible, sort_order)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+
+        $columns = $pdo->prepare(
+            'SELECT COLUMN_NAME FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+        );
+        $columns->execute(['site_references']);
+        $present = array_map(
+            static fn (array $row): string => strtolower((string) $row['COLUMN_NAME']),
+            $columns->fetchAll()
+        );
+        $kindType = '';
+        foreach ($present as $name) {
+            if ($name !== 'kind') {
+                continue;
+            }
+            $type = $pdo->prepare(
+                'SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+            );
+            $type->execute(['site_references', 'kind']);
+            $kindType = (string) ($type->fetch()['COLUMN_TYPE'] ?? '');
+        }
+
+        // Columns added after the first release of the table.
+        foreach (['i18n_json' => 'JSON NULL', 'website_url' => 'VARCHAR(500) NULL'] as $col => $def) {
+            if (!in_array($col, $present, true)) {
+                $pdo->exec("ALTER TABLE site_references ADD COLUMN {$col} {$def}");
+            }
+        }
+
+        // Widening an ENUM keeps every existing row valid, so this is safe on a
+        // live database: the only thing it adds is the ability to store 'client'.
+        if ($kindType === '' || strpos($kindType, "'client'") === false) {
+            $pdo->exec(
+                "ALTER TABLE site_references
+                 MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner'"
+            );
+        }
+    } catch (Throwable $e) {
+        $log('reconcile', $e);
+        $ready = false;
+        return $ready;
+    }
+
+    $ready = true;
+    return $ready;
+}
+
+/** URL-safe slug (accents folded, lowercase, dashes). */
 function slugify(string $text): string
 {
     $text = mb_strtolower(trim($text));
