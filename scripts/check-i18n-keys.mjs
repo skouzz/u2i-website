@@ -100,7 +100,8 @@ if (noEnglish.length) {
 }
 
 // Copy-paste check: identical FR/EN is fine for brand + technical terms.
-const ALLOWED_IDENTICAL = /(^nav\.(home|contact)$)|(AXXAIR|ISO|CEVA|U2I)|(^references\.(partners|clients))/;
+const ALLOWED_IDENTICAL =
+  /(^nav\.(home|contact)$)|(AXXAIR|ISO|CEVA|U2I)|(^references\.(partners|clients))/;
 const identical = [...fr.keys()].filter(
   (k) => en.has(k) && fr.get(k) === en.get(k) && !ALLOWED_IDENTICAL.test(k),
 );

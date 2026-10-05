@@ -95,9 +95,21 @@ const HERO_SLIDES = [
 const SECTORS = [
   { tagKey: "home.sector.pharma.tag", titleKey: "home.sector.pharma.title", image: pharmaImage },
   { tagKey: "home.sector.food.tag", titleKey: "home.sector.food.title", image: agroImage },
-  { tagKey: "home.sector.chemical.tag", titleKey: "home.sector.chemical.title", image: chimieImage },
-  { tagKey: "home.sector.cosmetics.tag", titleKey: "home.sector.cosmetics.title", image: cosmetiqueImage },
-  { tagKey: "home.sector.furniture.tag", titleKey: "home.sector.furniture.title", image: mobilierImage },
+  {
+    tagKey: "home.sector.chemical.tag",
+    titleKey: "home.sector.chemical.title",
+    image: chimieImage,
+  },
+  {
+    tagKey: "home.sector.cosmetics.tag",
+    titleKey: "home.sector.cosmetics.title",
+    image: cosmetiqueImage,
+  },
+  {
+    tagKey: "home.sector.furniture.tag",
+    titleKey: "home.sector.furniture.title",
+    image: mobilierImage,
+  },
 ] as const;
 
 const EQUIPMENTS = [
@@ -384,13 +396,19 @@ function VideoBanner() {
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <div className="px-4 py-2 bg-[#e0141c]/10 border border-[#e0141c]/30 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-[#e0141c]">{t("home.video.badgeQuality")}</p>
+                    <p className="text-sm font-semibold text-[#e0141c]">
+                      {t("home.video.badgeQuality")}
+                    </p>
                   </div>
                   <div className="px-4 py-2 bg-white/5 border border-white/10 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-white/70">{t("home.video.badgePrecision")}</p>
+                    <p className="text-sm font-semibold text-white/70">
+                      {t("home.video.badgePrecision")}
+                    </p>
                   </div>
                   <div className="px-4 py-2 bg-white/5 border border-white/10 backdrop-blur-sm">
-                    <p className="text-sm font-semibold text-white/70">{t("home.video.badgeSafety")}</p>
+                    <p className="text-sm font-semibold text-white/70">
+                      {t("home.video.badgeSafety")}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -917,9 +935,7 @@ function CertificationsSection() {
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-black/40">
             {t("home.certs.title")}
           </h3>
-          <p className="text-base leading-relaxed text-slate-600">
-            {t("home.certs.text")}
-          </p>
+          <p className="text-base leading-relaxed text-slate-600">{t("home.certs.text")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6 md:gap-8">

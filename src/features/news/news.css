@@ -102,13 +102,7 @@
 .news-card__media:not(:has(img)) {
   background:
     linear-gradient(135deg, rgb(224 20 28 / 8%), rgb(23 27 28 / 6%)),
-    repeating-linear-gradient(
-      45deg,
-      #eef0ee,
-      #eef0ee 10px,
-      #e7eae7 10px,
-      #e7eae7 20px
-    );
+    repeating-linear-gradient(45deg, #eef0ee, #eef0ee 10px, #e7eae7 10px, #e7eae7 20px);
 }
 
 .news-card__body {

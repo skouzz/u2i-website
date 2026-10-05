@@ -35,7 +35,10 @@ const reported = [
 ];
 
 // Minimal evaluation of translate() using the EN catalog values.
-const enBlock = src.slice(src.indexOf("const en: Partial<Record"), src.indexOf("\n};", src.indexOf("const en: Partial<Record")));
+const enBlock = src.slice(
+  src.indexOf("const en: Partial<Record"),
+  src.indexOf("\n};", src.indexOf("const en: Partial<Record")),
+);
 const enValues = new Map();
 for (const m of enBlock.matchAll(/"([a-zA-Z0-9.]+)":\s*\n?\s*"((?:[^"\\]|\\.)*)"/g)) {
   enValues.set(m[1], m[2].replace(/\\'/g, "'").replace(/\\"/g, '"'));

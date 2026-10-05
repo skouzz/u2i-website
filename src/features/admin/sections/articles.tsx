@@ -245,9 +245,7 @@ function ArticleForm({
   const [scheduledAt, setScheduledAt] = useState((article?.scheduledAt ?? "").slice(0, 16));
   const [seo, setSeo] = useState<CmsSeo>(article?.seo ?? {});
   const [slugEn, setSlugEn] = useState(article?.slugEn ?? "");
-  const [i18n, setI18n] = useState<Record<string, Record<string, string>>>(
-    article?.i18n ?? {},
-  );
+  const [i18n, setI18n] = useState<Record<string, Record<string, string>>>(article?.i18n ?? {});
   const [missing, setMissing] = useState<string[]>(article?.missingTranslation ?? []);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [tags, setTags] = useState<CmsTag[]>([]);

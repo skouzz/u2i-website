@@ -96,9 +96,7 @@ export function useSeo(options: {
     breadcrumbs,
   } = options;
 
-  const locale = localeFromPath(
-    typeof window !== "undefined" ? window.location.pathname : "/",
-  );
+  const locale = localeFromPath(typeof window !== "undefined" ? window.location.pathname : "/");
   useEffect(() => {
     const url = `${SITE_URL}${path ?? window.location.pathname}`;
     const finalTitle = seo?.seoTitle || title;

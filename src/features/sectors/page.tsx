@@ -236,8 +236,9 @@ export function SectorsPage() {
               <div className="sector-copy">
                 <div className="sector-copy__topline">
                   <span>{t(sector.tagKey).split("/ ")[1]}</span>
-                </div>                  <h2>{t(sector.titleKey)}</h2>
-                  <p className="sector-copy__description">{t(sector.descKey)}</p>
+                </div>{" "}
+                <h2>{t(sector.titleKey)}</h2>
+                <p className="sector-copy__description">{t(sector.descKey)}</p>
                 <div className="sector-copy__focus">
                   <Check size={16} aria-hidden="true" />
                   <span>{t(sector.focusKey)}</span>
@@ -247,7 +248,10 @@ export function SectorsPage() {
                 </LocalizedLink>
               </div>
 
-              <div className="sector-gallery" aria-label={`${t("sectors.gallery.aria")} ${t(sector.titleKey)}`}>
+              <div
+                className="sector-gallery"
+                aria-label={`${t("sectors.gallery.aria")} ${t(sector.titleKey)}`}
+              >
                 {sector.photos.length > 0 ? (
                   <div className="sector-gallery__grid">
                     {sector.photos.map((photo, photoIndex) => {
@@ -276,9 +280,7 @@ export function SectorsPage() {
                     })}
                   </div>
                 ) : (
-                  <p className="sector-gallery__empty">
-                    {t("sectors.gallery.empty")}
-                  </p>
+                  <p className="sector-gallery__empty">{t("sectors.gallery.empty")}</p>
                 )}
               </div>
             </div>
@@ -318,7 +320,8 @@ export function SectorsPage() {
                 <span>{t(activePhoto.sector.titleKey)}</span> /{" "}
                 {String(activePhoto.index + 1).padStart(2, "0")}{" "}
                 <span className="sector-lightbox__muted">
-                  {t("sectors.gallery.of")} {String(activePhoto.sector.photos.length).padStart(2, "0")}
+                  {t("sectors.gallery.of")}{" "}
+                  {String(activePhoto.sector.photos.length).padStart(2, "0")}
                 </span>
               </p>
               <button

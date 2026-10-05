@@ -289,9 +289,7 @@ function PageForm({
   const [scheduledAt, setScheduledAt] = useState((page?.scheduledAt ?? "").slice(0, 16));
   const [seo, setSeo] = useState<CmsSeo>(page?.seo ?? {});
   const [slugEn, setSlugEn] = useState(page?.slugEn ?? "");
-  const [i18n, setI18n] = useState<Record<string, Record<string, string>>>(
-    page?.i18n ?? {},
-  );
+  const [i18n, setI18n] = useState<Record<string, Record<string, string>>>(page?.i18n ?? {});
   const [missing, setMissing] = useState<string[]>(page?.missingTranslation ?? []);
   const [blocks, setBlocks] = useState<NonNullable<AdminPagePayload["blocks"]>>([]);
   const [pickerOpen, setPickerOpen] = useState(false);

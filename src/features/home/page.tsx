@@ -342,7 +342,9 @@ function HomeArticlesBlock({ title }: { title?: string | null }) {
           {articles.map((article) => (
             <a
               key={article.id}
-              href={link(`/actualites/${locale === "en" ? (article.slugEn ?? article.slug) : article.slug}`)}
+              href={link(
+                `/actualites/${locale === "en" ? (article.slugEn ?? article.slug) : article.slug}`,
+              )}
               className="group block overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition hover:shadow-lg"
             >
               {article.coverImageUrl ? (

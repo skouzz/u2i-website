@@ -35,9 +35,10 @@ export function NewsListPage() {
 
   useSeo({
     title: locale === "en" ? "News — U2I Process" : "Actualités — U2I Process",
-    description: locale === "en"
-      ? "Projects, new equipment, certifications: follow life at the U2I workshop."
-      : "Projets, nouveaux équipements, certifications : suivez la vie de l'atelier et de l'équipe U2I.",
+    description:
+      locale === "en"
+        ? "Projects, new equipment, certifications: follow life at the U2I workshop."
+        : "Projets, nouveaux équipements, certifications : suivez la vie de l'atelier et de l'équipe U2I.",
   });
 
   return (
@@ -64,11 +65,7 @@ export function NewsListPage() {
         <div className="news-wrap">
           {isLoading && <NewsGridSkeleton count={6} />}
 
-          {isError && (
-            <div className="news-empty">
-              {t("news.list.unavailable")}
-            </div>
-          )}
+          {isError && <div className="news-empty">{t("news.list.unavailable")}</div>}
 
           {!isLoading && !isError && articles.length === 0 && (
             <div className="news-empty">

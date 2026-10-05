@@ -219,11 +219,7 @@ export function ContactPage() {
                 </div>
                 <label>
                   {t("contact.form.subject")}
-                  <input
-                    name="subject"
-                    placeholder={t("contact.form.phSubject")}
-                    required
-                  />
+                  <input name="subject" placeholder={t("contact.form.phSubject")} required />
                 </label>
                 <label>
                   {t("contact.form.messageLabel")}

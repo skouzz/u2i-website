@@ -12,12 +12,7 @@ import "./loading.css";
  */
 export function PageSkeleton() {
   return (
-    <div
-      className="u2i-page-skeleton"
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-    >
+    <div className="u2i-page-skeleton" role="status" aria-live="polite" aria-busy="true">
       {/* Thin progress strip on top of the skeleton, so the wait still reads
           as "working" rather than "stuck". */}
       <RouteLoadingBar />

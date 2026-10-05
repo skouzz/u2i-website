@@ -37,11 +37,7 @@ const capabilities: Capability[] = [
     icon: DraftingCompass,
     titleKey: "about.cap.engineering.title",
     introKey: "about.cap.engineering.intro",
-    itemKeys: [
-      "about.cap.engineering.i1",
-      "about.cap.engineering.i2",
-      "about.cap.engineering.i3",
-    ],
+    itemKeys: ["about.cap.engineering.i1", "about.cap.engineering.i2", "about.cap.engineering.i3"],
   },
   {
     number: "02",
@@ -125,11 +121,7 @@ export function AboutPage() {
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.55 }}
           >
-            <img
-              src={processImage}
-              alt={t("about.alt.workshop")}
-              loading="lazy"
-            />
+            <img src={processImage} alt={t("about.alt.workshop")} loading="lazy" />
             <div className="about-story__caption">
               <span>{t("about.story.caption")}</span>
               <span>01 / U2I PROCESS</span>
@@ -147,12 +139,8 @@ export function AboutPage() {
             </p>
             <h2>{t("about.story.heading")}</h2>
             <p>{t("about.story.intro")}</p>
-            <p>
-              {t("about.story.p1")}
-            </p>
-            <p>
-              {t("about.story.p2")}
-            </p>
+            <p>{t("about.story.p1")}</p>
+            <p>{t("about.story.p2")}</p>
             <LocalizedLink className="about-text-link" to="/secteurs">
               {t("about.story.sectorsCta")} <ArrowUpRight size={17} aria-hidden="true" />
             </LocalizedLink>
@@ -246,9 +234,7 @@ export function AboutPage() {
               <span>04</span> {t("about.section.resources")}
             </p>
             <h2>{t("about.resources.title")}</h2>
-            <p className="about-resources__intro">
-              {t("about.workshop.text")}
-            </p>
+            <p className="about-resources__intro">{t("about.workshop.text")}</p>
             <div className="about-resource-list">
               {resources.map((resource, index) => (
                 <motion.div
@@ -270,19 +256,11 @@ export function AboutPage() {
           </div>
           <div className="about-team-photos" aria-label={t("about.alt.team")}>
             <figure className="about-team-photos__main">
-              <img
-                src={siteImage}
-                alt={t("about.alt.onsite")}
-                loading="lazy"
-              />
+              <img src={siteImage} alt={t("about.alt.onsite")} loading="lazy" />
               <figcaption>{t("about.resources.onsite")}</figcaption>
             </figure>
             <figure className="about-team-photos__secondary">
-              <img
-                src={inspectionImage}
-                alt={t("about.alt.inspection")}
-                loading="lazy"
-              />
+              <img src={inspectionImage} alt={t("about.alt.inspection")} loading="lazy" />
               <figcaption>{t("about.resources.inspection")}</figcaption>
             </figure>
             <div className="about-team-photos__note">
@@ -306,11 +284,7 @@ export function AboutPage() {
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.55 }}
           >
-            <img
-              src={weldingImage}
-              alt={t("about.alt.welding")}
-              loading="lazy"
-            />
+            <img src={weldingImage} alt={t("about.alt.welding")} loading="lazy" />
             <div className="about-quality__image-label">
               <BadgeCheck size={17} /> {t("about.quality.badge")}
             </div>
@@ -326,9 +300,7 @@ export function AboutPage() {
               <span>05</span> {t("about.section.quality")}
             </p>
             <h2>{t("about.quality.title")}</h2>
-            <p>
-              {t("about.quality.text")}
-            </p>
+            <p>{t("about.quality.text")}</p>
             <div className="about-quality__standard">
               <ClipboardCheck size={19} aria-hidden="true" />
               <span>BPF · QI · QO · FAT / SAT</span>
@@ -357,9 +329,7 @@ export function AboutPage() {
             <img src={axxairLogo} alt="AXXAIR" loading="lazy" />
             <div>
               <p>{t("about.partner.badge")}</p>
-              <span>
-                {t("about.partner.text")}
-              </span>
+              <span>{t("about.partner.text")}</span>
             </div>
           </div>
         </div>
