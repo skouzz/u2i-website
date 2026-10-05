@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "check:i18n": "node scripts/check-i18n-keys.mjs",
+    "check:nav": "node scripts/check-nav-labels.mjs",
+    "check:references": "node scripts/check-bundled-references.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",

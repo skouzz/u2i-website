@@ -286,6 +286,165 @@ function ensure_reference_schema(): bool
     return $ready;
 }
 
+/**
+ * Re-file reference rows that were saved under the wrong kind.
+ *
+ * When this section was still two pages, the dashboard had no way to create a
+ * `client` row, so every client logo was stored as `partner`. The page then
+ * found nothing on the client side and showed partners only — with the clients
+ * invisible no matter how many rows the database held.
+ *
+ * The bundled logo list is the authority on which register a logo belongs to,
+ * so a row whose image matches a bundled CLIENT is moved back to `client`, and
+ * one matching a bundled PARTNER is moved to `partner`. Rows whose image is
+ * unknown to us (an upload the admin made) are left exactly as they are: we have
+ * no basis to re-file those, and guessing would shuffle someone's content.
+ *
+ * Additive and idempotent: it only ever updates `kind` on rows it can identify
+ * with certainty, never inserts, never deletes, and re-running it changes
+ * nothing once the data is correct.
+ *
+ * Returns the number of rows re-filed, for logging.
+ */
+function repair_reference_kinds(): int
+{
+    $byStem = [];
+    foreach (reference_kind_map() as $kind => $stems) {
+        foreach ($stems as $stem) {
+            $byStem[reference_stem_key($stem)] = $kind;
+        }
+    }
+
+    try {
+        $pdo = db();
+        $rows = $pdo->query('SELECT id, kind, image_url FROM site_references')->fetchAll();
+    } catch (Throwable $e) {
+        error_log(sprintf('[u2i] site_references: kind repair read failed: %s', $e->getMessage()));
+        return 0;
+    }
+
+    $fixed = 0;
+    $update = null;
+    foreach ($rows as $row) {
+        $image = trim((string) ($row['image_url'] ?? ''));
+        if ($image === '') {
+            continue;
+        }
+        // Compare on the filename stem: a stored URL carries a build hash and
+        // an extension, neither of which the bundled list knows about.
+        $wanted = reference_kind_for_image($image, $byStem);
+        if ($wanted === null || $wanted === (string) $row['kind']) {
+            continue;
+        }
+        try {
+            if ($update === null) {
+                $update = $pdo->prepare('UPDATE site_references SET kind = ? WHERE id = ?');
+            }
+            $update->execute([$wanted, (int) $row['id']]);
+            $fixed++;
+        } catch (Throwable $e) {
+            error_log(sprintf('[u2i] site_references: kind repair write failed: %s', $e->getMessage()));
+            return $fixed;
+        }
+    }
+
+    if ($fixed > 0) {
+        error_log(sprintf('[u2i] site_references: re-filed %d row(s) into the right kind', $fixed));
+    }
+
+    return $fixed;
+}
+
+/**
+ * Reduce a logo filename to the part that identifies it across builds.
+ *
+ * A stored URL looks like `/assets/Sanofi-Bx7f2a1.png` in a build and
+ * `/src/assets/partners/Sanofi.png` in dev, while the bundled list only knows
+ * the original name. Decoding, taking the basename and dropping the extension
+ * leaves `sanofi` or `sanofi-bx7f2a1`; the build hash is appended by the
+ * bundler and is not part of the logo's identity. Comparison is
+ * case-insensitive because macOS and Windows report the same file either way.
+ */
+function reference_stem_key(string $nameOrUrl): string
+{
+    $decoded = $nameOrUrl;
+    if (strpos($decoded, '%') !== false) {
+        $decoded = rawurldecode($decoded);
+    }
+    $decoded = str_replace('\\\\', '/', $decoded);
+    $base = basename($decoded);
+    $stem = preg_replace('/\\.[a-z0-9]+$/i', '', $base);
+
+    return mb_strtolower(trim((string) ($stem ?? $base)));
+}
+
+/**
+ * Find the kind a stored image belongs to, by filename.
+ *
+ * The stored name may carry a build hash (`sanofi-bx7f2a1`), so an exact match
+ * on the whole stem is not enough. Matching is therefore: the stored stem
+ * EQUALS a known name, or the stored stem STARTS WITH a known name followed by a
+ * separator — which is how Vite appends its hash. Anything else (an upload the
+ * admin made, a logo we do not ship) matches nothing and is left untouched,
+ * rather than being guessed into the wrong register.
+ *
+ * Returns the kind, or null when the image is not one of the bundled logos.
+ */
+function reference_kind_for_image(string $imageUrl, array $byStem): ?string
+{
+    $stem = reference_stem_key($imageUrl);
+    if ($stem === '') {
+        return null;
+    }
+    if (isset($byStem[$stem])) {
+        return $byStem[$stem];
+    }
+    foreach ($byStem as $known => $kind) {
+        if ($known !== '' && strncmp($stem, $known . '-', strlen($known) + 1) === 0) {
+            return $kind;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Bundled logo images per kind, mirrored from src/lib/references-bundled.ts.
+ *
+ * The public logos are Vite asset imports, so their final URL is only known at
+ * build time; the FILENAME is stable across builds and is what identifies a
+ * logo. Matching on the trailing filename means a row saved from the dashboard
+ * (`/assets/Sanofi-abc123.png` or `/src/assets/partners/Sanofi.png`) still
+ * resolves to the same bundled client.
+ *
+ * Kept in sync by scripts/check-bundled-references.mjs, which fails if this
+ * list and the TypeScript one drift apart.
+ */
+function reference_kind_map(): array
+{
+    static $map = null;
+    if ($map !== null) {
+        return $map;
+    }
+
+    return $map = [
+        'client' => [
+            'Sanofi', 'LOGO%20HIKMA', 'LOGO%20SAIPH', 'LOGO%20TERIAK', 'UNIMED%20LOGO',
+            'Berg-Life-Sciences-295x300', 'LOGO-MEDIKA-300x269', 'LOGO-MediS-300x264',
+            'logo-PHARMA-DEARM-296x300', 'logo-adwya--300x291', 'logo-thera-400-150x150',
+            'opella-1-300x278', 'winthrop-1-300x296', 'LOGO-STERIPHARM-300x268',
+            'Pierre-fabre-logo-1-300x288', 'LOGO%20DELICE', 'cogia-logo',
+            'dorcas-logo-300x225', 'LOGO-DAR_ESSAYDALI_94d6073d8c-1-300x280',
+            'logo-MEVA-150x150', 'logo-LMP-291x300',
+        ],
+        'partner' => [
+            'AXXAIR-logo', 'Enex-we-know-how-logo-retina-300x262', 'BWT',
+            'tetrapak-logo-screen-400-150x150', 'sartorius-logo-vector-2-300x288',
+            'LOGO_CEVA_SANTE_ANIMALE', 'LOGO-ADVANCS-150x150',
+        ],
+    ];
+}
+
 /** URL-safe slug (accents folded, lowercase, dashes). */
 function slugify(string $text): string
 {

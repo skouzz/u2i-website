@@ -26,7 +26,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Building2, Handshake } from "lucide-react";
+import { BadgeCheck, Handshake } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { PageHero } from "@/components/PageHero";
@@ -108,7 +108,7 @@ function Group({
   items,
 }: {
   id: string;
-  icon: typeof Building2;
+  icon: typeof Handshake;
   title: string;
   text: string;
   items: BundledReference[];
@@ -249,38 +249,49 @@ function SubPages({ current }: { current: string }) {
  * whose machines those lines are built around.
  */
 /**
- * Clients and partners on one page, each as a single flat grid.
+ * Clients and partners in ONE grid, on one page, with no split.
  *
- * No industry subgroups: the bundled clients used to be split into
- * "Pharmaceutique" and "Agroalimentaire" headings, which added two section
- * headers and a dozen sentences to say what the logos already show, and left
- * the managed rows stranded in a third "other references" group. One grid per
- * register reads better and gives an admin's additions the same footing as the
- * logos that shipped with the site.
+ * The two registers answer the same question — "who do you work with?" — so
+ * drawing them as two headed grids made visitors read a wall of logos twice and
+ * made the page look like the clients were missing whenever one grid failed to
+ * fill. There is now a single heading, a single flat grid, and every logo the
+ * site knows about: managed client rows, managed partner rows, then the bundled
+ * logos of both registers.
+ *
+ * No industry subgroups either. The bundled clients used to be split into
+ * "Pharmaceutique" and "Agroalimentaire" headings, which added headers and
+ * sentences to say what the logos already show.
+ *
+ * Both kinds are read from the SAME query (one request), then merged here.
  */
 function ClientsAndPartnersPage() {
   const { locale, t } = useI18n();
 
-  // Managed rows first, then the bundled logos. Both hooks read the same query
-  // key, so this is one request, not two.
-  const managed = useMergedReferences(locale, "client", []);
-  const partners = useMergedReferences(locale, "partner", BUNDLED_PARTNERS);
+  // Managed rows of both kinds. Passing an empty bundle keeps this hook to
+  // "what the dashboard stores"; the bundled logos are merged below so both
+  // registers go through one shadowing pass.
+  const managedClients = useMergedReferences(locale, "client", []);
+  const managedPartners = useMergedReferences(locale, "partner", []);
+
+  const managed = [...managedClients, ...managedPartners];
 
   /*
-   * A bundled client is dropped from the grid when a managed row already covers
+   * A bundled logo is dropped from the grid when a managed row already covers
    * it. Matching on BOTH the image and the title matters:
    *
-   *  - image is how the partners and certifications groups shadow, and it is
-   *    what makes hiding a bundled logo in the dashboard actually hide it;
+   *  - image is what makes hiding a bundled logo in the dashboard actually hide
+   *    it, instead of letting the bundled copy reappear;
    *  - title catches the case where an admin re-uploads the same logo under a
-   *    new filename, which would otherwise show the client twice.
+   *    new filename, which would otherwise show the logo twice.
    */
   const managedTitles = new Set(managed.map((row) => row.title));
   const managedImages = new Set(managed.map((row) => row.image));
 
-  const clients = BUNDLED_CLIENTS_FLAT.filter(
-    (client) => !managedTitles.has(client.title) && !managedImages.has(client.image),
-  );
+  const isShadowed = (entry: BundledReference) =>
+    managedTitles.has(entry.title) || managedImages.has(entry.image);
+
+  const clients = BUNDLED_CLIENTS_FLAT.filter((entry) => !isShadowed(entry));
+  const partners = BUNDLED_PARTNERS.filter((entry) => !isShadowed(entry));
 
   return (
     <ReferencesShell>
@@ -290,31 +301,14 @@ function ClientsAndPartnersPage() {
       <div className="wrap">
         <Group
           id="clients"
-          icon={Building2}
+          icon={Handshake}
           title={t("references.clients.title")}
           text={
             locale === "en"
-              ? "Process lines, skids and equipment delivered to manufacturers in the pharmaceutical, food, chemical and cosmetic industries."
-              : "Lignes de procédé, skids et équipements livrés à des industriels des secteurs pharmaceutique, agroalimentaire, chimique et cosmétique."
+              ? "Process lines, skids and equipment delivered to manufacturers in the pharmaceutical, food, chemical and cosmetic industries, built on the technology of the partners we distribute."
+              : "Lignes de procédé, skids et équipements livrés à des industriels des secteurs pharmaceutique, agroalimentaire, chimique et cosmétique, bâtis sur les technologies de nos partenaires."
           }
-          items={[...managed, ...clients]}
-        />
-      </div>
-
-      <div className="wrap site-intro">
-        <p className="site-intro__label">{t("references.partners.intro")}</p>
-      </div>
-      <div className="wrap">
-        <Group
-          id="partenaires"
-          icon={Handshake}
-          title={locale === "en" ? "Technology partners" : "Partenaires technologiques"}
-          text={
-            locale === "en"
-              ? "Equipment manufacturers and official distributors whose machines we install and maintain."
-              : "Constructeurs d'équipements et distributeurs officiels dont nous installons et entretenons les machines."
-          }
-          items={partners}
+          items={[...managed, ...clients, ...partners]}
         />
       </div>
     </ReferencesShell>

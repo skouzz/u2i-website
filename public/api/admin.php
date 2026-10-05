@@ -1261,6 +1261,10 @@ try {
                 // before the references section existed would otherwise answer
                 // "La liste est vide" instead of telling the admin to install.
                 ensure_reference_schema();
+                // Re-file rows stored under the wrong kind, so an admin who never
+                // touches the import button still sees clients in the Clients
+                // group instead of everything piled up under Partenaires.
+                $refiled = repair_reference_kinds();
                 // prepare(), not query(): PDO::query() takes no parameters, so
                 // the U2I_REFERENCE_KINDS placeholders below would be passed as
                 // a fetch mode and the call would fail.
@@ -1269,7 +1273,11 @@ try {
                 );
                 $stmt->execute(U2I_REFERENCE_KINDS);
                 $rows = $stmt->fetchAll();
-                json_response(['ok' => true, 'items' => array_map('map_reference', $rows)]);
+                json_response([
+                    'ok' => true,
+                    'items' => array_map('map_reference', $rows),
+                    'refiled' => $refiled,
+                ]);
             }
             if ($method === 'PUT' || $method === 'POST') {
                 $data = read_json_body();

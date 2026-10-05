@@ -76,10 +76,8 @@ const fr = {
 
   // ── References section ───────────────────────────────────────────────────
   "references.clients.intro":
-    "Voici les industriels qui nous ont confié leurs lignes de procédé. Chaque logo correspond à une installation réalisée par nos équipes.",
+    "Les industriels qui nous ont confié leurs lignes de procédé, et les fournisseurs de technologies dont nous appliquons les machines. Chaque logo correspond à une installation réalisée par nos équipes.",
   "references.clients.managedTitle": "Autres références",
-  "references.partners.intro":
-    "Nous distribuons et appliquons les technologies de nos partenaires. C'est ce qui nous permet de vous livrer une machine et la compétence qui va avec.",
   "references.certifications.intro":
     "Nos certifications qualité et les formations de nos soudeurs. Les documents originaux sont communicables sur demande.",
   "references.empty": "Aucune référence publiée pour le moment.",
@@ -194,7 +192,7 @@ const fr = {
   "references.hero.eyebrow": "Références",
   "references.hero.title": "Nos réalisations & clients",
   "references.hero.text": "Un aperçu des industries et projets auxquels nous avons contribué.",
-  "references.clients.title": "Nos clients",
+  "references.clients.title": "Nos clients & partenaires",
 
   // ── News ─────────────────────────────────────────────────────────────────
   "news.hero.eyebrow": "Actualités",
@@ -643,10 +641,8 @@ const en: Partial<Record<keyof typeof fr, string>> = {
 
   // ── References section ───────────────────────────────────────────────────
   "references.clients.intro":
-    "These are the manufacturers who entrusted their process lines to us. Every logo corresponds to an installation delivered by our teams.",
+    "The manufacturers who entrusted their process lines to us, and the technology suppliers whose machines we install and maintain. Every logo corresponds to a delivery by our teams.",
   "references.clients.managedTitle": "Other references",
-  "references.partners.intro":
-    "We distribute and apply our partners' technologies. That is what lets us deliver a machine together with the expertise to run it.",
   "references.certifications.intro":
     "Our quality certifications and our welders' training. The original documents are available on request.",
   "references.empty": "No reference published yet.",
@@ -752,7 +748,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "references.hero.eyebrow": "References",
   "references.hero.title": "Our projects & clients",
   "references.hero.text": "A look at the industries and projects we contributed to.",
-  "references.clients.title": "Our clients",
+  "references.clients.title": "Our clients & partners",
 
   "news.hero.eyebrow": "News",
   "news.hero.title": "U2I Process news",

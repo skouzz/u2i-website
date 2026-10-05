@@ -40,12 +40,12 @@ const GROUPS: { kind: CmsReferenceKind; label: string; hint: string }[] = [
   {
     kind: "client",
     label: "Clients",
-    hint: "Logos des industriels pour qui nous avons réalisé des lignes, dans la grille « Nos clients » de la page Références.",
+    hint: "Industriels pour qui nous avons réalisé des lignes. Apparaissent dans la grille « Nos clients & partenaires » de la page Références.",
   },
   {
     kind: "partner",
     label: "Partenaires",
-    hint: "Fournisseurs de technologies et distributeurs d'équipement, dans la grille « Partenaires technologiques » de la page Références.",
+    hint: "Fournisseurs de technologies et distributeurs d'équipement. Apparaissent dans la MÊME grille que les clients, sur la page Références.",
   },
   {
     kind: "certification",
