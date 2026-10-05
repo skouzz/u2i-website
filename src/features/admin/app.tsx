@@ -120,7 +120,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   media: "Médiathèque",
   menus: "Menus",
   homepage: "Page d'accueil",
-  references: "Références clients",
+  references: "Références",
   header: "En-tête du site",
   footer: "Pied de page",
   settings: "Réglages",

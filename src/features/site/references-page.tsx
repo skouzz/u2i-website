@@ -1,5 +1,5 @@
 /**
- * The three pages under /references.
+ * The two pages under /references.
  *
  * Unlike every other entry in the IA, these do not render prose: they draw the
  * live reference rows from the CMS, merged with the logos bundled into the JS,
@@ -12,47 +12,46 @@
  * Replacing the whole grid as soon as one row exists is what previously made
  * 20+ logos vanish the first time somebody added a single reference.
  *
- * Routing is by slug inside one component rather than three, because the three
- * pages share the hero, the section chrome and the merge logic; only the grid
- * body differs.
+ * Clients and partners share ONE page, drawn by the section root itself rather
+ * than by a card that then links somewhere else: they answer the same question
+ * ("who do you work with?"), and splitting them only sent visitors hunting
+ * through two nearly identical logo walls. Within the clients, the logos are
+ * NOT split by industry either — one flat grid, because a logo already says
+ * which sector it belongs to. Certifications keeps its own page, since a
+ * quality certificate is a different kind of evidence from a customer logo.
+ *
+ * Routing is by slug inside one component rather than two, because both pages
+ * share the hero, the section chrome and the merge logic; only the grid body
+ * differs.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, BadgeCheck, Building2, Handshake } from "lucide-react";
+import { BadgeCheck, Building2, Handshake } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { PageHero } from "@/components/PageHero";
 import { useI18n } from "@/lib/i18n";
 import { LocalizedLink } from "@/lib/i18n/LocalizedLink";
-import { cmsApi, type CmsReference, type CmsReferenceKind } from "@/lib/cms";
+import { cmsApi, type CmsReferenceKind } from "@/lib/cms";
 import { useSeo } from "@/lib/seo";
 import {
   BUNDLED_CERTIFICATIONS,
-  BUNDLED_CLIENTS,
+  BUNDLED_CLIENTS_FLAT,
   BUNDLED_PARTNERS,
   type BundledReference,
 } from "@/lib/references-bundled";
-import { findSection, pick, type SiteEntry, type SiteSection } from "@/lib/site/ia";
+import { findSection, pick, type SiteEntry } from "@/lib/site/ia";
 import { ContactCta, SectionSwitcher } from "./shared";
 import { splitLines } from "./split-lines";
 import "./site.css";
 
 const REFERENCES_SECTION = findSection("/references");
 
-/**
- * Which CMS reference kind each page under /references draws.
- *
- * The slugs are French and the enum values are English, so the mapping is
- * spelled out rather than derived by string surgery — the previous
- * `slug.replace(...)` version silently produced `undefined` for any slug that
- * did not match, which is exactly the kind of mapping that quietly empties a
- * grid.
- */
-const KIND_BY_SLUG: Record<string, CmsReferenceKind> = {
-  "references-clients": "client",
-  partenaires: "partner",
-  certifications: "certification",
-};
+/** The combined clients + partners page. It is what the section root draws. */
+const CLIENTS_PARTNERS_SLUG = "clients-partenaires";
+
+/** Certifications keep their own page. */
+const CERTIFICATIONS_SLUG = "certifications";
 
 /**
  * Managed rows of one kind, with the matching bundled logos appended.
@@ -133,7 +132,7 @@ function Group({
   );
 }
 
-/** Share the page chrome for the three sub-pages and the section overview. */
+/** Share the page chrome for the combined page and the certifications page. */
 function ReferencesShell({ entry, children }: { entry?: SiteEntry; children: ReactNode }) {
   const { locale, link, t } = useI18n();
   const section = REFERENCES_SECTION!;
@@ -169,6 +168,7 @@ function ReferencesShell({ entry, children }: { entry?: SiteEntry; children: Rea
         imageAlt={title}
       />
       <div id="groups">{children}</div>
+      <SubPages current={path} />
       <SectionSwitcher current={section} />
       <ContactCta />
     </main>
@@ -176,144 +176,131 @@ function ReferencesShell({ entry, children }: { entry?: SiteEntry; children: Rea
 }
 
 /**
- * Entry point used by the router.
+ * Links between the pages of this section.
  *
- * `sectionId` is passed by the route so this file does not have to import the
- * registry's lookup twice; an unknown slug renders the overview rather than a
- * blank page, which keeps a stale link from 404-ing the whole section.
+ * Needed because the section root now draws the clients and partners directly
+ * rather than an index of cards: without this, certifications would only be
+ * reachable by typing its URL. Reuses the section switcher's styling rather
+ * than adding a second look for the same job.
  */
-export function ReferencesPage({ slug }: { slug?: string }) {
-  const { locale, t } = useI18n();
+function SubPages({ current }: { current: string }) {
+  const { locale } = useI18n();
   const section = REFERENCES_SECTION!;
 
-  const entry = slug ? section.entries.find((candidate) => candidate.slug === slug) : undefined;
-
-  if (!slug) return <ReferencesOverview section={section} />;
-
-  if (slug === "partenaires") return <PartnersPage entry={entry} />;
-  if (slug === "certifications") return <CertificationsPage entry={entry} />;
-  if (slug === "references-clients") return <ClientsPage entry={entry} />;
-
-  // Unknown slug under /references/: show the overview.
-  return <ReferencesOverview section={section} />;
-}
-
-function ReferencesOverview({ section }: { section: SiteSection }) {
-  const { locale, t } = useI18n();
-  const { data } = useQuery({
-    queryKey: ["cms", "references", locale],
-    queryFn: () => cmsApi.references(locale),
-    staleTime: 60_000,
-  });
-  const counts = (data?.items ?? []).reduce<Record<string, number>>((acc, row: CmsReference) => {
-    if (row.isVisible === false) return acc;
-    acc[row.kind] = (acc[row.kind] ?? 0) + 1;
-    return acc;
-  }, {});
-
   return (
-    <ReferencesShell>
-      <div className="wrap site-intro">
-        <p className="site-intro__label">{pick(section.eyebrow, locale)}</p>
-        <p className="site-intro__text">{pick(section.description, locale)}</p>
-      </div>
+    <section className="site-switcher" aria-labelledby="references-subpages-label">
       <div className="wrap">
-        <div className="site-grid">
+        <h2 id="references-subpages-label" className="site-switcher__label">
+          {locale === "en" ? "In this section" : "Dans cette rubrique"}
+        </h2>
+        <div className="site-switcher__links">
           {section.entries.map((entry) => {
-            const count = counts[KIND_BY_SLUG[entry.slug] ?? ""] ?? 0;
+            // The combined page has no page of its own: it IS the section root.
+            const to =
+              entry.slug === CLIENTS_PARTNERS_SLUG ? section.path : `${section.path}/${entry.slug}`;
+            const isCurrent = to === current;
             return (
-              <article key={entry.slug} className="site-card">
-                <div className="site-card__media">
-                  <img src={entry.image} alt="" loading="lazy" decoding="async" />
-                </div>
-                <div className="site-card__body">
-                  <h2 className="site-card__title">{pick(entry.label, locale)}</h2>
-                  <p className="site-card__text">{pick(entry.summary, locale)}</p>
-                  <p className="site-card__more">
-                    {count > 0
-                      ? `${count} ${locale === "en" ? (count > 1 ? "entries" : "entry") : count > 1 ? "références" : "référence"}`
-                      : null}
-                  </p>
-                  <LocalizedLink to={`/references/${entry.slug}`} className="site-card__more">
-                    {t("common.readMore")} <ArrowUpRight size={15} aria-hidden="true" />
-                  </LocalizedLink>
-                </div>
-              </article>
+              <LocalizedLink
+                key={entry.slug}
+                to={to}
+                className={isCurrent ? "is-current" : undefined}
+                aria-current={isCurrent ? "page" : undefined}
+              >
+                {pick(entry.label, locale)}
+              </LocalizedLink>
             );
           })}
         </div>
       </div>
-    </ReferencesShell>
+    </section>
   );
 }
 
-function ClientsPage({ entry }: { entry: SiteEntry | undefined }) {
+/**
+ * Entry point used by the router.
+ *
+ * The section root and the combined slug both draw the merged clients +
+ * partners page. So do the two retired slugs and any unknown one: a stale link
+ * lands on the references themselves rather than on a blank page or a 404.
+ */ export function ReferencesPage({ slug }: { slug?: string }) {
+  const section = REFERENCES_SECTION!;
+
+  if (slug === CERTIFICATIONS_SLUG) {
+    const entry = section.entries.find((candidate) => candidate.slug === CERTIFICATIONS_SLUG);
+    return <CertificationsPage entry={entry} />;
+  }
+
+  // Everything else draws the combined page: the section root, the combined
+  // slug itself, the retired `/references/partenaires` and
+  // `/references/references-clients` still sitting in old sitemaps and
+  // bookmarks, and any unknown slug.
+  //
+  // It is rendered as the SECTION, not as an entry of it, so every one of those
+  // URLs presents and canonicalises to /references instead of claiming a page
+  // of its own that does not exist.
+  return <ClientsAndPartnersPage />;
+}
+
+/**
+ * Clients and partners on one page.
+ *
+ * Clients come first, grouped by industry, because they are the reason a
+ * visitor is here; the technology partners close the page, since they explain
+ * whose machines those lines are built around.
+ */
+/**
+ * Clients and partners on one page, each as a single flat grid.
+ *
+ * No industry subgroups: the bundled clients used to be split into
+ * "Pharmaceutique" and "Agroalimentaire" headings, which added two section
+ * headers and a dozen sentences to say what the logos already show, and left
+ * the managed rows stranded in a third "other references" group. One grid per
+ * register reads better and gives an admin's additions the same footing as the
+ * logos that shipped with the site.
+ */
+function ClientsAndPartnersPage() {
   const { locale, t } = useI18n();
 
-  // Managed client rows first, then the bundled clients grouped by industry.
+  // Managed rows first, then the bundled logos. Both hooks read the same query
+  // key, so this is one request, not two.
   const managed = useMergedReferences(locale, "client", []);
+  const partners = useMergedReferences(locale, "partner", BUNDLED_PARTNERS);
 
   /*
-   * A bundled client is dropped from its industry group when a managed row
-   * already covers it. Matching on BOTH the image and the title matters:
+   * A bundled client is dropped from the grid when a managed row already covers
+   * it. Matching on BOTH the image and the title matters:
    *
-   *  - image is how the other two pages shadow, and it is what makes hiding a
-   *    bundled logo in the dashboard actually hide it;
+   *  - image is how the partners and certifications groups shadow, and it is
+   *    what makes hiding a bundled logo in the dashboard actually hide it;
    *  - title catches the case where an admin re-uploads the same logo under a
    *    new filename, which would otherwise show the client twice.
    */
   const managedTitles = new Set(managed.map((row) => row.title));
   const managedImages = new Set(managed.map((row) => row.image));
 
+  const clients = BUNDLED_CLIENTS_FLAT.filter(
+    (client) => !managedTitles.has(client.title) && !managedImages.has(client.image),
+  );
+
   return (
-    <ReferencesShell entry={entry}>
+    <ReferencesShell>
       <div className="wrap site-intro">
         <p className="site-intro__label">{t("references.clients.intro")}</p>
       </div>
       <div className="wrap">
-        {BUNDLED_CLIENTS.map((group) => {
-          const items = group.clients.filter(
-            (client) => !managedTitles.has(client.title) && !managedImages.has(client.image),
-          );
-          return (
-            <Group
-              key={group.industrySlug}
-              id={group.industrySlug}
-              icon={Building2}
-              title={group.label}
-              text={
-                locale === "en"
-                  ? `Process lines, skids and equipment delivered to ${group.label.toLowerCase()} manufacturers.`
-                  : `Lignes de procédé, skids et équipements livrés à des industriels du secteur ${group.label.toLowerCase()}.`
-              }
-              items={items}
-            />
-          );
-        })}
-        {managed.length > 0 ? (
-          <Group
-            id="autres-references"
-            icon={Building2}
-            title={t("references.clients.managedTitle")}
-            text={
-              locale === "en"
-                ? "Additional client references added from the dashboard."
-                : "Références clients supplémentaires ajoutées depuis le tableau de bord."
-            }
-            items={managed}
-          />
-        ) : null}
+        <Group
+          id="clients"
+          icon={Building2}
+          title={t("references.clients.title")}
+          text={
+            locale === "en"
+              ? "Process lines, skids and equipment delivered to manufacturers in the pharmaceutical, food, chemical and cosmetic industries."
+              : "Lignes de procédé, skids et équipements livrés à des industriels des secteurs pharmaceutique, agroalimentaire, chimique et cosmétique."
+          }
+          items={[...managed, ...clients]}
+        />
       </div>
-    </ReferencesShell>
-  );
-}
 
-function PartnersPage({ entry }: { entry: SiteEntry | undefined }) {
-  const { locale, t } = useI18n();
-  const partners = useMergedReferences(locale, "partner", BUNDLED_PARTNERS);
-
-  return (
-    <ReferencesShell entry={entry}>
       <div className="wrap site-intro">
         <p className="site-intro__label">{t("references.partners.intro")}</p>
       </div>

@@ -208,9 +208,9 @@ export type CmsReferenceKind = "client" | "partner" | "certification";
 /**
  * A reference row shown under /references.
  *
- * The three kinds map one-to-one onto the three pages in that section:
- * "client" logos on Références clients, "partner" logos on Partenaires, and
- * "certification" scans on Certifications.
+ * The three kinds map onto the grids the public pages draw: "client" logos and
+ * "partner" logos both feed /references (under their own heading), while
+ * "certification" scans feed /references/certifications.
  */
 export interface CmsReference {
   id?: number;

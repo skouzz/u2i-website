@@ -45,8 +45,6 @@ $staticRoutes = [
     '/projets/mise-en-service',
     '/projets/etudes-de-cas',
     '/references',
-    '/references/references-clients',
-    '/references/partenaires',
     '/references/certifications',
     '/u2i',
     '/u2i/a-propos',

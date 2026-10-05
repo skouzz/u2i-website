@@ -7,11 +7,13 @@
  * back to them, and the dashboard's "importer" button seeds the editor with
  * them so the original logos become editable without being re-entered by hand.
  *
- * Split three ways, matching the three pages under /references:
+ * Split three ways, matching the three registers the site shows:
  *
- *   BUNDLED_CLIENTS       the manufacturers we built lines for, grouped by
- *                         industry so the page can show who we work with per
- *                         sector rather than one undifferentiated wall
+ *   BUNDLED_CLIENTS       the manufacturers we built lines for. Authored
+ *                         grouped by industry for provenance, but the public
+ *                         page renders BUNDLED_CLIENTS_FLAT as ONE grid — a
+ *                         logo already says which sector it belongs to, so
+ *                         splitting them only added headings
  *   BUNDLED_PARTNERS      equipment and technology suppliers — the companies
  *                         whose machines and know-how we resell and apply
  *   BUNDLED_CERTIFICATIONS quality certificates and training diplomas
@@ -67,9 +69,11 @@ export interface BundledReference {
 /**
  * Client logos grouped by industry.
  *
- * The group key is an industry slug from `src/lib/site/ia.ts`, so the client
- * page can render each group with its own title and copy and stay in step with
- * the navigation without duplicating slugs here.
+ * The group key is an industry slug from `src/lib/site/ia.ts`, so the grouping
+ * stays in step with the navigation without duplicating slugs here. The public
+ * page no longer renders per group — it uses BUNDLED_CLIENTS_FLAT — but the
+ * grouping is kept because it documents where each logo came from and keeps the
+ * list readable while editing it.
  */
 export interface BundledClientGroup {
   /** Matches a section entry slug in the Industries IA. */
@@ -115,7 +119,12 @@ export const BUNDLED_CLIENTS: BundledClientGroup[] = [
   },
 ];
 
-/** Every bundled client logo, flattened — used by the dashboard importer. */
+/**
+ * Every bundled client logo, flattened.
+ *
+ * This is what the public clients grid and the dashboard importer both consume;
+ * the industry grouping above is provenance, not presentation.
+ */
 export const BUNDLED_CLIENTS_FLAT: BundledReference[] = BUNDLED_CLIENTS.flatMap(
   (group) => group.clients,
 );

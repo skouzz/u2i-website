@@ -963,36 +963,27 @@ const U2I: SiteEntry[] = [
 // ── Section 5 — Références ──────────────────────────────────────────────────
 //
 // Rendered by dedicated pages (see features/site/references-page.tsx): these
-// three children draw live CMS data and bundled logo sets rather than prose.
+// children draw live CMS data and bundled logo sets rather than prose.
+//
+// Clients and partners share ONE page. They answer the same question — "who
+// do you work with?" — and splitting them only made visitors hunt through two
+// nearly identical logo walls to find either one. The section root
+// (/references) draws that combined page directly rather than an index of
+// cards, so the logos are what a visitor lands on. Certifications stays on its
+// own page because it is a different kind of evidence altogether.
 
 const REFERENCES: SiteEntry[] = [
   {
-    slug: "references-clients",
-    label: { fr: "Références clients", en: "Client references" },
-    title: { fr: "Références clients", en: "Client references" },
+    slug: "clients-partenaires",
+    label: { fr: "Clients & partenaires", en: "Clients & partners" },
+    title: { fr: "Nos clients et nos partenaires", en: "Our clients and our partners" },
     summary: {
-      fr: "Les industriels qui nous ont confié leurs lignes de procédé, classés par secteur d'activité.",
-      en: "The manufacturers who entrusted their process lines to us, grouped by industry.",
+      fr: "Les industriels qui nous ont confié leurs lignes de procédé, et les partenaires technologiques dont nous appliquons les technologies.",
+      en: "The manufacturers who entrusted their process lines to us, and the technology partners whose technologies we apply.",
     },
     metaDescription: {
-      fr: "Références clients U2I dans le pharmaceutique, la biotechnologie, l'agroalimentaire et la chimie.",
-      en: "U2I client references in pharmaceutical, biotechnology, food and chemical industries.",
-    },
-    body: { fr: [], en: [] },
-    points: { fr: [], en: [] },
-    image: designImage,
-  },
-  {
-    slug: "partenaires",
-    label: { fr: "Partenaires", en: "Partners" },
-    title: { fr: "Nos partenaires", en: "Our partners" },
-    summary: {
-      fr: "Distributeurs et fournisseurs de technologies avec lesquels nous travaillons pour vous offrir les meilleurs équipements.",
-      en: "Distributors and technology suppliers we work with to offer you the best equipment.",
-    },
-    metaDescription: {
-      fr: "Partenaires et distributeurs d'U2I : AXXAIR pour la soudure orbitale, et les fournisseurs de technologies de procédé.",
-      en: "U2I's partners and distributors: AXXAIR for orbital welding, and process technology suppliers.",
+      fr: "Références clients et partenaires d'U2I : industriels du pharmaceutique, de l'agroalimentaire et de la chimie, et distributeurs comme AXXAIR pour la soudure orbitale.",
+      en: "U2I's client and partner references: manufacturers in pharmaceuticals, food and chemicals, and distributors such as AXXAIR for orbital welding.",
     },
     body: { fr: [], en: [] },
     points: { fr: [], en: [] },

@@ -29,21 +29,28 @@ type Item = CmsReference;
 let clientSeq = 0;
 const newClientId = () => `u2i-ref-${Date.now().toString(36)}-${++clientSeq}`;
 
+/*
+ * The three kinds the public pages draw, and where each one ends up.
+ *
+ * Clients and partners are two separate groups HERE because the public page
+ * still separates them with a heading — but they now share one page, so the
+ * hints point at the grids on /references rather than at pages of their own.
+ */
 const GROUPS: { kind: CmsReferenceKind; label: string; hint: string }[] = [
   {
     kind: "client",
-    label: "Références clients",
-    hint: "Logos des industriels pour qui nous avons réalisé des lignes, sur la page Références clients.",
+    label: "Clients",
+    hint: "Logos des industriels pour qui nous avons réalisé des lignes, dans la grille « Nos clients » de la page Références.",
   },
   {
     kind: "partner",
     label: "Partenaires",
-    hint: "Fournisseurs de technologies et distributeurs d'équipement, sur la page Partenaires.",
+    hint: "Fournisseurs de technologies et distributeurs d'équipement, dans la grille « Partenaires technologiques » de la page Références.",
   },
   {
     kind: "certification",
     label: "Certifications",
-    hint: "Logos et documents affichés dans la grille « Certifications ».",
+    hint: "Logos et documents affichés dans la grille « Certifications qualité », sur la page Références › Certifications.",
   },
 ];
 
@@ -53,7 +60,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Type used by the "Ajouter" button; each row can override it afterwards.
-  const [newKind, setNewKind] = useState<CmsReferenceKind>("partner");
+  // Defaults to client, which is the group an admin adds to most often.
+  const [newKind, setNewKind] = useState<CmsReferenceKind>("client");
   // Row most recently added, used to scroll it into view and highlight it.
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
 
@@ -130,9 +138,9 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   }, [pendingFocus]);
 
   /**
-   * Move a row into another group (partenaire ↔ certification).
+   * Move a row into another group (client ↔ partenaire ↔ certification).
    *
-   * The row is re-inserted at the end of its new group so the flat list stays
+   * The row is re-inserted at the top of its new group so the flat list stays
    * grouped by kind, which is what the ordering sent to the server assumes.
    */
   const changeKind = (index: number, kind: CmsReferenceKind) => {
@@ -277,15 +285,16 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   return (
     <div className="admin-section">
       <div className="admin-section__head">
-        <h2>Références clients</h2>
+        <h2>Références</h2>
         <button className="admin-btn admin-btn--primary" onClick={save} disabled={busy}>
           <Save size={14} /> {busy ? "Enregistrement…" : "Enregistrer"}
         </button>
       </div>
 
       <p className="admin-hint">
-        Ces éléments remplacent les logos codés en dur sur la page Références. Tant qu'aucune
-        référence n'est enregistrée, la page affiche la liste d'origine.
+        Ces éléments s'ajoutent aux logos fournis avec le site : la page Références affiche les
+        références enregistrées puis, pour celles que vous ne gérez pas ici, les logos d'origine.
+        Masquer une référence d'origine la retire de la page sans l'effacer de la liste.
       </p>
 
       <div
@@ -323,7 +332,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
               value={newKind}
               onChange={(e) => setNewKind(e.target.value as CmsReferenceKind)}
             >
-              <option value="partner">Partenaire (logo client)</option>
+              <option value="client">Client (industriel)</option>
+              <option value="partner">Partenaire (fournisseur)</option>
               <option value="certification">Certification</option>
             </select>
           </label>
@@ -509,6 +519,7 @@ function ReferenceRow({
             value={item.kind}
             onChange={(e) => onKindChange(e.target.value as CmsReferenceKind)}
           >
+            <option value="client">Client</option>
             <option value="partner">Partenaire</option>
             <option value="certification">Certification</option>
           </select>
