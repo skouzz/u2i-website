@@ -190,7 +190,7 @@ function int_field(array $data, string $key): int
 }
 
 /** Reference kinds the site understands, in the order they are displayed. */
-const U2I_REFERENCE_KINDS = ['client', 'partner', 'certification'];
+const U2I_REFERENCE_KINDS = ['reference', 'certification'];
 
 /**
  * Make sure site_references matches what the code reads and writes.
@@ -226,7 +226,7 @@ function ensure_reference_schema(): bool
         $pdo->exec(
             "CREATE TABLE IF NOT EXISTS site_references (
                 id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-                kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
+                kind ENUM('reference','certification') NOT NULL DEFAULT 'reference',
                 title VARCHAR(255) NOT NULL,
                 image_url VARCHAR(500) NULL,
                 website_url VARCHAR(500) NULL,
@@ -268,14 +268,9 @@ function ensure_reference_schema(): bool
             }
         }
 
-        // Widening an ENUM keeps every existing row valid, so this is safe on a
-        // live database: the only thing it adds is the ability to store 'client'.
-        if ($kindType === '' || strpos($kindType, "'client'") === false) {
-            $pdo->exec(
-                "ALTER TABLE site_references
-                 MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner'"
-            );
-        }
+        // Clients and partners are one collection now, so the column is
+        // migrated here rather than left for the next person to discover.
+        migrate_reference_kinds($pdo, $kindType);
     } catch (Throwable $e) {
         $log('reconcile', $e);
         $ready = false;
@@ -287,18 +282,83 @@ function ensure_reference_schema(): bool
 }
 
 /**
+ * Collapse the retired `client` / `partner` kinds into `reference`.
+ *
+ * A company is a company: the dashboard used to make an editor choose between
+ * "client" and "partner", the column stored that choice, and the whole
+ * pipeline then had to carry it. Nothing reads it any more, so the column
+ * keeps only the two collections that actually exist — companies, and the
+ * certificates that are a different kind of evidence.
+ *
+ * The three steps below are the only way to narrow an ENUM in MySQL without
+ * losing rows, and the order matters:
+ *
+ *   1. WIDEN to include `reference` while still accepting `client` and
+ *      `partner`. Widening never touches existing rows, so this is safe on a
+ *      live database and is a no-op once it has been done.
+ *   2. MOVE the rows. `client` and `partner` become `reference`. Only the
+ *      `kind` column is written: id, title, images, URLs, translations and
+ *      ordering are all left exactly as they are, so no reference is lost and
+ *      no duplicate is created — this is an UPDATE in place, never an insert.
+ *   3. NARROW to the two live kinds. This is only legal once step 2 emptied
+ *      the old values; doing it earlier is what truncates rows to ''.
+ *
+ * Safe to run repeatedly: once the column reads
+ * `enum('reference','certification')` every step is skipped. Returns the number
+ * of rows moved, for logging.
+ */
+function migrate_reference_kinds(PDO $pdo, string $currentType = ''): int
+{
+    if ($currentType === '') {
+        $stmt = $pdo->prepare(
+            "SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'site_references' AND COLUMN_NAME = 'kind'"
+        );
+        $stmt->execute();
+        $currentType = (string) ($stmt->fetchColumn() ?: '');
+    }
+
+    if ($currentType === '') {
+        return 0;
+    }
+
+    // 1. Widen: add 'reference' (and keep whatever the column had) so step 2
+    //    has a legal value to write.
+    if (strpos($currentType, "'reference'") === false) {
+        $pdo->exec(
+            "ALTER TABLE site_references
+             MODIFY COLUMN kind ENUM('reference','certification','client','partner')
+             NOT NULL DEFAULT 'reference'"
+        );
+        $currentType = "enum('reference','certification','client','partner')";
+    }
+
+    // 2. Move the rows. In place, so nothing is created or destroyed.
+    $update = $pdo->prepare(
+        "UPDATE site_references SET kind = 'reference' WHERE kind IN ('client', 'partner')"
+    );
+    $update->execute();
+    $moved = $update->rowCount();
+
+    // 3. Narrow: now that no row holds a retired value, the old ones can go.
+    if (strpos($currentType, "'client'") !== false || strpos($currentType, "'partner'") !== false) {
+        $pdo->exec(
+            "ALTER TABLE site_references
+             MODIFY COLUMN kind ENUM('reference','certification') NOT NULL DEFAULT 'reference'"
+        );
+    }
+
+    return $moved;
+}
+
+/**
  * Re-file reference rows that were saved under the wrong kind.
  *
- * When this section was still two pages, the dashboard had no way to create a
- * `client` row, so every client logo was stored as `partner`. The page then
- * found nothing on the client side and showed partners only — with the clients
- * invisible no matter how many rows the database held.
- *
- * The bundled logo list is the authority on which register a logo belongs to,
- * so a row whose image matches a bundled CLIENT is moved back to `client`, and
- * one matching a bundled PARTNER is moved to `partner`. Rows whose image is
- * unknown to us (an upload the admin made) are left exactly as they are: we have
- * no basis to re-file those, and guessing would shuffle someone's content.
+ * A company logo filed as `certification` is moved back to `reference`, which
+ * is the only other collection now: a certificate is a document, a company
+ * logo is a company. Rows whose image is unknown to us (an upload the admin
+ * made) are left exactly as they are: we have no basis to re-file those, and
+ * guessing would shuffle someone's content.
  *
  * Additive and idempotent: it only ever updates `kind` on rows it can identify
  * with certainty, never inserts, never deletes, and re-running it changes
@@ -618,7 +678,9 @@ function reference_kind_map(): array
     }
 
     return $map = [
-        'client' => [
+        // Every company logo, whatever it was historically filed as: a client
+        // and a partner are both simply a reference now.
+        'reference' => [
             'Sanofi', 'LOGO%20HIKMA', 'LOGO%20SAIPH', 'LOGO%20TERIAK', 'UNIMED%20LOGO',
             'Berg-Life-Sciences-295x300', 'LOGO-MEDIKA-300x269', 'LOGO-MediS-300x264',
             'logo-PHARMA-DEARM-296x300', 'logo-adwya--300x291', 'logo-thera-400-150x150',
@@ -626,8 +688,6 @@ function reference_kind_map(): array
             'Pierre-fabre-logo-1-300x288', 'LOGO%20DELICE', 'cogia-logo',
             'dorcas-logo-300x225', 'LOGO-DAR_ESSAYDALI_94d6073d8c-1-300x280',
             'logo-MEVA-150x150', 'logo-LMP-291x300',
-        ],
-        'partner' => [
             'AXXAIR-logo', 'Enex-we-know-how-logo-retina-300x262', 'BWT',
             'tetrapak-logo-screen-400-150x150', 'sartorius-logo-vector-2-300x288',
             'LOGO_CEVA_SANTE_ANIMALE', 'LOGO-ADVANCS-150x150',

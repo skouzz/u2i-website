@@ -263,17 +263,20 @@ function SubPages({ current }: { current: string }) {
 /**
  * EVERY reference in ONE grid, with no register named anywhere.
  *
+ * Certifications are NOT drawn here: they are documents, not companies, and
+ * they have their own page under the same section.
+ *
  * The page used to split its logos by register — clients here, partners there,
  * each under its own heading — and the split was worse than cosmetic: it made
  * the page read as if one group were missing, and a visitor who wanted to know
  * simply "who do you work with?" had to scan two walls to answer it.
  *
  * Every logo the site knows about is therefore drawn together under one neutral
- * heading: the managed client rows and managed partner rows first, then every
- * bundled logo of both registers that no managed row already covers. The two
- * registers are still read from the database — they are simply not treated as
- * two things on the page. There is no industry subgroup, no heading per group,
- * and no filter: one list, and the grid is the list.
+ * heading: the managed rows first, then every bundled logo no managed row
+ * already covers. The CMS stores them in one collection too — a company is a
+ * `reference`, whatever it used to be filed as — so the page has nothing to
+ * split on. There is no industry subgroup, no heading per group, and no
+ * filter: one list, and the grid is the list.
  *
  * No industry subgroups either. The bundled clients used to be split into
  * "Pharmaceutique" and "Agroalimentaire" headings, which added headers and
@@ -284,13 +287,10 @@ function SubPages({ current }: { current: string }) {
 function ClientsAndPartnersPage() {
   const { locale, t } = useI18n();
 
-  // Managed rows of both kinds. Passing an empty bundle keeps this hook to
-  // "what the dashboard stores"; the bundled logos are merged below so both
-  // registers go through one shadowing pass.
-  const managedClients = useMergedReferences(locale, "client", []);
-  const managedPartners = useMergedReferences(locale, "partner", []);
-
-  const managed = [...managedClients, ...managedPartners];
+  // Every company, whatever it used to be filed as. Passing an empty bundle
+  // keeps this hook to "what the dashboard stores"; the bundled logos are
+  // merged below so they go through one shadowing pass.
+  const managed = useMergedReferences(locale, "reference", []);
 
   /*
    * A bundled logo is dropped from the grid when a managed row already covers
@@ -318,6 +318,8 @@ function ClientsAndPartnersPage() {
 
   const clients = BUNDLED_CLIENTS_FLAT.filter((entry) => !isShadowed(entry));
   const partners = BUNDLED_PARTNERS.filter((entry) => !isShadowed(entry));
+  // One collection, so one list: the bundled logos are appended in the order
+  // they ship, which is every company regardless of the register it came from.
 
   return (
     <ReferencesShell>

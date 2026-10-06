@@ -30,27 +30,24 @@ let clientSeq = 0;
 const newClientId = () => `u2i-ref-${Date.now().toString(36)}-${++clientSeq}`;
 
 /*
- * The three kinds the public pages draw, and where each one ends up.
+ * The two collections the CMS stores, and where each one ends up.
  *
- * Clients and partners are two separate groups HERE because the public page
- * still separates them with a heading — but they now share one page, so the
- * hints point at the grids on /references rather than at pages of their own.
+ * There is no client/partner split any more: a company is a company, so it is
+ * a single `reference` row whichever register it came from. Only the
+ * certificates are a genuinely different kind of thing — they are documents,
+ * not logos of companies — and they keep their own collection and their own
+ * page.
  */
 const GROUPS: { kind: CmsReferenceKind; label: string; hint: string }[] = [
   {
-    kind: "client",
-    label: "Clients",
-    hint: "Industriels pour qui nous avons réalisé des lignes. Apparaissent dans la grille « Nos clients & partenaires » de la page Références.",
-  },
-  {
-    kind: "partner",
-    label: "Partenaires",
-    hint: "Fournisseurs de technologies et distributeurs d'équipement. Apparaissent dans la MÊME grille que les clients, sur la page Références.",
+    kind: "reference",
+    label: "Références",
+    hint: "Toutes les entreprises, clients, fournisseurs et partenaires avec lesquels U2I travaille ou a travaillé. Apparaissent ensemble dans la grille unique de la page Références.",
   },
   {
     kind: "certification",
     label: "Certifications",
-    hint: "Logos et documents affichés dans la grille « Certifications qualité », sur la page Références › Certifications.",
+    hint: "Documents et logos affichés dans la grille « Certifications qualité », sur la page Références › Certifications.",
   },
 ];
 
@@ -59,9 +56,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Type used by the "Ajouter" button; each row can override it afterwards.
-  // Defaults to client, which is the group an admin adds to most often.
-  const [newKind, setNewKind] = useState<CmsReferenceKind>("client");
+  // There is no kind picker any more: each group has its own "add" button, so
+  // a row is created as whatever collection the button belongs to.
   // Row most recently added, used to scroll it into view and highlight it.
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
 
@@ -136,21 +132,6 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
       window.clearTimeout(clearTimer);
     };
   }, [pendingFocus]);
-
-  /**
-   * Move a row into another group (client ↔ partenaire ↔ certification).
-   *
-   * The row is re-inserted at the top of its new group so the flat list stays
-   * grouped by kind, which is what the ordering sent to the server assumes.
-   */
-  const changeKind = (index: number, kind: CmsReferenceKind) => {
-    setItems((prev) => {
-      const row = prev[index];
-      if (!row || row.kind === kind) return prev;
-      const rest = prev.filter((_, i) => i !== index);
-      return insertAtStartOfKind(rest, { ...row, kind });
-    });
-  };
 
   /**
    * Insert a row at the TOP of its group.
@@ -242,8 +223,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
       }
     };
 
-    collect(BUNDLED_CLIENTS_FLAT, "client");
-    collect(BUNDLED_PARTNERS, "partner");
+    collect(BUNDLED_CLIENTS_FLAT, "reference");
+    collect(BUNDLED_PARTNERS, "reference");
     collect(BUNDLED_CERTIFICATIONS, "certification");
 
     if (missing.length === 0 && rekind.size === 0) {
@@ -282,8 +263,8 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         return found === undefined || found !== kind;
       }).length;
     return (
-      count(BUNDLED_CLIENTS_FLAT, "client") +
-      count(BUNDLED_PARTNERS, "partner") +
+      count(BUNDLED_CLIENTS_FLAT, "reference") +
+      count(BUNDLED_PARTNERS, "reference") +
       count(BUNDLED_CERTIFICATIONS, "certification")
     );
   }, [items]);
@@ -356,7 +337,7 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         <p className="admin-hint">
           {items.length === 0
             ? "La liste est vide. Importez les logos d'origine pour les rendre modifiables, ou ajoutez-les à la main."
-            : "Ajoutez en lot les logos d'origine absents, et remettez dans le bon groupe ceux qui sont enregistrés sous le mauvais type."}
+            : "Ajoutez en lot les logos d'origine absents, et remettez dans le bon groupe ceux qui sont enregistrés comme certification."}
         </p>
         <div>
           <button
@@ -377,29 +358,27 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
         className="admin-form"
         style={{ gap: 10, background: "#fff", borderRadius: 10, padding: 14 }}
       >
+        {/* One button per collection. There is no kind to choose: a company is a
+            reference, a certificate is a certification. */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "end", gap: 10 }}>
-          <label style={{ margin: 0, minWidth: 200 }}>
-            Type de référence
-            <select
-              value={newKind}
-              onChange={(e) => setNewKind(e.target.value as CmsReferenceKind)}
-            >
-              <option value="client">Client (industriel)</option>
-              <option value="partner">Partenaire (fournisseur)</option>
-              <option value="certification">Certification</option>
-            </select>
-          </label>
           <button
             type="button"
             className="admin-btn admin-btn--primary"
-            onClick={() => add(newKind)}
+            onClick={() => add("reference")}
           >
-            <Plus size={13} /> Ajouter
+            <Plus size={13} /> Ajouter une référence
+          </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={() => add("certification")}
+          >
+            <Plus size={13} /> Ajouter une certification
           </button>
         </div>
         <p className="admin-hint">
-          Une ligne vide est créée dans le groupe choisi. Vous pouvez changer son type à tout moment
-          avec le sélecteur « Type » de la ligne.
+          Chaque bouton crée une ligne vide dans son groupe, en haut de la liste. Un logo
+          d'entreprise est une référence ; un document d'attestation est une certification.
         </p>
       </div>
 
@@ -435,7 +414,6 @@ export function ReferencesSection({ ctx }: { ctx: AdminCtx }) {
                 isFirst={position === 0}
                 isLast={position === groupIndexes.length - 1}
                 onChange={(patch) => update(index, patch)}
-                onKindChange={(kind) => changeKind(index, kind)}
                 isNew={item.clientId === pendingFocus}
                 onMove={(delta) => move(index, delta)}
                 onRemove={() => setItems((prev) => prev.filter((_, i) => i !== index))}
@@ -461,7 +439,6 @@ function ReferenceRow({
   isLast,
   isNew,
   onChange,
-  onKindChange,
   onMove,
   onRemove,
 }: {
@@ -472,7 +449,6 @@ function ReferenceRow({
   /** Highlight a just-added row so it is obvious where it landed. */
   isNew?: boolean;
   onChange: (patch: Partial<Item>) => void;
-  onKindChange: (kind: CmsReferenceKind) => void;
   onMove: (delta: number) => void;
   onRemove: () => void;
 }) {
@@ -565,17 +541,6 @@ function ReferenceRow({
       </div>
 
       <div className="admin-form__row" style={{ alignItems: "end" }}>
-        <label style={{ maxWidth: 190 }}>
-          Type
-          <select
-            value={item.kind}
-            onChange={(e) => onKindChange(e.target.value as CmsReferenceKind)}
-          >
-            <option value="client">Client</option>
-            <option value="partner">Partenaire</option>
-            <option value="certification">Certification</option>
-          </select>
-        </label>
         <label>
           Titre
           <input
@@ -613,7 +578,7 @@ function ReferenceRow({
       </label>
 
       <label>
-        Lien (URL du site client, optionnel)
+        Lien (URL du site, optionnel)
         <input
           value={item.websiteUrl ?? ""}
           onChange={(e) => onChange({ websiteUrl: e.target.value })}

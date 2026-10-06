@@ -94,19 +94,20 @@ const partners = resolveImages(
     section("export const BUNDLED_PARTNERS:", "export const BUNDLED_CERTIFICATIONS"),
   ),
 );
+// Client and partner are one collection server-side now, so the two TypeScript
+// lists are compared against a single PHP `reference` block holding both.
+const companies = [...clients, ...partners];
 
-const phpClients = phpBlock("client");
-const phpPartners = phpBlock("partner");
+const phpReferences = phpBlock("reference");
 
-if (!phpClients || !phpPartners) {
-  console.error("FAIL  could not find reference_kind_map() in public/api/config.php");
+if (!phpReferences) {
+  console.error(
+    "FAIL  could not find the 'reference' block of reference_kind_map() in public/api/config.php",
+  );
   process.exit(1);
 }
 
-for (const [label, tsList, phpList] of [
-  ["client", clients, phpClients],
-  ["partner", partners, phpPartners],
-]) {
+for (const [label, tsList, phpList] of [["reference", companies, phpReferences]]) {
   const tsSet = norm(tsList);
   const phpSet = norm(phpList);
 

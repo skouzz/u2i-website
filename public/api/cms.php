@@ -360,19 +360,28 @@ try {
             // row exists but is hidden — otherwise hiding a bundled logo in the
             // dashboard would simply let the bundled copy reappear.
             //
-            // FIELD() pins the order to client → partner → certification, the
-            // order the pages and the editor both use. Plain `ORDER BY kind`
-            // sorted the ENUM alphabetically, which put certifications first and
-            // sent the partners before the clients.
+            // FIELD() pins the order to reference → certification, the order
+            // the pages and the editor both use. Plain `ORDER BY kind` sorted
+            // the ENUM alphabetically, which put certifications first.
             //
             // A database without the table (or without ALTER rights) must not
             // take the page down: the bundled logos are a complete fallback, so
             // an empty list is the correct answer here and the page keeps
             // rendering every client and partner logo it shipped with.
+            //
+            // The reconcile is NOT conditional on the read failing. A table still
+            // carrying the retired client/partner values answers this query
+            // happily — FIELD() only sorts, it does not validate — so waiting
+            // for an error meant the page was served rows the code can no longer
+            // read, and the migration silently only happened once an admin
+            // opened the dashboard. Ensuring the schema first makes the data
+            // model match what the endpoint returns. It is a single cached
+            // information_schema lookup per request.
+            ensure_reference_schema();
             $rows = [];
             try {
                 $stmt = db()->prepare(
-                    'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?, ?), sort_order ASC, id ASC'
+                    'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?), sort_order ASC, id ASC'
                 );
                 $stmt->execute(U2I_REFERENCE_KINDS);
                 $rows = $stmt->fetchAll();
@@ -391,7 +400,7 @@ try {
                 try {
                     if (ensure_reference_schema()) {
                         $retry = db()->prepare(
-                            'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?, ?), sort_order ASC, id ASC'
+                            'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?), sort_order ASC, id ASC'
                         );
                         $retry->execute(U2I_REFERENCE_KINDS);
                         $rows = $retry->fetchAll();

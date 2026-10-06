@@ -77,6 +77,29 @@ ALTER TABLE site_references
 ALTER TABLE site_references
     MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner';
 
+-- Clients and partners are one collection: a company is a company. The three
+-- steps are ordered deliberately, because narrowing an ENUM while rows still
+-- hold one of the removed values is what truncates them to ''. Nothing is
+-- inserted or deleted here — only `kind` is rewritten in place, so ids, titles,
+-- images, URLs, translations and ordering all survive untouched.
+--
+--   1. widen  — accept 'reference' while still accepting the old values
+--   2. move   — client/partner become reference
+--   3. narrow — drop the retired values, now that no row holds one
+--
+-- Safe to re-run: once the column reads enum('reference','certification')
+-- every step is a no-op. public/api/config.php runs the same migration from
+-- migrate_reference_kinds(), so an installation that skips this file still
+-- migrates itself the first time the references endpoints are read.
+ALTER TABLE site_references
+    MODIFY COLUMN kind ENUM('reference','certification','client','partner')
+    NOT NULL DEFAULT 'reference';
+
+UPDATE site_references SET kind = 'reference' WHERE kind IN ('client', 'partner');
+
+ALTER TABLE site_references
+    MODIFY COLUMN kind ENUM('reference','certification') NOT NULL DEFAULT 'reference';
+
 -- Menu items: per-item English label, so a sub-section added in the dashboard
 -- can be translated. Both API files already read this column; it was simply
 -- never created, which is why every /en menu label fell back to French.

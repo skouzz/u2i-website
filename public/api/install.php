@@ -46,12 +46,15 @@ function ensure_column(PDO $pdo, string $table, string $column, string $definiti
 }
 
 /**
- * Widen site_references.kind so it accepts 'client' alongside 'partner' and
- * 'certification'.
+ * Collapse the retired `client` / `partner` kinds into `reference`.
  *
- * Widening an ENUM keeps every existing row valid, so this is safe to run on a
- * live database. Guarded on the current definition so re-running the installer
- * is a no-op rather than a second pointless ALTER.
+ * A company is a company, so the column keeps only the two collections that
+ * actually exist: companies, and the certificates that are a different kind of
+ * evidence. Widening the ENUM keeps every existing row valid, so this is safe
+ * on a live database, and it is guarded on the current definition so re-running
+ * the installer is a no-op rather than a second pointless ALTER. The three
+ * ordered steps — and why they cannot be reordered — are documented on
+ * migrate_reference_kinds().
  */
 function ensure_reference_kind(PDO $pdo): void
 {
@@ -66,16 +69,21 @@ function ensure_reference_kind(PDO $pdo): void
         return;
     }
 
-    if ($row === false || $row === null || strpos((string) $row, "'client'") !== false) {
+    if ($row === false || $row === null) {
+        return;
+    }
+
+    // The column still carries the retired client/partner values, so the rows
+    // are moved before the enum is narrowed — see migrate_reference_kinds().
+    $type = (string) $row;
+    if (strpos($type, "'client'") === false && strpos($type, "'partner'") === false) {
         return;
     }
 
     try {
-        $pdo->exec(
-            "ALTER TABLE site_references
-             MODIFY COLUMN kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner'"
-        );
-        $results['migrated'][] = 'site_references.kind';
+        $moved = migrate_reference_kinds($pdo, $type);
+        $results['migrated'][] = 'site_references.kind'
+            . ($moved > 0 ? " ({$moved} company row(s) became references)" : '');
     } catch (Throwable $e) {
         $results['failed'][] = ['sql' => 'site_references.kind', 'error' => $e->getMessage()];
     }
@@ -243,7 +251,7 @@ $statements = [
 
     'site_references' => "CREATE TABLE IF NOT EXISTS site_references (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-        kind ENUM('client','partner','certification') NOT NULL DEFAULT 'partner',
+        kind ENUM('reference','certification') NOT NULL DEFAULT 'reference',
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500) NULL,
         website_url VARCHAR(500) NULL,

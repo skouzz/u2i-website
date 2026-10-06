@@ -203,14 +203,16 @@ export interface CmsNavItem {
   children?: CmsNavItem[];
 }
 
-export type CmsReferenceKind = "client" | "partner" | "certification";
+export type CmsReferenceKind = "reference" | "certification";
 
 /**
  * A reference row shown under /references.
  *
- * The three kinds map onto the grids the public pages draw: "client" logos and
- * "partner" logos both feed /references (under their own heading), while
- * "certification" scans feed /references/certifications.
+ * Two collections, and only two: a company is a "reference" (client, partner,
+ * supplier or distributor — the distinction is not kept), while a
+ * "certification" is the document that vouches for it. They map onto the two
+ * grids the public pages draw: company logos feed /references, certification
+ * documents feed /references/certifications.
  */
 export interface CmsReference {
   id?: number;

@@ -480,7 +480,7 @@ function map_reference(array $row): array
         // was migrated) must not reach the editor: the <select> has no matching
         // option, so React renders an empty value and the row is then dropped
         // on the next save. Falling back to 'partner' keeps it editable.
-        'kind' => in_array((string) $row['kind'], U2I_REFERENCE_KINDS, true) ? (string) $row['kind'] : 'partner',
+        'kind' => in_array((string) $row['kind'], U2I_REFERENCE_KINDS, true) ? (string) $row['kind'] : 'reference',
         'title' => (string) $row['title'],
         'imageUrl' => $row['image_url'] ?? null,
         'websiteUrl' => $row['website_url'] ?? null,
@@ -503,9 +503,9 @@ function map_reference(array $row): array
  * the table empty — every client, partner and certification logo gone from the
  * site with no way back. Now the whole replacement either lands or does not.
  *
- * The kinds are grouped client → partner → certification before writing so the
- * stored sort_order matches the order the public pages and the editor both use;
- * the dashboard used to receive them in plain alphabetical order, which put
+ * The kinds are grouped reference → certification before writing so the stored
+ * sort_order matches the order the public pages and the editor both use; the
+ * dashboard used to receive them in plain alphabetical order, which put
  * certifications first.
  */
 function save_references(array $items): void
@@ -522,12 +522,13 @@ function save_references(array $items): void
         if (!is_array($item)) {
             continue;
         }
-        // An unknown kind is coerced rather than skipped: the row is real
+        // A company is just a reference now, so an unknown or missing kind
+        // becomes 'reference' rather than being skipped: the row is real
         // content the admin added, and dropping it here is how logos
         // disappeared from the list without any error being shown.
         $kind = field($item, 'kind');
         if (!in_array($kind, U2I_REFERENCE_KINDS, true)) {
-            $kind = 'partner';
+            $kind = 'reference';
         }
         $title = field($item, 'title');
         if ($title === '') {
@@ -1283,7 +1284,7 @@ try {
                 // the U2I_REFERENCE_KINDS placeholders below would be passed as
                 // a fetch mode and the call would fail.
                 $stmt = db()->prepare(
-                    'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?, ?), sort_order ASC, id ASC'
+                    'SELECT * FROM site_references ORDER BY FIELD(kind, ?, ?), sort_order ASC, id ASC'
                 );
                 $stmt->execute(U2I_REFERENCE_KINDS);
                 $rows = $stmt->fetchAll();
