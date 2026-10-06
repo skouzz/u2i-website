@@ -261,14 +261,19 @@ function SubPages({ current }: { current: string }) {
  * whose machines those lines are built around.
  */
 /**
- * Clients and partners in ONE grid, on one page, with no split.
+ * EVERY reference in ONE grid, with no register named anywhere.
  *
- * The two registers answer the same question — "who do you work with?" — so
- * drawing them as two headed grids made visitors read a wall of logos twice and
- * made the page look like the clients were missing whenever one grid failed to
- * fill. There is now a single heading, a single flat grid, and every logo the
- * site knows about: managed client rows, managed partner rows, then the bundled
- * logos of both registers.
+ * The page used to split its logos by register — clients here, partners there,
+ * each under its own heading — and the split was worse than cosmetic: it made
+ * the page read as if one group were missing, and a visitor who wanted to know
+ * simply "who do you work with?" had to scan two walls to answer it.
+ *
+ * Every logo the site knows about is therefore drawn together under one neutral
+ * heading: the managed client rows and managed partner rows first, then every
+ * bundled logo of both registers that no managed row already covers. The two
+ * registers are still read from the database — they are simply not treated as
+ * two things on the page. There is no industry subgroup, no heading per group,
+ * and no filter: one list, and the grid is the list.
  *
  * No industry subgroups either. The bundled clients used to be split into
  * "Pharmaceutique" and "Agroalimentaire" headings, which added headers and
@@ -316,19 +321,18 @@ function ClientsAndPartnersPage() {
 
   return (
     <ReferencesShell>
+      {/* The intro, from the three references.partners.* keys. */}
       <div className="wrap site-intro">
-        <p className="site-intro__label">{t("references.clients.intro")}</p>
+        <p className="site-intro__label">{t("references.partners.eyebrow")}</p>
+        <h2 className="site-intro__title">{t("references.partners.title")}</h2>
+        <p className="site-intro__text">{t("references.partners.text")}</p>
       </div>
       <div className="wrap">
         <Group
-          id="clients"
+          id="references"
           icon={Handshake}
-          title={t("references.clients.title")}
-          text={
-            locale === "en"
-              ? "Process lines, skids and equipment delivered to manufacturers in the pharmaceutical, food, chemical and cosmetic industries, built on the technology of the partners we distribute."
-              : "Lignes de procédé, skids et équipements livrés à des industriels des secteurs pharmaceutique, agroalimentaire, chimique et cosmétique, bâtis sur les technologies de nos partenaires."
-          }
+          title={t("references.all.title")}
+          text={t("references.all.text")}
           items={[...managed, ...clients, ...partners]}
         />
       </div>

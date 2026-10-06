@@ -965,18 +965,22 @@ const U2I: SiteEntry[] = [
 // Rendered by dedicated pages (see features/site/references-page.tsx): these
 // children draw live CMS data and bundled logo sets rather than prose.
 //
-// Clients and partners share ONE page. They answer the same question — "who
-// do you work with?" — and splitting them only made visitors hunt through two
-// nearly identical logo walls to find either one. The section root
-// (/references) draws that combined page directly rather than an index of
-// cards, so the logos are what a visitor lands on. Certifications stays on its
-// own page because it is a different kind of evidence altogether.
+// Clients and partners share ONE page, drawn as ONE grid under one neutral
+// heading. They answer the same question — "who do you work with?" — and
+// splitting them by register only made visitors hunt through two nearly
+// identical logo walls, while naming the register made the page read as if one
+// group were missing. The section root (/references) draws that unified page
+// directly rather than an index of cards, so the logos are what a visitor lands
+// on, and neither its hero nor its heading names a register. The slug
+// `clients-partenaires` is kept so existing links still resolve, but its label
+// and title are neutral for the same reason. Certifications stays on its own
+// page because a certificate is a different kind of evidence from a logo.
 
 const REFERENCES: SiteEntry[] = [
   {
     slug: "clients-partenaires",
-    label: { fr: "Clients & partenaires", en: "Clients & partners" },
-    title: { fr: "Nos clients et nos partenaires", en: "Our clients and our partners" },
+    label: { fr: "Références", en: "References" },
+    title: { fr: "Nos références", en: "Our references" },
     summary: {
       fr: "Les industriels qui nous ont confié leurs lignes de procédé, et les partenaires technologiques dont nous appliquons les technologies.",
       en: "The manufacturers who entrusted their process lines to us, and the technology partners whose technologies we apply.",
@@ -1080,12 +1084,12 @@ export const SITE_SECTIONS: SiteSection[] = [
     label: { fr: "Références", en: "References" },
     eyebrow: { fr: "Ils nous font confiance", en: "They trust us" },
     title: {
-      fr: "Nos clients, nos partenaires,\nnos certifications",
-      en: "Our clients, our partners,\nour certifications",
+      fr: "Nos références",
+      en: "Our references",
     },
     description: {
-      fr: "Nos références se lisent dans trois registres : les industriels qui nous ont confié leurs lignes, les partenaires technologiques qui nous équipent, et les certifications qui garantissent nos équipes.",
-      en: "Our references read across three registers: the manufacturers who entrusted their lines to us, the technology partners who equip us, and the certifications that vouch for our teams.",
+      fr: "Les industriels qui nous ont confié leurs lignes de procédé, et les partenaires technologiques dont nous appliquons les technologies.",
+      en: "The manufacturers who entrusted their process lines to us, and the technology partners whose technologies we apply.",
     },
     metaDescription: {
       fr: "Références U2I : clients, partenaires et certifications de l'atelier de tuyauterie de procédé et de soudure orbitale.",

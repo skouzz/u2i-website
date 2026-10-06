@@ -75,8 +75,6 @@ const fr = {
   "site.equipmentCta": "Découvrir nos équipements",
 
   // ── References section ───────────────────────────────────────────────────
-  "references.clients.intro":
-    "Les industriels qui nous ont confié leurs lignes de procédé, et les fournisseurs de technologies dont nous appliquons les machines. Chaque logo correspond à une installation réalisée par nos équipes.",
   "references.clients.managedTitle": "Autres références",
   "references.certifications.intro":
     "Nos certifications qualité et les formations de nos soudeurs. Les documents originaux sont communicables sur demande.",
@@ -192,7 +190,6 @@ const fr = {
   "references.hero.eyebrow": "Références",
   "references.hero.title": "Nos réalisations & clients",
   "references.hero.text": "Un aperçu des industries et projets auxquels nous avons contribué.",
-  "references.clients.title": "Nos clients & partenaires",
 
   // ── News ─────────────────────────────────────────────────────────────────
   "news.hero.eyebrow": "Actualités",
@@ -458,10 +455,16 @@ const fr = {
   "references.certs.text":
     "Des partenaires de confiance et des certifications qui témoignent de notre engagement qualité.",
   "references.certs.cta": "Découvrir nos partenaires",
-  // references.partners.* and references.quality.* are gone with the two-page
-  // layout they belonged to. Clients and partners now share one page
-  // (references.clients.*) and the certificates have their own
-  // (references.certifications.*), so nothing reads them any more.
+  "references.partners.eyebrow": "Nos partenaires",
+  "references.partners.title": "Des relations durables",
+  "references.partners.text":
+    "Des acteurs reconnus de l'industrie et de la santé nous confient leurs projets.",
+  // The single heading over the one grid. Deliberately neutral: the page
+  // presents every reference together, so naming a register here would
+  // reintroduce the split the page exists to avoid.
+  "references.all.title": "Références",
+  "references.all.text":
+    "Lignes de procédé, skids et équipements livrés à des industriels des secteurs pharmaceutique, agroalimentaire, chimique et cosmétique, bâtis sur les technologies de nos partenaires.",
 
   // ── Contact form ─────────────────────────────────────────────────────────
   "contact.form.legend": "Coordonnées",
@@ -636,8 +639,6 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "site.equipmentCta": "Discover our equipment",
 
   // ── References section ───────────────────────────────────────────────────
-  "references.clients.intro":
-    "The manufacturers who entrusted their process lines to us, and the technology suppliers whose machines we install and maintain. Every logo corresponds to a delivery by our teams.",
   "references.clients.managedTitle": "Other references",
   "references.certifications.intro":
     "Our quality certifications and our welders' training. The original documents are available on request.",
@@ -744,7 +745,6 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "references.hero.eyebrow": "References",
   "references.hero.title": "Our projects & clients",
   "references.hero.text": "A look at the industries and projects we contributed to.",
-  "references.clients.title": "Our clients & partners",
 
   "news.hero.eyebrow": "News",
   "news.hero.title": "U2I Process news",
@@ -997,7 +997,13 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "references.certs.text":
     "Trusted partners and certifications that reflect our quality commitment.",
   "references.certs.cta": "Discover our partners",
-  // See the FR block: keys of the retired two-page references layout.
+  "references.partners.eyebrow": "Our partners",
+  "references.partners.title": "Lasting relationships",
+  "references.partners.text":
+    "Recognised players in industry and healthcare trust us with their projects.",
+  "references.all.title": "References",
+  "references.all.text":
+    "Process lines, skids and equipment delivered to manufacturers in the pharmaceutical, food, chemical and cosmetic industries, built on the technology of the partners we distribute.",
 
   "contact.form.legend": "Contact details",
   "contact.form.note": "Fields marked with an asterisk are required.",
