@@ -535,19 +535,25 @@ function save_references(array $items): void
         }
         $i18n = $item['i18n'] ?? null;
         $prepared[] = [
-            $kind,
-            $title,
-            field($item, 'imageUrl') ?: null,
-            field($item, 'websiteUrl') ?: null,
-            !empty($item['isVisible']) ? 1 : 0,
-            is_array($i18n) ? encode_i18n($i18n) : '{}',
+            'kind' => $kind,
+            'title' => $title,
+            'image_url' => field($item, 'imageUrl') ?: null,
+            'website_url' => field($item, 'websiteUrl') ?: null,
+            'is_visible' => !empty($item['isVisible']) ? 1 : 0,
+            'i18n_json' => is_array($i18n) ? encode_i18n($i18n) : '{}',
         ];
     }
 
+    // The same certificate entered twice (once clean, once with the page
+    // counter a scrape appended) would be written back as two entries and show
+    // as two again. Collapsing here as well as on read means a dashboard tab
+    // left open across the fix cannot reintroduce the duplicates.
+    $prepared = array_values(dedupe_reference_rows($prepared));
+
     usort(
         $prepared,
-        static fn (array $a, array $b): int => array_search($a[0], U2I_REFERENCE_KINDS, true)
-            <=> array_search($b[0], U2I_REFERENCE_KINDS, true)
+        static fn (array $a, array $b): int => array_search($a['kind'], U2I_REFERENCE_KINDS, true)
+            <=> array_search($b['kind'], U2I_REFERENCE_KINDS, true)
     );
 
     $pdo = db();
@@ -559,7 +565,15 @@ function save_references(array $items): void
              VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         foreach ($prepared as $order => $row) {
-            $stmt->execute([$row[0], $row[1], $row[2], $row[3], $order, $row[4], $row[5]]);
+            $stmt->execute([
+                $row['kind'],
+                $row['title'],
+                $row['image_url'],
+                $row['website_url'],
+                $order,
+                (int) $row['is_visible'],
+                $row['i18n_json'],
+            ]);
         }
         $pdo->commit();
     } catch (Throwable $e) {
@@ -1273,10 +1287,14 @@ try {
                 );
                 $stmt->execute(U2I_REFERENCE_KINDS);
                 $rows = $stmt->fetchAll();
+                // Same collapse the public page applies, so the editor shows the
+                // list that is actually published instead of the raw rows.
+                $collapsed = dedupe_reference_rows($rows);
                 json_response([
                     'ok' => true,
-                    'items' => array_map('map_reference', $rows),
+                    'items' => array_map('map_reference', $collapsed),
                     'refiled' => $refiled,
+                    'deduped' => count($rows) - count($collapsed),
                 ]);
             }
             if ($method === 'PUT' || $method === 'POST') {

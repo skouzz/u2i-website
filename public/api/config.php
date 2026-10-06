@@ -308,6 +308,12 @@ function ensure_reference_schema(): bool
  */
 function repair_reference_kinds(): int
 {
+    // Re-filing writes a kind the ENUM may not know yet, so the column has to
+    // be widened first. Doing it here rather than relying on the caller to have
+    // called ensure_reference_schema() means this function is safe to use on its
+    // own: called before the reconcile, it used to abort on the first row.
+    ensure_reference_schema();
+
     $byStem = [];
     foreach (reference_kind_map() as $kind => $stems) {
         foreach ($stems as $stem) {
@@ -353,6 +359,190 @@ function repair_reference_kinds(): int
     }
 
     return $fixed;
+}
+
+/**
+ * Reduce a title to a comparison key, ignoring the noise a text scrape leaves.
+ *
+ * The certifications had been seeded twice: once by hand from the certificates
+ * themselves, and once from a scrape of the old page whose builder appended the
+ * page counter to the name. That put both
+ *
+ *     Certificat Axxair - Bouker Amen Allah
+ *     Certificat Axxair - Bouker Amen Allah01
+ *
+ * in the table, and the site rendered the pair as two separate certificates.
+ * The trailing digits carry no meaning, so they are stripped before comparing:
+ * the two rows are then recognised as one entry.
+ *
+ * Accents are folded too, because "Certificat" and "Certificate" are the same
+ * entry as far as a reader is concerned, and a hand re-typed title is unlikely
+ * to reproduce accents.
+ */
+function reference_title_key(string $title): string
+{
+    $text = trim($title);
+    if ($text === '') {
+        return '';
+    }
+    if (function_exists('iconv')) {
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+        if (is_string($ascii) && $ascii !== '') {
+            $text = $ascii;
+        }
+    }
+    $text = mb_strtolower($text);
+    // Trailing counters ("...Allah01", "...807106"), then any leftover spaces.
+    $text = preg_replace('/[0-9]+$/u', '', $text);
+    $text = preg_replace('/[^a-z0-9]+/u', ' ', (string) $text);
+
+    return trim(preg_replace('/\s+/', ' ', (string) $text) ?? '');
+}
+
+/**
+ * Collapse rows that are the same reference entered twice.
+ *
+ * Unlike repair_reference_kinds() this changes nothing in the database: it only
+ * decides which of several identical rows the site should show, and folds the
+ * others' useful fields (translation, website, visibility) into it. Both the
+ * public read and the dashboard run the fetched rows through it, so a duplicate
+ * disappears from the site immediately, and the next dashboard save — which
+ * replaces the whole list — writes the collapsed version back, which is what
+ * makes the cleanup permanent without a migration nobody asked for.
+ *
+ * Two references count as the same when they share a kind AND either the same
+ * logo file or, where no file is stored, the same title. Rows whose logo is a
+ * genuine different file are never merged on title alone, so two certificates
+ * that happen to share a name but not an image both survive.
+ *
+ * The winner is the copy whose title was least mangled by a scrape (see
+ * reference_title_rank()): the fewest trailing digits, then the shorter name,
+ * then the oldest row. It inherits anything it is missing from the copies it
+ * absorbs. Order is preserved: the first occurrence keeps its position.
+ *
+ * Returns the deduplicated rows in their original order.
+ */
+function dedupe_reference_rows(array $rows): array
+{
+    $kept = [];
+    $index = [];
+    $seenStems = [];
+
+    foreach ($rows as $row) {
+        $kind = (string) ($row['kind'] ?? '');
+        $stem = reference_stem_key((string) ($row['image_url'] ?? ''));
+        // A row with no logo can only be matched on its title.
+        if ($stem !== '') {
+            // A stored URL carries the hash of the build it was saved from
+            // (`/assets/Sanofi-Bx7f2a1.png`) while the same logo is also on file
+            // unhashed, so an exact stem match is not enough. As in
+            // reference_kind_for_image(), a stored stem that merely STARTS with a
+            // known stem followed by `-` is the same logo.
+            $key = reference_stem_match($stem, $seenStems);
+            // Registered either way: the first sighting files the stem under its
+            // own name, a later build-hashed twin is filed under that same key.
+            $seenStems[$stem] = $key !== '' ? $key : $stem;
+            $key = $seenStems[$stem];
+        } else {
+            $key = reference_title_key((string) ($row['title'] ?? ''));
+        }
+        if ($key === '') {
+            $kept[] = $row;
+            continue;
+        }
+        $key = $kind . '|' . $key;
+
+        if (!isset($index[$key])) {
+            $index[$key] = count($kept);
+            $kept[] = $row;
+            continue;
+        }
+
+        $at = $index[$key];
+        $winner = $kept[$at];
+        // Among copies of one entry the least mangled title wins: fewest
+        // trailing digits first, then the shorter name. "ISO 9001" must beat
+        // "ISO 900107" even though both end in a digit, and the oldest row
+        // breaks what is left, so the original hand-entered copy is kept.
+        $rowRank = reference_title_rank((string) ($row['title'] ?? ''));
+        $winRank = reference_title_rank((string) ($winner['title'] ?? ''));
+        $rowCleaner = $rowRank < $winRank
+            || ($rowRank === $winRank
+                && mb_strlen((string) ($row['title'] ?? '')) < mb_strlen((string) ($winner['title'] ?? '')));
+
+        // Whichever copy carries the title, the other is absorbed into it and
+        // still donates anything it is missing — the fields below are read off
+        // both, so it does not matter which side came first in the table.
+        $primary = $rowCleaner ? $row : $winner;
+        $secondary = $rowCleaner ? $winner : $row;
+
+        // `?:` rather than `??`: a field the admin cleared reaches the database
+        // as an empty string, which must not shadow a value worth keeping.
+        $primary['website_url'] = ($primary['website_url'] ?? '') ?: ($secondary['website_url'] ?? '');
+        $primary['sort_order'] = min((int) ($primary['sort_order'] ?? 0), (int) ($secondary['sort_order'] ?? 0));
+        $primary['is_visible'] = (int) ($primary['is_visible'] ?? 0) || (int) ($secondary['is_visible'] ?? 0);
+
+        $kept[$at] = array_merge($primary, merge_reference_i18n($primary, $secondary));
+    }
+
+    return $kept;
+}
+
+/**
+ * Find the key a stem was first recorded under, tolerating a build hash.
+ *
+ * $seen maps every stem already met to the key it was filed under, so
+ * `/assets/Sanofi.png` and `/assets/Sanofi-Bx7f2a1.png` — the same logo, one
+ * build apart — resolve to one key and therefore to one entry.
+ */
+function reference_stem_match(string $stem, array $seen): string
+{
+    if (isset($seen[$stem])) {
+        return $seen[$stem];
+    }
+    foreach ($seen as $known => $key) {
+        if ($known !== '' && strncmp($stem, $known . '-', strlen($known) + 1) === 0) {
+            return $key;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Rank a title by how much of it is scrape noise — lower is better.
+ *
+ * A copy carrying a page counter ("...Allah01", "IMG_807106", "ISO 900107")
+ * ends in digits that the clean copy does not have appended. Counting them
+ * separates the two even when both happen to end in a digit, which is exactly
+ * the case for "ISO 9001" and its scraped twin "ISO 900107".
+ */
+function reference_title_rank(string $title): int
+{
+    if (preg_match('/([0-9]+)$/', rtrim(trim($title)), $m)) {
+        return strlen($m[1]);
+    }
+
+    return 0;
+}
+
+/**
+ * Fold the translations of an absorbed copy into the one keeping the entry.
+ *
+ * A per-language merge rather than a wholesale replace, so entering the same
+ * logo twice cannot blank a translation that was written once. Languages the
+ * keeping copy already has win; the absorbed copy only fills the gaps.
+ */
+function merge_reference_i18n(array $winner, array $absorbed): array
+{
+    $a = decode_i18n(isset($winner['i18n_json']) ? (string) $winner['i18n_json'] : null);
+    $b = decode_i18n(isset($absorbed['i18n_json']) ? (string) $absorbed['i18n_json'] : null);
+    if ($b === []) {
+        return $winner;
+    }
+    $merged = $a + $b;
+
+    return array_merge($winner, ['i18n_json' => encode_i18n($merged)]);
 }
 
 /**

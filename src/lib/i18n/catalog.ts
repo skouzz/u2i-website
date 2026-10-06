@@ -458,14 +458,10 @@ const fr = {
   "references.certs.text":
     "Des partenaires de confiance et des certifications qui témoignent de notre engagement qualité.",
   "references.certs.cta": "Découvrir nos partenaires",
-  "references.partners.eyebrow": "Nos partenaires",
-  "references.partners.title": "Des relations durables",
-  "references.partners.text":
-    "Des acteurs reconnus de l'industrie et de la santé nous confient leurs projets.",
-  "references.quality.eyebrow": "Qualité & conformité",
-  "references.quality.title": "Certifications",
-  "references.quality.text":
-    "Formations, attestations et homologations au service de réalisations fiables.",
+  // references.partners.* and references.quality.* are gone with the two-page
+  // layout they belonged to. Clients and partners now share one page
+  // (references.clients.*) and the certificates have their own
+  // (references.certifications.*), so nothing reads them any more.
 
   // ── Contact form ─────────────────────────────────────────────────────────
   "contact.form.legend": "Coordonnées",
@@ -1001,14 +997,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "references.certs.text":
     "Trusted partners and certifications that reflect our quality commitment.",
   "references.certs.cta": "Discover our partners",
-  "references.partners.eyebrow": "Our partners",
-  "references.partners.title": "Lasting relationships",
-  "references.partners.text":
-    "Recognised players in industry and healthcare trust us with their projects.",
-  "references.quality.eyebrow": "Quality & compliance",
-  "references.quality.title": "Certifications",
-  "references.quality.text":
-    "Training, certificates and accreditations in support of reliable work.",
+  // See the FR block: keys of the retired two-page references layout.
 
   "contact.form.legend": "Contact details",
   "contact.form.note": "Fields marked with an asterisk are required.",

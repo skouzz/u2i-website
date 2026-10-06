@@ -401,6 +401,13 @@ try {
                     $rows = [];
                 }
             }
+            // A reference entered twice — the certifications had been seeded
+            // once by hand and once from a scrape that appended the page counter
+            // to the name — is stored as two rows and used to render as two
+            // certificates. Collapsing on read means the duplicate is gone from
+            // the published page without a write, and the dashboard save that
+            // follows makes it permanent.
+            $rows = dedupe_reference_rows($rows);
             $items = [];
             foreach ($rows as $row) {
                 $merged = apply_i18n($row, I18N_REFERENCE_FIELDS, $lang);

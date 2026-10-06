@@ -174,3 +174,81 @@ export function titleFromImageUrl(url: string): string {
   if (!cleaned) return "Sans titre";
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
+
+/**
+ * Reduce a logo URL to the part that identifies the same logo across builds.
+ *
+ * A bundled logo resolves to `/assets/Sanofi-Bx7f2a1.png` in a build and a
+ * managed row stores whatever the browser had at save time, so comparing the
+ * two as strings matches only by luck: same filename, different directory, hash
+ * or encoding. The filename stem is what survives all of that, so it is the
+ * stem that decides whether a managed row and a bundled logo are one logo.
+ *
+ * Mirrors reference_stem_key() in public/api/config.php, which does the same
+ * comparison on the server to re-file a row into the right register.
+ */
+export function referenceStemKey(url: string): string {
+  const withoutQuery = url.split("?")[0].split("#")[0];
+  let decoded = withoutQuery;
+  try {
+    decoded = decodeURIComponent(withoutQuery);
+  } catch {
+    // A malformed escape is compared as-is rather than throwing mid-render.
+  }
+  const file = decoded.replace(/\\/g, "/").split("/").pop() ?? "";
+  return file
+    .replace(/\.[a-z0-9]+$/i, "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Reduce a title to a comparison key that ignores how it was typed.
+ *
+ * Two entries are the same when their titles differ only by case, accents,
+ * punctuation or a trailing page counter — "CEVA Santé Animale" against
+ * "CEVA sante animale", or "Certificat Axxair - Bouker Amen Allah01" against
+ * "Certificat Axxair - Bouker Amen Allah". An exact comparison treats those as
+ * different logos and renders the pair twice.
+ *
+ * Mirrors reference_title_key() in public/api/config.php.
+ */
+export function referenceTitleKey(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[0-9]+$/, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Index filename stems so one logo stored under several names stays one entry.
+ *
+ * A managed row keeps the URL the browser had when it was saved, so the same
+ * logo can be on file as `/assets/Sanofi.png` in one build and
+ * `/assets/Sanofi-Bx7f2a1.png` in the next. Keyed on the stem alone those are
+ * two entries and the logo is published twice, so a stem that merely starts with
+ * an already-seen stem followed by `-` is filed under that same key.
+ *
+ * Mirrors reference_stem_match() in public/api/config.php.
+ */
+export function indexReferenceStems(urls: (string | null | undefined)[]): Set<string> {
+  const seen = new Map<string, string>();
+  for (const url of urls) {
+    if (!url) continue;
+    const stem = referenceStemKey(url);
+    if (!stem || seen.has(stem)) continue;
+    let key = stem;
+    for (const known of seen.keys()) {
+      if (known && stem.startsWith(`${known}-`)) {
+        key = seen.get(known)!;
+        break;
+      }
+    }
+    seen.set(stem, key);
+  }
+  return new Set(seen.values());
+}

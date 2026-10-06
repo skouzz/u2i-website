@@ -38,6 +38,9 @@ import {
   BUNDLED_CERTIFICATIONS,
   BUNDLED_CLIENTS_FLAT,
   BUNDLED_PARTNERS,
+  indexReferenceStems,
+  referenceStemKey,
+  referenceTitleKey,
   type BundledReference,
 } from "@/lib/references-bundled";
 import { findSection, pick, type SiteEntry } from "@/lib/site/ia";
@@ -68,15 +71,24 @@ function useMergedReferences(locale: string, kind: CmsReferenceKind, bundled: Bu
   });
 
   const managed = (data?.items ?? []).filter((row) => row.kind === kind);
-  const shadowed = new Set(
-    managed.map((row) => row.imageUrl).filter((value): value is string => Boolean(value)),
-  );
+  // A bundled logo is shadowed by a managed row that carries the same image OR
+  // the same title, both compared on normalised keys. Image alone is not enough:
+  // an admin who re-uploaded a logo under a new filename, or a row saved in an
+  // earlier build whose URL carries that build's hash, would otherwise be
+  // published twice — the certificates were exactly that, 8 in the database and
+  // the same 8 again from the bundle.
+  const shadowedImages = indexReferenceStems(managed.map((row) => row.imageUrl));
+  const shadowedTitles = new Set(managed.map((row) => referenceTitleKey(row.title)));
 
   const fromManaged: BundledReference[] = managed
     .filter((row) => row.isVisible !== false && row.imageUrl)
     .map((row) => ({ title: row.title, image: row.imageUrl as string }));
 
-  const fromBundle = bundled.filter((entry) => !shadowed.has(entry.image));
+  const fromBundle = bundled.filter(
+    (entry) =>
+      !shadowedImages.has(referenceStemKey(entry.image)) &&
+      !shadowedTitles.has(referenceTitleKey(entry.title)),
+  );
 
   return [...fromManaged, ...fromBundle];
 }
@@ -283,12 +295,21 @@ function ClientsAndPartnersPage() {
    *    it, instead of letting the bundled copy reappear;
    *  - title catches the case where an admin re-uploads the same logo under a
    *    new filename, which would otherwise show the logo twice.
+   *
+   * Both comparisons are made on normalised keys (filename stem, folded title)
+   * rather than raw strings. The database is filled by hand and by import, so a
+   * title arrives spelled "CEVA Santé Animale" on one row and "CEVA sante
+   * animale" on another, and an image URL stored in an earlier build carries
+   * that build's hash. Compared literally, each of those pairs rendered twice —
+   * which is how the certifications ended up published as 16 entries for 8
+   * certificates.
    */
-  const managedTitles = new Set(managed.map((row) => row.title));
-  const managedImages = new Set(managed.map((row) => row.image));
+  const managedTitles = new Set(managed.map((row) => referenceTitleKey(row.title)));
+  const managedImages = indexReferenceStems(managed.map((row) => row.image));
 
   const isShadowed = (entry: BundledReference) =>
-    managedTitles.has(entry.title) || managedImages.has(entry.image);
+    managedTitles.has(referenceTitleKey(entry.title)) ||
+    managedImages.has(referenceStemKey(entry.image));
 
   const clients = BUNDLED_CLIENTS_FLAT.filter((entry) => !isShadowed(entry));
   const partners = BUNDLED_PARTNERS.filter((entry) => !isShadowed(entry));
