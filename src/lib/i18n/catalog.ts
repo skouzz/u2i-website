@@ -464,7 +464,7 @@ const fr = {
   // reintroduce the split the page exists to avoid.
   "references.all.title": "Références",
   "references.all.text":
-    "Lignes de procédé, skids et équipements livrés à des industriels des secteurs pharmaceutique, agroalimentaire, chimique et cosmétique, bâtis sur les technologies de nos partenaires.",
+    "",
 
   // ── Contact form ─────────────────────────────────────────────────────────
   "contact.form.legend": "Coordonnées",
