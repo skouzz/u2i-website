@@ -666,14 +666,21 @@ try {
                 $slug = slugify(field($data, 'slug') !== '' ? field($data, 'slug') : $title);
                 $slug = unique_slug('pages', $slug);
                 $stmt = db()->prepare(
-                    'INSERT INTO pages (slug, title, eyebrow, hero_title, hero_text, hero_image_url, nav_label, nav_order, parent_id, status, is_published, published_at, scheduled_at, seo_json, updated_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    'INSERT INTO pages (slug, slug_en, title, eyebrow, hero_title, hero_text, hero_image_url, nav_label, nav_order, parent_id, status, is_published, published_at, scheduled_at, seo_json, i18n_json, updated_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                 );
                 [$status, $scheduledAt] = derive_status($data);
                 $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
                 $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
+                $slugEnRaw = field($data, 'slugEn');
+                $slugEn = $slugEnRaw !== '' ? unique_slug('pages', slugify($slugEnRaw)) : null;
+                $i18n = sanitize_i18n_payload(
+                    $data['i18n'] ?? null,
+                    ['title', 'eyebrow', 'heroTitle', 'heroText', 'navLabel']
+                );
                 $stmt->execute([
                     $slug,
+                    $slugEn,
                     $title,
                     field($data, 'eyebrow') ?: null,
                     field($data, 'heroTitle') ?: null,
@@ -689,6 +696,7 @@ try {
                     $publishedAt,
                     $scheduledAt,
                     $seo,
+                    $i18n,
                     current_actor(),
                 ]);
                 $pageId = (int) db()->lastInsertId();
@@ -828,11 +836,18 @@ try {
                 $publishedAt = $status === 'published' ? date('Y-m-d H:i:s') : null;
                 $seo = isset($data['seo']) && is_array($data['seo']) ? json_encode($data['seo'], JSON_UNESCAPED_UNICODE) : null;
                 $stmt = db()->prepare(
-                    'INSERT INTO articles (slug, title, excerpt, body, cover_image_url, author, category_id, status, is_published, published_at, scheduled_at, seo_json, updated_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    'INSERT INTO articles (slug, slug_en, title, excerpt, body, cover_image_url, author, category_id, status, is_published, published_at, scheduled_at, seo_json, i18n_json, updated_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                );
+                $slugEnRaw = field($data, 'slugEn');
+                $slugEn = $slugEnRaw !== '' ? unique_slug('articles', slugify($slugEnRaw)) : null;
+                $i18n = sanitize_i18n_payload(
+                    $data['i18n'] ?? null,
+                    ['title', 'excerpt', 'body', 'author']
                 );
                 $stmt->execute([
                     $slug,
+                    $slugEn,
                     $title,
                     field($data, 'excerpt') ?: null,
                     field($data, 'body') ?: null,
@@ -844,6 +859,7 @@ try {
                     $publishedAt,
                     $scheduledAt,
                     $seo,
+                    $i18n,
                     current_actor(),
                 ]);
                 $articleId = (int) db()->lastInsertId();
