@@ -326,9 +326,6 @@ ensure_column($pdo, 'media', 'title', 'VARCHAR(255) NULL');
 ensure_column($pdo, 'media', 'alt_text', 'VARCHAR(500) NULL');
 ensure_column($pdo, 'media', 'caption', 'VARCHAR(500) NULL');
 ensure_column($pdo, 'media', 'description', 'TEXT NULL');
-ensure_column($pdo, 'media', 'alt_text', 'VARCHAR(500) NULL');
-ensure_column($pdo, 'media', 'caption', 'VARCHAR(500) NULL');
-ensure_column($pdo, 'media', 'description', 'TEXT NULL');
 
 ensure_column($pdo, 'settings', 'header_json', 'JSON NULL');
 ensure_column($pdo, 'settings', 'footer_json', 'JSON NULL');
