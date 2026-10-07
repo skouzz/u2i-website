@@ -225,6 +225,9 @@ function map_article_row(array $row): array
         }
     }
 
+    $missing = ['title', 'excerpt', 'body', 'author'];
+    $en = decode_i18n(isset($row['i18n_json']) ? (string) $row['i18n_json'] : null);
+
     return with_i18n_meta([
         'id' => (int) $row['id'],
         'slug' => (string) $row['slug'],
@@ -701,6 +704,14 @@ try {
                 ]);
                 $pageId = (int) db()->lastInsertId();
                 save_blocks($pageId, is_array($data['blocks'] ?? null) ? $data['blocks'] : []);
+
+                // Mirror the page under the English slug so the English-only
+                // public page lookup (cms.php find_by_slug(..., lang='en')) finds
+                // the top-level page without another hit on pages.slug_en.
+                if ($slugEn !== null) {
+                    $mirrorStmt = db()->prepare('UPDATE pages SET slug_en = ?, updated_by = ? WHERE id = ?');
+                    $mirrorStmt->execute([$slugEn, current_actor(), $pageId]);
+                }
                 log_activity('page.create', 'page', $pageId, $title);
                 $page = fetch_page($pageId);
                 json_response(['ok' => true, 'page' => $page ? map_page_row($page) : null], 201);
@@ -864,6 +875,14 @@ try {
                 ]);
                 $articleId = (int) db()->lastInsertId();
                 sync_article_tags($articleId, is_array($data['tagIds'] ?? null) ? $data['tagIds'] : []);
+
+                // Mirror the article under the English slug so the English-only
+                // public article lookup (cms.php find_by_slug(..., lang='en'))
+                // finds this article without another hit on articles.slug_en.
+                if ($slugEn !== null) {
+                    $mirrorStmt = db()->prepare('UPDATE articles SET slug_en = ?, updated_by = ? WHERE id = ?');
+                    $mirrorStmt->execute([$slugEn, current_actor(), $articleId]);
+                }
                 log_activity('article.create', 'article', $articleId, $title);
                 json_response(['ok' => true, 'article' => map_article_row(fetch_article($articleId) ?? [])], 201);
             }

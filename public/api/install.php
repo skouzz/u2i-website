@@ -313,7 +313,19 @@ ensure_column($pdo, 'articles', 'scheduled_at', 'DATETIME NULL');
 ensure_column($pdo, 'articles', 'status', "ENUM('draft','pending','scheduled','published','archived') NOT NULL DEFAULT 'draft'");
 ensure_column($pdo, 'articles', 'updated_by', 'VARCHAR(120) NULL');
 
+// v3 i18n overlay columns (idempotent).
+ensure_column($pdo, 'pages',   'slug_en',   'VARCHAR(191) NULL');
+ensure_column($pdo, 'pages',   'i18n_json', 'JSON NULL');
+ensure_column($pdo, 'articles', 'slug_en',   'VARCHAR(191) NULL');
+ensure_column($pdo, 'articles', 'i18n_json', 'JSON NULL');
+
+$pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_articles_slug_en ON articles (slug_en)');
+$pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pages_slug_en   ON pages   (slug_en)');
+
 ensure_column($pdo, 'media', 'title', 'VARCHAR(255) NULL');
+ensure_column($pdo, 'media', 'alt_text', 'VARCHAR(500) NULL');
+ensure_column($pdo, 'media', 'caption', 'VARCHAR(500) NULL');
+ensure_column($pdo, 'media', 'description', 'TEXT NULL');
 ensure_column($pdo, 'media', 'alt_text', 'VARCHAR(500) NULL');
 ensure_column($pdo, 'media', 'caption', 'VARCHAR(500) NULL');
 ensure_column($pdo, 'media', 'description', 'TEXT NULL');
