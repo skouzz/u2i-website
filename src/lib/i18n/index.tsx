@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import React from "react";
 import { useRouterState } from "@tanstack/react-router";
 
 import {
@@ -21,6 +21,8 @@ export {
   missingKeys,
   translateNavLabel,
 } from "./catalog";
+
+const { createContext, useContext, useMemo } = React;
 
 /** Read the active locale from the URL: /en/... is English, everything else French. */
 export function localeFromPath(pathname: string): Locale {
