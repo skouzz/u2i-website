@@ -112,7 +112,7 @@ const fr = {
   "about.hero.eyebrow": "Qui sommes-nous",
   "about.hero.title": "Univers Inox Industriel",
   "about.hero.text":
-    "Plus de 20 ans d'expertise dans la tuyauterie inox et la soudure orbitale au service de l'industrie.",
+    "Fondée en 2015 à Akouda, à quelques kilomètres au nord-ouest de Sousse, Univers Inox Industriel (U2I) est spécialisée en chaudronnerie, soudure et tuyauterie industrielle pour les secteurs de haute exigence : pharmaceutique, alimentaire et chimique.",
   "about.story.title": "Notre histoire",
   "about.story.p1":
     "Nos ingénieurs et techniciens mettent leur expérience des secteurs pharmaceutique, agroalimentaire et chimique au service de projets aux exigences élevées. Nous adaptons chaque intervention aux besoins du client et aux réalités de son site.",
@@ -265,11 +265,11 @@ const fr = {
     "Découvrez nos processus de bout en bout, garantissant la qualité, la précision et la traçabilité de chaque installation.",
   "home.who.title": "Qui sommes nous",
   "home.who.text1":
-    "Tunisie. Nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie industrielle pour les secteurs les plus exigeants.",
+    "Fondée en 2015, la société Univers Inox Industriel est basée à Akouda, une ville située à quelques kilomètres au nord-ouest de Sousse en Tunisie. Nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie industrielle spécialement dans les domaines de haute exigence notamment le secteur pharmaceutique, les secteurs alimentaire et chimique.",
   "home.who.text2":
-    "Notre personnel constitué d'équipe d'ingénieurs et des techniciens spécialisés et formés vous accompagne à chaque étape.",
+    "Notre personnel constitué d'une équipe d'ingénieurs et des techniciens spécialisés et expérimentés, issus d'une expérience de plus de 10 ans dans le domaine pharmaceutique, peut contrôler toutes les phases de la réalisation d'un projet : les études, la préfabrication en atelier, les travaux sur site, la mise en service, la qualification de l'installation, la maintenance sur site.",
   "home.who.text3":
-    "Nous assurons l'études, la préfabrication en atelier, les travaux sur site, la mise en service, la maintenance et l'assistance.",
+    "Le personnel U2I, spécialiste de la tuyauterie process, est avant tout à l'écoute des besoins spécifiques de ses clients.",
   "home.who.cta": "Nous contacter",
   "home.expertise.title": "Nos Domaines d'Expertise",
   "home.expertise.text":
@@ -356,11 +356,11 @@ const fr = {
   "about.svc.control.title": "Contrôle & maintenance",
   "about.svc.control.text": "Endoscopie, essais de pression et maintenance préventive.",
   "about.who.text1":
-    "Basés en Tunisie, nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie industrielle pour les secteurs les plus exigeants.",
+    "Fondée en 2015, la société Univers Inox Industriel est basée à Akouda, une ville située à quelques kilomètres au nord-ouest de Sousse en Tunisie. Nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie industrielle spécialement dans les domaines de haute exigence notamment le secteur pharmaceutique, les secteurs alimentaire et chimique.",
   "about.who.text2":
-    "Notre personnel, constitué d'ingénieurs et de techniciens spécialisés et formés, vous accompagne à chaque étape.",
+    "Notre personnel constitué d'une équipe d'ingénieurs et des techniciens spécialisés et expérimentés, issus d'une expérience de plus de 10 ans dans le domaine pharmaceutique, peut contrôler toutes les phases de la réalisation d'un projet : les études, la préfabrication en atelier, les travaux sur site, la mise en service, la qualification de l'installation, la maintenance sur site.",
   "about.who.text3":
-    "Nous assurons l'étude, la préfabrication en atelier, les travaux sur site, la mise en service, la maintenance et l'assistance.",
+    "Le personnel U2I, spécialiste de la tuyauterie process, est avant tout à l'écoute des besoins spécifiques de ses clients.",
   "about.step.study.title": "Étudier",
   "about.step.study.text": "Vos besoins, vos plans et les contraintes du process.",
   "about.step.prefab.title": "Préfabriquer",
@@ -674,7 +674,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "about.hero.eyebrow": "About us",
   "about.hero.title": "Univers Inox Industriel",
   "about.hero.text":
-    "Over 20 years of expertise in stainless steel piping and orbital welding for industry.",
+    "Founded in 2015 in Akouda, a few kilometres north-west of Sousse, Univers Inox Industriel (U2I) specialises in pressure vessel fabrication, welding and industrial piping for high-demand sectors: pharmaceutical, food and chemical.",
   "about.story.title": "Our story",
   "about.story.p1":
     "Our engineers and technicians bring experience from the pharmaceutical, food and chemical industries to high-exigence projects. We adapt every intervention to the client's needs and the reality of their site.",
@@ -813,10 +813,11 @@ const en: Partial<Record<keyof typeof fr, string>> = {
     "Discover our end-to-end processes, guaranteeing the quality, precision and traceability of every installation.",
   "home.who.title": "About us",
   "home.who.text1":
-    "Based in Tunisia, we specialise in sheet metal work, welding and industrial piping for the most demanding industries.",
-  "home.who.text2": "Our team of qualified engineers and technicians supports you at every step.",
+    "Founded in 2015, Univers Inox Industriel is based in Akouda, a town a few kilometres north-west of Sousse in Tunisia. We specialise in pressure vessel fabrication, welding and industrial piping, especially in high-demand fields such as the pharmaceutical, food and chemical sectors.",
+  "home.who.text2":
+    "Our team of engineers and specialised, experienced technicians, with more than ten years in the pharmaceutical sector, can oversee every stage of a project: studies, workshop prefabrication, on-site work, commissioning, installation qualification and on-site maintenance.",
   "home.who.text3":
-    "We handle engineering, workshop prefabrication, on-site works, commissioning, maintenance and support.",
+    "As process piping specialists, the U2I team is above all focused on listening to our clients' specific needs.",
   "home.who.cta": "Contact us",
   "home.expertise.title": "Our areas of expertise",
   "home.expertise.text":
@@ -901,10 +902,11 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   "about.svc.control.title": "Inspection & maintenance",
   "about.svc.control.text": "Endoscopy, pressure testing and preventive maintenance.",
   "about.who.text1":
-    "Based in Tunisia, we specialise in sheet metal work, welding and industrial piping for the most demanding industries.",
-  "about.who.text2": "Our team of qualified engineers and technicians supports you at every step.",
+    "Founded in 2015, Univers Inox Industriel is based in Akouda, a town a few kilometres north-west of Sousse in Tunisia. We specialise in pressure vessel fabrication, welding and industrial piping, especially in high-demand fields such as the pharmaceutical, food and chemical sectors.",
+  "about.who.text2":
+    "Our team of engineers and specialised, experienced technicians, with more than ten years in the pharmaceutical sector, can oversee every stage of a project: studies, workshop prefabrication, on-site work, commissioning, installation qualification and on-site maintenance.",
   "about.who.text3":
-    "We handle engineering, workshop prefabrication, on-site works, commissioning, maintenance and support.",
+    "As process piping specialists, the U2I team is above all focused on listening to our clients' specific needs.",
   "about.step.study.title": "Study",
   "about.step.study.text": "Your needs, your plans and your process constraints.",
   "about.step.prefab.title": "Prefabricate",

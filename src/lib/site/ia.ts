@@ -837,23 +837,23 @@ const U2I: SiteEntry[] = [
     label: { fr: "À propos", en: "About" },
     title: { fr: "À propos d'U2I", en: "About U2I" },
     summary: {
-      fr: "Univers Inox Industriel : un atelier tunisien de tuyauterie de procédé, soudure orbitale et fabrication inox au service des industries du procédé.",
-      en: "Univers Inox Industriel: a Tunisian workshop for process piping, orbital welding and stainless fabrication, serving process industries.",
+      fr: "Univers Inox Industriel : un atelier tunisien fondé en 2015 à Akouda, spécialisé en chaudronnerie, soudure et tuyauterie industrielle pour les secteurs pharmaceutique, alimentaire et chimique.",
+      en: "Univers Inox Industriel: a Tunisian workshop founded in 2015 in Akouda, specialising in pressure vessel fabrication, welding and industrial piping for the pharmaceutical, food and chemical sectors.",
     },
     metaDescription: {
-      fr: "U2I Process, fabricant tunisien de tuyauterie de procédé inox, soudure orbitale et équipements pour le pharmaceutique, la biotechnologie et l'agroalimentaire.",
-      en: "U2I Process, a Tunisian manufacturer of stainless process piping, orbital welding and equipment for pharmaceutical, biotechnology and food industries.",
+      fr: "Univers Inox Industriel (U2I) est un atelier tunisien fondé en 2015 à Akouda, spécialisé en chaudronnerie, soudure et tuyauterie industrielle pour les secteurs pharmaceutique, alimentaire et chimique.",
+      en: "Univers Inox Industriel (U2I) is a Tunisian workshop founded in 2015 in Akouda, specialising in pressure vessel fabrication, welding and industrial piping for the pharmaceutical, food and chemical sectors.",
     },
     body: {
       fr: [
-        "Univers Inox Industriel est né d'un constat simple : la Tunisie dispose d'une agroalimentaire et d'une pharmacie exigeantes, mais peu d'ateliers capables de leur fournir des équipements de procédé conformes à leurs standards.",
-        "Installés à Akouda, dans la région de Sousse, nous avons bâti un atelier équipé pour la tuyauterie inox et la soudure orbitale, et une équipe d'ingénieurs capable de concevoir le procédé autant que de le fabriquer.",
-        "Nous travaillons pour des groupes pharmaceutiques et agroalimentaires tunisiens, algériens et français, sur des installations qui doivent fonctionner plusieurs années sans interruption.",
+        "Fondée en 2015, la société Univers Inox Industriel est basée à Akouda, une ville située à quelques kilomètres au nord-ouest de Sousse en Tunisie. Nous sommes spécialisés en chaudronnerie, travaux de soudure et tuyauterie industrielle spécialement dans les domaines de haute exigence, notamment les secteurs pharmaceutique, alimentaire et chimique.",
+        "Notre personnel, constitué d'une équipe d'ingénieurs et de techniciens spécialisés et expérimentés, issus d'une expérience de plus de dix ans dans le domaine pharmaceutique, peut contrôler toutes les phases de la réalisation d'un projet : les études, la préfabrication en atelier, les travaux sur site, la mise en service, la qualification de l'installation et la maintenance sur site.",
+        "L'équipe U2I, spécialiste de la tuyauterie process, est avant tout à l'écoute des besoins spécifiques de ses clients.",
       ],
       en: [
-        "Univers Inox Industriel began with a simple observation: Tunisia has a demanding food and pharmaceutical industry, but few workshops capable of supplying it with process equipment matching its standards.",
-        "Based in Akouda, in the Sousse region, we built a workshop equipped for stainless piping and orbital welding, and an engineering team able to design the process as well as manufacture it.",
-        "We work for Tunisian, Algerian and French pharmaceutical and food groups, on installations that must run for years without interruption.",
+        "Founded in 2015, Univers Inox Industriel is based in Akouda, a town a few kilometres north-west of Sousse in Tunisia. We specialise in pressure vessel fabrication, welding and industrial piping, especially in high-demand fields such as the pharmaceutical, food and chemical sectors.",
+        "Our team of engineers and specialised, experienced technicians, with more than ten years in the pharmaceutical sector, can oversee every stage of a project: studies, workshop prefabrication, on-site work, commissioning, installation qualification and on-site maintenance.",
+        "As process piping specialists, the U2I team is above all focused on listening to our clients' specific needs.",
       ],
     },
     points: {
