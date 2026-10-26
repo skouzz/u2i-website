@@ -1,9 +1,6 @@
-import React, {
-  useMemo as reactUseMemo,
-  useContext as reactUseContext,
-  createContext as reactCreateContext,
-} from "react";
+import { useMemo, useContext, createContext } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 import { DEFAULT_LOCALE, SOURCE_LOCALE, translate, type Locale, type MessageKey } from "./catalog";
 import { localize, localeFromPath } from "./locatable";
@@ -32,7 +29,7 @@ type I18nValue = {
   switchTo: Locale;
 };
 
-const I18nContext = reactCreateContext<I18nValue | null>(null);
+const I18nContext = createContext<I18nValue | null>(null);
 
 function getI18nValue(locale: Locale): I18nValue {
   const other: Locale = locale === "fr" ? "en" : "fr";
@@ -46,16 +43,16 @@ function getI18nValue(locale: Locale): I18nValue {
 }
 
 function cachedI18nValue(locale: Locale): I18nValue {
-  return reactUseMemo<I18nValue>(() => getI18nValue(locale), [locale]);
+  return useMemo<I18nValue>(() => getI18nValue(locale), [locale]);
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+export function I18nProvider({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const locale = localeFromPath(pathname);
 
   const value = cachedI18nValue(locale);
 
-  return React.createElement(I18nContext.Provider, { value }, children);
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 /**
@@ -63,7 +60,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
  * rendered outside the provider (e.g. an isolated test) still works.
  */
 export function useI18n(): I18nValue {
-  const ctx = reactUseContext(I18nContext);
+  const ctx = useContext(I18nContext);
   const fallbackLocale: Locale = DEFAULT_LOCALE;
   if (ctx) return ctx;
   return {

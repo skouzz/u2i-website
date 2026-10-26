@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, X } from "lucide-react";
 
@@ -41,14 +41,26 @@ import equip6 from "@/assets/equipments/Skid de DégraissageDécapagePassivation
 const posterImage = pharmaImage;
 
 // Default images (fallback when CMS is not configured)
-const DEFAULT_HERO_SLIDES = [
+const DEFAULT_HERO_SLIDES: ReadonlyArray<{
+  readonly key: "slide1" | "slide2" | "slide3" | "slide4";
+  readonly labelKey: "home.slide1.label" | "home.slide2.label" | "home.slide3.label" | "home.slide4.label";
+  readonly titleKey: "home.slide1.title" | "home.slide2.title" | "home.slide3.title" | "home.slide4.title";
+  readonly date?: string;
+  readonly dateKey?: "home.slide2.date" | "home.slide3.date" | "home.slide4.date";
+  readonly image: string;
+}> = [
   { key: "slide1", labelKey: "home.slide1.label", titleKey: "home.slide1.title", date: "08.07.2026", image: slide1Image },
   { key: "slide2", labelKey: "home.slide2.label", titleKey: "home.slide2.title", dateKey: "home.slide2.date", image: slide2Image },
   { key: "slide3", labelKey: "home.slide3.label", titleKey: "home.slide3.title", dateKey: "home.slide3.date", image: slide4Image },
   { key: "slide4", labelKey: "home.slide4.label", titleKey: "home.slide4.title", dateKey: "home.slide4.date", image: slide4Image },
 ];
 
-const DEFAULT_SECTORS = [
+const DEFAULT_SECTORS: ReadonlyArray<{
+  readonly key: "pharma" | "food" | "chemical" | "cosmetics" | "furniture";
+  readonly tagKey: "home.sector.pharma.tag" | "home.sector.food.tag" | "home.sector.chemical.tag" | "home.sector.cosmetics.tag" | "home.sector.furniture.tag";
+  readonly titleKey: "home.sector.pharma.title" | "home.sector.food.title" | "home.sector.chemical.title" | "home.sector.cosmetics.title" | "home.sector.furniture.title";
+  readonly image: string;
+}> = [
   { key: "pharma", tagKey: "home.sector.pharma.tag", titleKey: "home.sector.pharma.title", image: pharmaImage },
   { key: "food", tagKey: "home.sector.food.tag", titleKey: "home.sector.food.title", image: agroImage },
   { key: "chemical", tagKey: "home.sector.chemical.tag", titleKey: "home.sector.chemical.title", image: chimieImage },
@@ -56,7 +68,11 @@ const DEFAULT_SECTORS = [
   { key: "furniture", tagKey: "home.sector.furniture.tag", titleKey: "home.sector.furniture.title", image: mobilierImage },
 ];
 
-const DEFAULT_EQUIPMENTS = [
+const DEFAULT_EQUIPMENTS: ReadonlyArray<{
+  readonly id: "endoscopie" | "controle-gaz" | "coupe-rectification" | "soudure-orbitale" | "commande-numerique" | "skid-degraissage";
+  readonly titleKey: "equipment.item.endoscopie" | "equipment.item.controleGaz" | "equipment.item.coupe" | "equipment.item.orbital" | "equipment.item.commande" | "equipment.item.skid";
+  readonly image: string;
+}> = [
   { id: "endoscopie", titleKey: "equipment.item.endoscopie", image: equip1 },
   { id: "controle-gaz", titleKey: "equipment.item.controleGaz", image: equip2 },
   { id: "coupe-rectification", titleKey: "equipment.item.coupe", image: equip3 },
@@ -65,9 +81,13 @@ const DEFAULT_EQUIPMENTS = [
   { id: "skid-degraissage", titleKey: "equipment.item.skid", image: equip6 },
 ];
 
-const DEFAULT_PARTNERS = [
+const DEFAULT_PARTNERS: ReadonlyArray<{
+  readonly title: string;
+  readonly image: string;
+  readonly key: string;
+}> = [
   { title: "Sanofi", image: sanofiLogoImage, key: "sanofi" },
-  { title: "Hikma", image: sanofiLogoImage, key: "hikma" }, // fallback, will use sanofi image
+  { title: "Hikma", image: sanofiLogoImage, key: "hikma" },
   { title: "Saiph", image: sanofiLogoImage, key: "saiph" },
   { title: "Teriak", image: sanofiLogoImage, key: "teriak" },
   { title: "UNIMED", image: sanofiLogoImage, key: "unimed" },
@@ -97,7 +117,7 @@ const PARTNER_LOGOS = DEFAULT_PARTNERS.map((p) => ({ title: p.title, image: p.im
 /** The original designed homepage (shown when no CMS sections are configured). */
 export function DefaultHomePage() {
   const { locale } = useI18n();
-  
+
   // Fetch CMS-managed images for each section
   const heroSlides = useSiteImages("hero_slides");
   const sectors = useSiteImages("sectors");
@@ -112,7 +132,8 @@ export function DefaultHomePage() {
       <Presentation />
       <Sectors sectors={DEFAULT_SECTORS} cmsSectors={sectors.data} />
       <Equipments equipments={DEFAULT_EQUIPMENTS} cmsEquipments={equipments.data} />
-      <References partners={DEFAULT_PARTNERS} cmsPartners={partners.data} />          <CertificationsSection certs={CERTIFICATIONS} cmsCerts={certifications.data} />
+      <References partners={DEFAULT_PARTNERS} cmsPartners={partners.data} />
+      <CertificationsSection certs={CERTIFICATIONS} cmsCerts={certifications.data} />
     </main>
   );
 }
@@ -127,7 +148,7 @@ interface HeroProps {
 function Hero({ slides, cmsSlides }: HeroProps) {
   const { t } = useI18n();
   const [i, setI] = useState(0);
-  
+
   // Merge CMS images with defaults: CMS wins when available
   const mergedSlides = slides.map((slide) => {
     const cmsSlide = cmsSlides?.items.find((s) => s.keyName === slide.key && s.isVisible !== false);
@@ -136,7 +157,7 @@ function Hero({ slides, cmsSlides }: HeroProps) {
       image: cmsSlide?.imageUrl || slide.image,
     };
   });
-  
+
   const total = mergedSlides.length;
   const SLIDE_DURATION = 5000;
   const activeSlide = mergedSlides[i];
@@ -152,9 +173,9 @@ function Hero({ slides, cmsSlides }: HeroProps) {
     <section className="hero-section relative h-[calc(100svh-56px)] min-h-[540px] overflow-hidden bg-black md:h-[calc(100svh-80px)]">
       <div className="hero-grain" aria-hidden="true" />
 
-      {HERO_SLIDES.map((s, idx) => (
+      {mergedSlides.map((s, idx) => (
         <motion.img
-          key={s.labelKey}
+          key={s.key}
           src={s.image}
           alt=""
           initial={idx === 0 ? { y: 40, scale: 1.05, opacity: 0 } : { opacity: 0 }}
@@ -185,7 +206,7 @@ function Hero({ slides, cmsSlides }: HeroProps) {
             <span>{t(activeSlide.labelKey)}</span>
             <span className="hero-slide-meta__line" aria-hidden="true" />
             <span className="hero-slide-meta__date">
-              {"dateKey" in activeSlide ? t(activeSlide.dateKey) : activeSlide.date}
+              {activeSlide.dateKey ? t(activeSlide.dateKey) : activeSlide.date}
             </span>
           </div>
           <motion.h1
@@ -488,7 +509,7 @@ interface SectorsProps {
 
 function Sectors({ sectors, cmsSectors }: SectorsProps) {
   const { t, link } = useI18n();
-  
+
   // Merge CMS images with defaults
   const mergedSectors = sectors.map((sector) => {
     const cmsSector = cmsSectors?.items.find((s) => s.keyName === sector.key && s.isVisible !== false);
@@ -599,7 +620,7 @@ function Sectors({ sectors, cmsSectors }: SectorsProps) {
                 />
                 <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                 <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black text-neutral-900 uppercase tracking-widest shadow-sm">
-                  {t(s.tagKey)}
+                  {t(s.titleKey)}
                 </div>
               </div>
 
@@ -628,7 +649,7 @@ interface EquipmentsProps {
 
 function Equipments({ equipments, cmsEquipments }: EquipmentsProps) {
   const { t, link } = useI18n();
-  
+
   // Merge CMS images with defaults
   const mergedEquipments = equipments.map((eq) => {
     const cmsEq = cmsEquipments?.items.find((e) => e.keyName === eq.id && e.isVisible !== false);
@@ -735,7 +756,7 @@ interface ReferencesProps {
 
 function References({ partners, cmsPartners }: ReferencesProps) {
   const { t } = useI18n();
-  
+
   // Merge CMS images with defaults - use partner key to match
   const mergedPartners = partners.map((partner, idx) => {
     // Find CMS partner by index if no key match
@@ -933,7 +954,7 @@ interface CertificationsProps {
 function CertificationsSection({ certs, cmsCerts }: CertificationsProps) {
   const { t, link } = useI18n();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  
+
   // Merge CMS images with defaults
   const mergedCerts = certs.map((cert, idx) => {
     const cmsCert = cmsCerts?.items.find(
@@ -1088,5 +1109,4 @@ function CertificationsSection({ certs, cmsCerts }: CertificationsProps) {
   );
 }
 
-// Keep React import used (JSX transform).
-void React;
+
