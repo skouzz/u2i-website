@@ -36,6 +36,9 @@ const ArticlesSection = lazy(() =>
 const MediaSection = lazy(() =>
   import("./sections/media").then((m) => ({ default: m.MediaSection })),
 );
+const SiteImagesSection = lazy(() =>
+  import("./sections/site-images").then((m) => ({ default: m.SiteImagesSection })),
+);
 const MessagesSection = lazy(() =>
   import("./sections/messages").then((m) => ({ default: m.MessagesSection })),
 );
@@ -88,6 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Médias & menus",
     items: [
       { key: "media", label: "Médiathèque", icon: ImageIcon },
+      { key: "siteImages", label: "Images du site", icon: ImageIcon },
       { key: "menus", label: "Menus", icon: ListTree },
     ],
   },
@@ -118,6 +122,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   categories: "Catégories",
   tags: "Tags",
   media: "Médiathèque",
+  siteImages: "Images du site",
   menus: "Menus",
   homepage: "Page d'accueil",
   references: "Références",
@@ -419,8 +424,8 @@ export function AdminDashboard() {
           {section === "pages" && <PagesSection ctx={context} />}
           {section === "articles" && <ArticlesSection ctx={context} />}
           {section === "categories" && <CategoriesSection ctx={context} />}
-          {section === "tags" && <TagsSection ctx={context} />}
-          {section === "media" && <MediaSection ctx={context} />}
+          {section === "tags" && <TagsSection ctx={context} />}  { section === "media" && <MediaSection ctx={context} /> }
+          { section === "siteImages" && <SiteImagesSection ctx={context} /> }
           {section === "menus" && <MenusSection ctx={context} />}
           {section === "homepage" && <HomepageSection ctx={context} />}
           {section === "references" && <ReferencesSection ctx={context} />}

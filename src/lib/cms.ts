@@ -167,6 +167,28 @@ export interface CmsSocialLinks {
   whatsapp?: string;
 }
 
+export interface CmsSiteImage {
+  id: number;
+  section: string;
+  keyName: string;
+  imageUrl?: string | null;
+  imageId?: number | null;
+  altText?: string | null;
+  sortOrder: number;
+  isVisible: boolean;
+  createdAt?: string;
+}
+
+/** Admin payload for saving site images (without server-assigned id). */
+export interface CmsSiteImagePayload {
+  section: string;
+  keyName: string;
+  imageUrl?: string | null;
+  altText?: string | null;
+  sortOrder?: number;
+  isVisible?: boolean;
+}
+
 export interface CmsMenuItem {
   id?: number;
   clientId?: string;
@@ -601,6 +623,22 @@ export const adminApi = {
     getJson<{ ok: true }>(
       `/api/admin.php?a=article_publish&p=${id}`,
       withCsrf(jsonBody({ published }), csrf),
+    ),
+
+  // ── Site images (organized by section + key) ──────────────────────────
+  siteImages: (csrf: string, section?: string) =>
+    getJson<{ ok: true; items: CmsSiteImage[] }>(
+      section ? `/api/admin.php?a=site_images&section=${encodeURIComponent(section)}` : "/api/admin.php?a=site_images",
+      withCsrf({}, csrf),
+    ),
+
+  saveSiteImages: (csrf: string, items: CmsSiteImagePayload[]) =>
+    getJson<{ ok: true }>("/api/admin.php?a=site_images", withCsrf(jsonBody({ items }), csrf)),
+
+  // ── Public: site images (no auth needed for reads) ──────────────────────
+  publicSiteImages: (section: string) =>
+    getJson<{ ok: true; items: CmsSiteImage[] }>(
+      "/api/admin.php?a=site_images&section=" + encodeURIComponent(section),
     ),
 
   // ── Media ──

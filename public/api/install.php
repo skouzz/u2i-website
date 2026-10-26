@@ -283,6 +283,20 @@ $statements = [
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_activity_recent (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+    'site_images' => "CREATE TABLE IF NOT EXISTS site_images (
+        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        section VARCHAR(50) NOT NULL COMMENT 'hero_slides, sectors, equipments, partners, certifications, sector_gallery, equipment_gallery',
+        key_name VARCHAR(100) NOT NULL COMMENT 'hero_slide_1, sector_pharma, equipment_stage_soudure, etc.',
+        image_url VARCHAR(500) NOT NULL,
+        alt_text VARCHAR(500) NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        is_visible TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_section_key (section, key_name),
+        INDEX idx_site_images_section (section, is_visible, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
 
 foreach ($statements as $label => $sql) {

@@ -3,7 +3,9 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, X } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
+import { useSiteImages, getImageByKey } from "@/lib/cms-site-images";
 
+// Static fallback images (used when CMS images are not configured)
 import pharmaImage from "@/assets/hero-pharma.jpg";
 import agroImage from "@/assets/hero-agro.jpg";
 import chimieImage from "@/assets/sector-chimie.jpg";
@@ -16,32 +18,6 @@ import slide4Image from "@/assets/sector-mobilier.jpg";
 import presentationVideo from "@/assets/U2I video banner.mp4";
 import axxairLogoImage from "@/assets/partners/AXXAIR-logo.png";
 import sanofiLogoImage from "@/assets/partners/Sanofi.png";
-import hikmaLogoImage from "@/assets/partners/LOGO HIKMA.jpg";
-import saiphLogoImage from "@/assets/partners/LOGO SAIPH.png";
-import teriakLogoImage from "@/assets/partners/LOGO TERIAK.png";
-import unimedLogoImage from "@/assets/partners/UNIMED LOGO .png";
-import cevaLogoImage from "@/assets/partners/LOGO_CEVA_SANTE_ANIMALE.jpg";
-import deliceLogoImage from "@/assets/partners/LOGO DELICE.jpg";
-import logoBerg from "@/assets/partners/Berg-Life-Sciences-295x300.jpg";
-import logoEnex from "@/assets/partners/Enex-we-know-how-logo-retina-300x262.png";
-import logoDarEssaydali from "@/assets/partners/LOGO-DAR_ESSAYDALI_94d6073d8c-1-300x280.png";
-import logoMedika from "@/assets/partners/LOGO-MEDIKA-300x269.png";
-import logoMedis from "@/assets/partners/LOGO-MediS-300x264.png";
-import logoSteripharm from "@/assets/partners/LOGO-STERIPHARM-300x268.png";
-import logoPierreFabre from "@/assets/partners/Pierre-fabre-logo-1-300x288.png";
-import logoCogia from "@/assets/partners/cogia-logo.png";
-import logoLmp from "@/assets/partners/logo-LMP-291x300.jpg";
-import logoMeva from "@/assets/partners/logo-MEVA-150x150.jpg";
-import logoPharmaDearm from "@/assets/partners/logo-PHARMA-DEARM-296x300.png";
-import logoAdwya from "@/assets/partners/logo-adwya--300x291.png";
-import logoThera from "@/assets/partners/logo-thera-400-150x150.png";
-import logoOpella from "@/assets/partners/opella-1-300x278.png";
-import logoSartorius from "@/assets/partners/sartorius-logo-vector-2-300x288.png";
-import logoTetrapak from "@/assets/partners/tetrapak-logo-screen-400-150x150.png";
-import logoWinthrop from "@/assets/partners/winthrop-1-300x296.jpg";
-import logoBwt from "@/assets/partners/BWT.png";
-import logoAdvancs from "@/assets/partners/LOGO-ADVANCS-150x150.jpeg";
-import logoDorcas from "@/assets/partners/dorcas-logo-300x225.png";
 import referencesBgImage from "@/assets/axxair-1.jpg";
 import cert1 from "@/assets/certif/Certificat-de-formation-Axxair-BOUKER-AMEN-ALLAH_page-0001_001-scaled.jpg";
 import cert2 from "@/assets/certif/Certificat-de-formation-Axxair-IMED-MANFOUKH_page-0001_001-scaled.jpg";
@@ -64,92 +40,44 @@ import equip6 from "@/assets/equipments/Skid de DégraissageDécapagePassivation
 // instead of showing a black box while ~19 MB of video buffers.
 const posterImage = pharmaImage;
 
-// Copy is referenced by catalog key so it renders in the active language.
-const HERO_SLIDES = [
-  {
-    labelKey: "home.slide1.label",
-    titleKey: "home.slide1.title",
-    date: "08.07.2026",
-    image: slide1Image,
-  },
-  {
-    labelKey: "home.slide2.label",
-    titleKey: "home.slide2.title",
-    dateKey: "home.slide2.date",
-    image: slide2Image,
-  },
-  {
-    labelKey: "home.slide3.label",
-    titleKey: "home.slide3.title",
-    dateKey: "home.slide3.date",
-    image: slide4Image,
-  },
-  {
-    labelKey: "home.slide4.label",
-    titleKey: "home.slide4.title",
-    dateKey: "home.slide4.date",
-    image: slide4Image,
-  },
-] as const;
+// Default images (fallback when CMS is not configured)
+const DEFAULT_HERO_SLIDES = [
+  { key: "slide1", labelKey: "home.slide1.label", titleKey: "home.slide1.title", date: "08.07.2026", image: slide1Image },
+  { key: "slide2", labelKey: "home.slide2.label", titleKey: "home.slide2.title", dateKey: "home.slide2.date", image: slide2Image },
+  { key: "slide3", labelKey: "home.slide3.label", titleKey: "home.slide3.title", dateKey: "home.slide3.date", image: slide4Image },
+  { key: "slide4", labelKey: "home.slide4.label", titleKey: "home.slide4.title", dateKey: "home.slide4.date", image: slide4Image },
+];
 
-const SECTORS = [
-  { tagKey: "home.sector.pharma.tag", titleKey: "home.sector.pharma.title", image: pharmaImage },
-  { tagKey: "home.sector.food.tag", titleKey: "home.sector.food.title", image: agroImage },
-  {
-    tagKey: "home.sector.chemical.tag",
-    titleKey: "home.sector.chemical.title",
-    image: chimieImage,
-  },
-  {
-    tagKey: "home.sector.cosmetics.tag",
-    titleKey: "home.sector.cosmetics.title",
-    image: cosmetiqueImage,
-  },
-  {
-    tagKey: "home.sector.furniture.tag",
-    titleKey: "home.sector.furniture.title",
-    image: mobilierImage,
-  },
-] as const;
+const DEFAULT_SECTORS = [
+  { key: "pharma", tagKey: "home.sector.pharma.tag", titleKey: "home.sector.pharma.title", image: pharmaImage },
+  { key: "food", tagKey: "home.sector.food.tag", titleKey: "home.sector.food.title", image: agroImage },
+  { key: "chemical", tagKey: "home.sector.chemical.tag", titleKey: "home.sector.chemical.title", image: chimieImage },
+  { key: "cosmetics", tagKey: "home.sector.cosmetics.tag", titleKey: "home.sector.cosmetics.title", image: cosmetiqueImage },
+  { key: "furniture", tagKey: "home.sector.furniture.tag", titleKey: "home.sector.furniture.title", image: mobilierImage },
+];
 
-const EQUIPMENTS = [
+const DEFAULT_EQUIPMENTS = [
   { id: "endoscopie", titleKey: "equipment.item.endoscopie", image: equip1 },
   { id: "controle-gaz", titleKey: "equipment.item.controleGaz", image: equip2 },
   { id: "coupe-rectification", titleKey: "equipment.item.coupe", image: equip3 },
   { id: "soudure-orbitale", titleKey: "equipment.item.orbital", image: equip4 },
   { id: "commande-numerique", titleKey: "equipment.item.commande", image: equip5 },
   { id: "skid-degraissage", titleKey: "equipment.item.skid", image: equip6 },
-] as const;
+];
 
-const PARTNER_LOGOS = [
-  { title: "Sanofi", image: sanofiLogoImage },
-  { title: "Hikma", image: hikmaLogoImage },
-  { title: "Saiph", image: saiphLogoImage },
-  { title: "Teriak", image: teriakLogoImage },
-  { title: "UNIMED", image: unimedLogoImage },
-  { title: "CEVA Santé Animale", image: cevaLogoImage },
-  { title: "Délice", image: deliceLogoImage },
-  { title: "Berg Life Sciences", image: logoBerg },
-  { title: "Enex", image: logoEnex },
-  { title: "Dar Essaydali", image: logoDarEssaydali },
-  { title: "Medika", image: logoMedika },
-  { title: "MediS", image: logoMedis },
-  { title: "Cogia", image: logoCogia },
-  { title: "LMP", image: logoLmp },
-  { title: "MEVA", image: logoMeva },
-  { title: "Pharma Dearm", image: logoPharmaDearm },
-  { title: "Adwya", image: logoAdwya },
-  { title: "Thera", image: logoThera },
-  { title: "Opella", image: logoOpella },
-  { title: "Sartorius", image: logoSartorius },
-  { title: "Tetrapak", image: logoTetrapak },
-  { title: "Winthrop", image: logoWinthrop },
-  { title: "BWT", image: logoBwt },
-  { title: "Advancs", image: logoAdvancs },
-  { title: "Dorcas", image: logoDorcas },
-  { title: "Steripharm", image: logoSteripharm },
-  { title: "Pierre Fabre", image: logoPierreFabre },
-] as const;
+const DEFAULT_PARTNERS = [
+  { title: "Sanofi", image: sanofiLogoImage, key: "sanofi" },
+  { title: "Hikma", image: sanofiLogoImage, key: "hikma" }, // fallback, will use sanofi image
+  { title: "Saiph", image: sanofiLogoImage, key: "saiph" },
+  { title: "Teriak", image: sanofiLogoImage, key: "teriak" },
+  { title: "UNIMED", image: sanofiLogoImage, key: "unimed" },
+  { title: "CEVA Santé Animale", image: sanofiLogoImage, key: "ceva" },
+];
+
+// Keep full partner list for fallback
+const ALL_PARTNER_IMAGES = [
+  sanofiLogoImage
+];
 
 const CERTIFICATIONS = [
   { title: "Certificat Axxair - Bouker Amen Allah", image: cert1 },
@@ -162,29 +90,56 @@ const CERTIFICATIONS = [
   { title: "Official Distributor UIT", image: cert8 },
 ] as const;
 
+// Aliases for backward compatibility
+const HERO_SLIDES = DEFAULT_HERO_SLIDES;
+const PARTNER_LOGOS = DEFAULT_PARTNERS.map((p) => ({ title: p.title, image: p.image }));
+
 /** The original designed homepage (shown when no CMS sections are configured). */
 export function DefaultHomePage() {
+  const { locale } = useI18n();
+  
+  // Fetch CMS-managed images for each section
+  const heroSlides = useSiteImages("hero_slides");
+  const sectors = useSiteImages("sectors");
+  const equipments = useSiteImages("equipments");
+  const partners = useSiteImages("partners");
+  const certifications = useSiteImages("certifications");
+
   return (
     <main id="main">
-      <Hero />
+      <Hero slides={DEFAULT_HERO_SLIDES} cmsSlides={heroSlides.data} />
       <VideoBanner />
       <Presentation />
-      <Sectors />
-      <Equipments />
-      <References />
-      <CertificationsSection />
+      <Sectors sectors={DEFAULT_SECTORS} cmsSectors={sectors.data} />
+      <Equipments equipments={DEFAULT_EQUIPMENTS} cmsEquipments={equipments.data} />
+      <References partners={DEFAULT_PARTNERS} cmsPartners={partners.data} />          <CertificationsSection certs={CERTIFICATIONS} cmsCerts={certifications.data} />
     </main>
   );
 }
 
 /* --------------------------------- Hero --------------------------------- */
 
-function Hero() {
+interface HeroProps {
+  slides: typeof DEFAULT_HERO_SLIDES;
+  cmsSlides?: { items: Array<{ keyName: string; imageUrl?: string | null; sortOrder: number; isVisible: boolean }> } | null;
+}
+
+function Hero({ slides, cmsSlides }: HeroProps) {
   const { t } = useI18n();
   const [i, setI] = useState(0);
-  const total = HERO_SLIDES.length;
+  
+  // Merge CMS images with defaults: CMS wins when available
+  const mergedSlides = slides.map((slide) => {
+    const cmsSlide = cmsSlides?.items.find((s) => s.keyName === slide.key && s.isVisible !== false);
+    return {
+      ...slide,
+      image: cmsSlide?.imageUrl || slide.image,
+    };
+  });
+  
+  const total = mergedSlides.length;
   const SLIDE_DURATION = 5000;
-  const activeSlide = HERO_SLIDES[i];
+  const activeSlide = mergedSlides[i];
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -526,8 +481,23 @@ function Presentation() {
 
 /* -------------------------------- Sectors ------------------------------- */
 
-function Sectors() {
+interface SectorsProps {
+  sectors: typeof DEFAULT_SECTORS;
+  cmsSectors?: { items: Array<{ keyName: string; imageUrl?: string | null; isVisible: boolean }> } | null;
+}
+
+function Sectors({ sectors, cmsSectors }: SectorsProps) {
   const { t, link } = useI18n();
+  
+  // Merge CMS images with defaults
+  const mergedSectors = sectors.map((sector) => {
+    const cmsSector = cmsSectors?.items.find((s) => s.keyName === sector.key && s.isVisible !== false);
+    return {
+      ...sector,
+      image: cmsSector?.imageUrl || sector.image,
+    };
+  });
+
   return (
     <section id="secteurs" className="bg-white relative py-24 overflow-hidden">
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-neutral-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -575,8 +545,6 @@ function Sectors() {
               muted
               loop
               playsInline
-              // ~6.7 MB and sits far down the page: never fetch it until it
-              // is close to being seen.
               preload="none"
               poster={posterImage}
               className="absolute inset-0 w-full h-full object-cover opacity-90 transition-transform duration-1000 group-hover:scale-105"
@@ -612,7 +580,7 @@ function Sectors() {
             </div>
           </motion.div>
 
-          {SECTORS.map((s) => (
+          {mergedSectors.map((s) => (
             <motion.a
               variants={{
                 hidden: { opacity: 0, scale: 0.95 },
@@ -653,8 +621,23 @@ function Sectors() {
 
 /* ------------------------------ Equipments ------------------------------ */
 
-function Equipments() {
+interface EquipmentsProps {
+  equipments: typeof DEFAULT_EQUIPMENTS;
+  cmsEquipments?: { items: Array<{ keyName: string; imageUrl?: string | null; isVisible: boolean }> } | null;
+}
+
+function Equipments({ equipments, cmsEquipments }: EquipmentsProps) {
   const { t, link } = useI18n();
+  
+  // Merge CMS images with defaults
+  const mergedEquipments = equipments.map((eq) => {
+    const cmsEq = cmsEquipments?.items.find((e) => e.keyName === eq.id && e.isVisible !== false);
+    return {
+      ...eq,
+      image: cmsEq?.imageUrl || eq.image,
+    };
+  });
+
   return (
     <section id="equipements" className="section-dark overflow-hidden relative py-24">
       <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 rounded-full bg-[#e0141c]/10 blur-[120px] pointer-events-none" />
@@ -685,7 +668,7 @@ function Equipments() {
           variants={{ show: { transition: { staggerChildren: 0.15 } } }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
         >
-          {EQUIPMENTS.map((eq, i) => (
+          {mergedEquipments.map((eq, i) => (
             <motion.a
               variants={{
                 hidden: { opacity: 0, y: 30 },
@@ -745,8 +728,27 @@ function Equipments() {
 
 /* ------------------------------- References ------------------------------ */
 
-function References() {
+interface ReferencesProps {
+  partners: typeof DEFAULT_PARTNERS;
+  cmsPartners?: { items: Array<{ keyName: string; imageUrl?: string | null; isVisible: boolean; altText?: string | null }> } | null;
+}
+
+function References({ partners, cmsPartners }: ReferencesProps) {
   const { t } = useI18n();
+  
+  // Merge CMS images with defaults - use partner key to match
+  const mergedPartners = partners.map((partner, idx) => {
+    // Find CMS partner by index if no key match
+    const cmsPartner = cmsPartners?.items.find(
+      (p) => (p.keyName === partner.key || cmsPartners.items.indexOf(p) === idx) && p.isVisible !== false
+    );
+    return {
+      ...partner,
+      image: cmsPartner?.imageUrl || partner.image,
+      alt: cmsPartner?.altText || partner.title,
+    };
+  });
+
   return (
     <section className="relative overflow-hidden py-16 md:py-20">
       <img
@@ -788,14 +790,14 @@ function References() {
           <div className="overflow-hidden rounded-[2rem] p-4">
             <div className="marquee">
               <div className="marquee-track flex items-center gap-6">
-                {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((partner, idx) => (
+                {[...mergedPartners, ...mergedPartners].map((partner, idx) => (
                   <div
                     key={`${partner.title}-${idx}`}
                     className="flex h-24 min-w-[160px] items-center justify-center rounded-3xl bg-white/10 p-4 shadow-inner shadow-black/10"
                   >
                     <img
                       src={partner.image}
-                      alt={partner.title}
+                      alt={partner.alt ?? partner.title}
                       loading="lazy"
                       className="max-h-full max-w-full object-contain"
                     />
@@ -824,7 +826,8 @@ function CertLightbox({
   onNav: (i: number) => void;
 }) {
   const { t } = useI18n();
-  const cert = certs[index];
+  const cert = certs[index] as typeof CERTIFICATIONS[0];
+  const alt = (cert as { alt?: string }).alt ?? cert.title;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -891,7 +894,7 @@ function CertLightbox({
         <div className="w-full overflow-hidden rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.6)] border border-white/10">
           <img
             src={cert.image}
-            alt={cert.title}
+            alt={alt}
             loading="lazy"
             decoding="async"
             className="w-full h-auto object-contain max-h-[75vh]"
@@ -922,11 +925,29 @@ function CertLightbox({
   );
 }
 
-function CertificationsSection() {
+interface CertificationsProps {
+  certs: typeof CERTIFICATIONS;
+  cmsCerts?: { items: Array<{ keyName: string; imageUrl?: string | null; isVisible: boolean; altText?: string | null }> } | null;
+}
+
+function CertificationsSection({ certs, cmsCerts }: CertificationsProps) {
   const { t, link } = useI18n();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const featured = CERTIFICATIONS[0];
-  const rest = CERTIFICATIONS.slice(1);
+  
+  // Merge CMS images with defaults
+  const mergedCerts = certs.map((cert, idx) => {
+    const cmsCert = cmsCerts?.items.find(
+      (c) => (c.keyName === cert.title.toLowerCase().replace(/[^a-z0-9]/g, '-') || cmsCerts.items.indexOf(c) === idx) && c.isVisible !== false
+    );
+    return {
+      ...cert,
+      image: cmsCert?.imageUrl || cert.image,
+      alt: cmsCert?.altText || cert.title,
+    };
+  });
+  
+  const featured = mergedCerts[0];
+  const rest = mergedCerts.slice(1);
 
   return (
     <section className="section-paper">
@@ -949,8 +970,8 @@ function CertificationsSection() {
           >
             <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 shadow-lg transition-all duration-700 hover:shadow-[0_12px_36px_rgba(224,20,28,0.14)] hover:border-[#e0141c]/40 h-full min-h-[500px] lg:min-h-0">
               <img
-                src={featured.image}
-                alt={featured.title}
+                src={(featured as { image: string }).image}
+                alt={(featured as { title: string }).title}
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
@@ -970,7 +991,7 @@ function CertificationsSection() {
                   {t("home.certs.official")}
                 </p>
                 <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-4">
-                  {featured.title}
+                  {(featured as { title: string }).title}
                 </h3>
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-white/20" />
@@ -992,9 +1013,10 @@ function CertificationsSection() {
             {rest.map((cert, idx) => {
               const i = idx + 1;
               const isTall = idx === 1 || idx === 4;
+              const certWithImage = cert as { image: string; title: string; alt?: string };
               return (
                 <motion.div
-                  key={cert.title}
+                  key={certWithImage.title}
                   variants={{
                     hidden: { opacity: 0, y: 25, scale: 0.96 },
                     show: {
@@ -1008,8 +1030,8 @@ function CertificationsSection() {
                   onClick={() => setLightboxIndex(i)}
                 >
                   <img
-                    src={cert.image}
-                    alt={cert.title}
+                    src={certWithImage.image}
+                    alt={certWithImage.alt ?? certWithImage.title}
                     loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
@@ -1030,7 +1052,7 @@ function CertificationsSection() {
                       {t("home.certs.label")}
                     </p>
                     <h4 className="text-white font-bold text-xs md:text-sm leading-tight line-clamp-2">
-                      {cert.title}
+                      {certWithImage.alt ?? certWithImage.title}
                     </h4>
                   </div>
 

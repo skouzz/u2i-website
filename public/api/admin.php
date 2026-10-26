@@ -1666,6 +1666,69 @@ try {
             }
             json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
 
+// ── Site images (organized by section + key) ──────────────────────────
+        case 'site_images':
+            // GET is public (no auth) so the frontend can read managed images.
+            // PUT/POST require admin + CSRF.
+            if ($method === 'GET') {
+                $section = field($_GET, 'section') ?: '';
+                $stmt = db()->prepare(
+                    'SELECT si.*, m.url AS media_url, m.original_name
+                     FROM site_images si
+                     LEFT JOIN media m ON m.id = si.image_id
+                     ' . ($section ? 'WHERE si.section = ?' : '') . '
+                     ORDER BY si.section, si.sort_order ASC, si.id ASC'
+                );
+                $stmt->execute($section ? [$section] : []);
+                $rows = $stmt->fetchAll();
+                $items = [];
+                foreach ($rows as $row) {
+                    $items[] = [
+                        'id' => (int) $row['id'],
+                        'section' => (string) $row['section'],
+                        'keyName' => (string) $row['key_name'],
+                        'imageUrl' => $row['image_url'] ?? null,
+                        'imageId' => isset($row['image_id']) ? (int) $row['image_id'] : null,
+                        'altText' => $row['alt_text'] ?? null,
+                        'sortOrder' => (int) $row['sort_order'],
+                        'isVisible' => (bool) $row['is_visible'],
+                        'createdAt' => $row['created_at'],
+                    ];
+                }
+                json_response(['ok' => true, 'items' => $items]);
+            }
+            if ($method === 'PUT' || $method === 'POST') {
+                $data = read_json_body();
+                $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+                
+                // Full replace: delete all for each section in the payload
+                $sections = array_unique(array_column($items, 'section'));
+                foreach ($sections as $section) {
+                    db()->prepare('DELETE FROM site_images WHERE section = ?')->execute([$section]);
+                }
+                
+                $stmt = db()->prepare(
+                    'INSERT INTO site_images (section, key_name, image_url, alt_text, sort_order, is_visible)
+                     VALUES (?, ?, ?, ?, ?, ?)'
+                );
+                foreach ($items as $order => $item) {
+                    if (!is_array($item) || !isset($item['section']) || !isset($item['keyName'])) {
+                        continue;
+                    }
+                    $stmt->execute([
+                        $item['section'],
+                        $item['keyName'],
+                        $item['imageUrl'] ?? null,
+                        $item['altText'] ?? null,
+                        $item['sortOrder'] ?? $order,
+                        !empty($item['isVisible']) ? 1 : 0,
+                    ]);
+                }
+                log_activity('site_images.update', 'site_images', 1);
+                json_response(['ok' => true]);
+            }
+            json_response(['ok' => false, 'message' => 'Method not allowed.'], 405);
+
         default:
             json_response(['ok' => false, 'message' => 'Unknown action.'], 404);
     }

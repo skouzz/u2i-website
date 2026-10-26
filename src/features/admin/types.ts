@@ -5,6 +5,7 @@ export type SectionKey =
   | "categories"
   | "tags"
   | "media"
+  | "siteImages"
   | "menus"
   | "homepage"
   | "references"
