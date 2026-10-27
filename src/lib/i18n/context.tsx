@@ -1,23 +1,8 @@
-import { useMemo, useContext, createContext } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 import { DEFAULT_LOCALE, SOURCE_LOCALE, translate, type Locale, type MessageKey } from "./catalog";
 import { localize, localeFromPath } from "./locatable";
-
-export { localeFromPath, localize, stripLocale, switchLocalePath } from "./locatable";
-
-export type { Locale, MessageKey } from "./catalog";
-export {
-  LOCALES,
-  LOCALE_LABELS,
-  LOCALE_SHORT,
-  LOCALE_PREFIX,
-  SOURCE_LOCALE,
-  hasTranslation,
-  missingKeys,
-  translateNavLabel,
-} from "./catalog";
 
 type I18nValue = {
   locale: Locale;
@@ -42,15 +27,16 @@ function getI18nValue(locale: Locale): I18nValue {
   };
 }
 
-function cachedI18nValue(locale: Locale): I18nValue {
-  return useMemo<I18nValue>(() => getI18nValue(locale), [locale]);
+function useI18nValue(locale: Locale): I18nValue {
+  const [value] = useState(() => getI18nValue(locale));
+  return value;
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const locale = localeFromPath(pathname);
 
-  const value = cachedI18nValue(locale);
+  const value = useI18nValue(locale);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
